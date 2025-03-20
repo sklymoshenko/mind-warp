@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+
+:root {
+  --trivia-lime: 76 100% 50%; /* Neon lime (#D4FF00) */
+  --trivia-void: 0 0% 0%; /* Pure black */
+  --trivia-white: 0 0% 100%; /* Pure white */
+  --trivia-accent: 270 100% 50%; /* Bright purple for subtle accents */
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+.animation-delay-200 {
+  animation-delay: 0.2s;
+}
+.animation-delay-300 {
+  animation-delay: 0.3s;
+}
+.animation-delay-400 {
+  animation-delay: 0.4s;
+}
+.animation-delay-500 {
+  animation-delay: 0.5s;
+}
+.animation-delay-600 {
+  animation-delay: 0.6s;
+}
