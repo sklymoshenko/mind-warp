@@ -1,8 +1,16 @@
 import './App.css'
-import WelcomePage from './components/WelcomePage'
+import BackgroundWrapper from './components/BackgroundWrapper'
+import CreateGame from './pages/CreateGame'
+import WelcomePage from './pages/WelcomePage'
+import { Router, Route } from '@solidjs/router'
 
-function App() {
-  return <WelcomePage />
+export default () => {
+  return (
+    <BackgroundWrapper>
+      <Router>
+        <Route path="/" component={WelcomePage} />
+        <Route path="/create-game" component={CreateGame} />
+      </Router>
+    </BackgroundWrapper>
+  )
 }
-
-export default App

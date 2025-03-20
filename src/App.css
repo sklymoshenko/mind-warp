@@ -1,10 +1,10 @@
 @import 'tailwindcss';
 
 :root {
-  --trivia-lime: 76 100% 50%; /* Neon lime (#D4FF00) */
-  --trivia-void: 0 0% 0%; /* Pure black */
-  --trivia-white: 0 0% 100%; /* Pure white */
-  --trivia-accent: 270 100% 50%; /* Bright purple for subtle accents */
+  --trivia-lime: 74 40% 74%; /* #C6D9A3, soft lime (replacing the neon lime) */
+  --trivia-void: 0 0% 0%; /* #000000, pure black */
+  --trivia-white: 0 0% 100%; /* #FFFFFF, pure white */
+  --trivia-accent: 270 100% 50%; /* Bright purple for accents */
 }
 
 @keyframes float {
