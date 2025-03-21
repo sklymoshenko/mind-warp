@@ -10,11 +10,13 @@
       "devDependencies": {
         "@solidjs/router": "^0.15.3",
         "@tailwindcss/vite": "^4.0.14",
+        "@types/canvas-confetti": "^1.9.0",
         "autoprefixer": "^10.4.21",
         "eslint": "^9.22.0",
         "eslint-config-prettier": "^10.1.1",
         "eslint-plugin-solid": "^0.14.5",
         "prettier": "^3.5.3",
+        "solid-icons": "^1.1.0",
         "tailwindcss": "^4.0.14",
         "typescript": "~5.7.2",
         "vite": "^6.2.0",
@@ -230,6 +232,8 @@
     "@types/babel__template": ["@types/babel__template@7.4.4", "", { "dependencies": { "@babel/parser": "^7.1.0", "@babel/types": "^7.0.0" } }, "sha512-h/NUaSyG5EyxBIp8YRxo4RMe2/qQgvyowRwVMzhYhBCONbW8PUsg4lkFMrhgZhUe5z3L3MiLDuvyJ/CaPa2A8A=="],
 
     "@types/babel__traverse": ["@types/babel__traverse@7.20.6", "", { "dependencies": { "@babel/types": "^7.20.7" } }, "sha512-r1bzfrm0tomOI8g1SzvCaQHo6Lcv6zu0EA+W2kHrt8dyrHQxGzBBL4kdkzIS+jBMV+EYcMAEAqXqYaLJq5rOZg=="],
+
+    "@types/canvas-confetti": ["@types/canvas-confetti@1.9.0", "", {}, "sha512-aBGj/dULrimR1XDZLtG9JwxX1b4HPRF6CX9Yfwh3NvstZEm1ZL7RBnel4keCPSqs1ANRu1u2Aoz9R+VmtjYuTg=="],
 
     "@types/estree": ["@types/estree@1.0.6", "", {}, "sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw=="],
 
@@ -500,6 +504,8 @@
     "shebang-command": ["shebang-command@2.0.0", "", { "dependencies": { "shebang-regex": "^3.0.0" } }, "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA=="],
 
     "shebang-regex": ["shebang-regex@3.0.0", "", {}, "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A=="],
+
+    "solid-icons": ["solid-icons@1.1.0", "", { "peerDependencies": { "solid-js": "*" } }, "sha512-IesTfr/F1ElVwH2E1110s2RPXH4pujKfSs+koT8rwuTAdleO5s26lNSpqJV7D1+QHooJj18mcOiz2PIKs0ic+A=="],
 
     "solid-js": ["solid-js@1.9.5", "", { "dependencies": { "csstype": "^3.1.0", "seroval": "^1.1.0", "seroval-plugins": "^1.1.0" } }, "sha512-ogI3DaFcyn6UhYhrgcyRAMbu/buBJitYQASZz5WzfQVPP10RD2AbCoRZ517psnezrasyCbWzIxZ6kVqet768xw=="],
 
