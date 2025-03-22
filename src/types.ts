@@ -2,6 +2,10 @@ export type User = {
   id: string
   name: string
   isAdmin: boolean
+  roundScore: {
+    roundId: string
+    score: number
+  }[]
 }
 
 export type Round = {
@@ -16,6 +20,7 @@ export type Question = {
   text: string
   answer: string
   isCorrect: boolean | null
+  points: RoundRank['id']
 }
 
 export type RoundRank = {

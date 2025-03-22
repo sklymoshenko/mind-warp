@@ -16,9 +16,13 @@ const defaultRanks: RoundRank[] = [
   { id: 1000, label: '1000', isSelected: false },
 ]
 
-const CreateGame = () => {
+type Props = {
+  onGameCreated: (game: Game) => void
+}
+
+const CreateGame = (props: Props) => {
   const navigate = useNavigate()
-  const [game, setGame] = createSignal<Game>()
+  const [gameId, setGameId] = createSignal<Game['id']>('')
   const [step, setStep] = createSignal(1)
   const [creatorName, setCreatorName] = createSignal('')
   const [rounds, setRounds] = createSignal<Round[]>([])
@@ -46,7 +50,7 @@ const CreateGame = () => {
 
   const onFirstStepFinish = () => {
     nextStep()
-    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true }])
+    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true, roundScore: [] }])
   }
 
   const onSecondStepFinish = () => {
@@ -57,9 +61,9 @@ const CreateGame = () => {
     setStep(step() - 1)
   }
 
-  const addUserToRound = () => {
+  const addUser = () => {
     if (currentUserName().trim() === '') return
-    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false }])
+    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false, roundScore: [] }])
     setCurrentUserName('')
   }
 
@@ -71,6 +75,7 @@ const CreateGame = () => {
 
       return r
     })
+
     setRoundRanks(updatedRanks)
   }
 
@@ -91,13 +96,16 @@ const CreateGame = () => {
   const onFinish = () => {
     if (rounds().length === 0) return
     setStep(0)
-    setGame({
+    const game = {
       id: crypto.randomUUID(),
       users: gameUsers(),
       rounds: rounds(),
       currentRound: 1,
       currentQuestion: 0,
-    })
+    }
+
+    props.onGameCreated(game)
+    setGameId(game.id)
   }
 
   return (
@@ -112,7 +120,7 @@ const CreateGame = () => {
         </A>
       </div>
 
-      <Show when={game()?.id}>
+      <Show when={gameId()}>
         <div class="relative z-10 text-center">
           <h1 class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000 w-1/2 mx-auto">
             <span class="bg-gradient-to-r from-accent to-pink-500 bg-clip-text text-transparent">Oh</span>, Let’s Launch
@@ -123,7 +131,7 @@ const CreateGame = () => {
           </h1>
           <button
             class="mt-8 bg-primary text-viod text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
           >
             Lets Go
           </button>
@@ -182,7 +190,7 @@ const CreateGame = () => {
                     class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                   <button
-                    onClick={addUserToRound}
+                    onClick={addUser}
                     class="mt-2 w-full bg-void text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                     classList={{
                       ' opacity-50 hover:cursor-not-allowed!': emptyCurrentUserName() || sameUser() || userAsCreator(),

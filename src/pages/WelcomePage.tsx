@@ -1,6 +1,6 @@
 // src/components/Welcome.tsx
 import { useNavigate } from '@solidjs/router'
-import { createSignal, onMount } from 'solid-js'
+import { createEffect, createSignal, onMount } from 'solid-js'
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = createSignal(false)
@@ -8,6 +8,10 @@ const Welcome = () => {
 
   onMount(() => {
     setTimeout(() => setIsLoaded(true), 100)
+  })
+
+  createEffect(() => {
+    navigate('/dashboard')
   })
 
   return (
