@@ -1,28 +1,9 @@
-// src/components/CreateGame.tsx
-import { createMemo, createSignal, For, on, Show } from 'solid-js'
-import { A } from '@solidjs/router'
+import { createMemo, createSignal, For, Show } from 'solid-js'
+import { A, useNavigate } from '@solidjs/router'
 import { IoCloseSharp } from 'solid-icons/io'
 import { BsController, BsStars } from 'solid-icons/bs'
-import { FaSolidDice, FaSolidUserAstronaut } from 'solid-icons/fa'
-
-type User = {
-  id: string
-  name: string
-  isAdmin: boolean
-}
-
-interface Round {
-  id: string
-  name: string
-  ranks: RoundRank[]
-  users: User[]
-}
-
-type RoundRank = {
-  id: number
-  label: string
-  isSelected: boolean
-}
+import { FaSolidUserAstronaut } from 'solid-icons/fa'
+import { RoundRank, Round, User, Game } from '../types'
 
 const defaultRanks: RoundRank[] = [
   { id: 100, label: '100', isSelected: true },
@@ -36,14 +17,15 @@ const defaultRanks: RoundRank[] = [
 ]
 
 const CreateGame = () => {
-  const [step, setStep] = createSignal(3)
-  const [creatorName, setCreatorName] = createSignal('asd')
+  const navigate = useNavigate()
+  const [game, setGame] = createSignal<Game>()
+  const [step, setStep] = createSignal(1)
+  const [creatorName, setCreatorName] = createSignal('')
   const [rounds, setRounds] = createSignal<Round[]>([])
   const [currentRoundName, setCurrentRoundName] = createSignal('')
   const [currentUserName, setCurrentUserName] = createSignal('')
   const [gameUsers, setGameUsers] = createSignal<User[]>([])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
-  const [isSkippingQuestionsFilling, setIsSkippingQuestionsFilling] = createSignal<boolean | undefined>()
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
 
@@ -93,23 +75,29 @@ const CreateGame = () => {
   }
 
   const addRound = () => {
-    // if (currentRoundName().trim() === '' || gameUsers().length === 0) return
+    if (currentRoundName().trim() === '' || gameUsers().length === 0) return
     setRounds([
       ...rounds(),
       {
         name: currentRoundName(),
-        users: gameUsers(),
         id: crypto.randomUUID(),
         ranks: roundRanks().filter((r) => r.isSelected),
+        questions: [],
       },
     ])
     setCurrentRoundName('')
   }
 
-  const createGame = () => {
-    console.log('Game Created:', { creator: creatorName(), rounds: rounds() })
-    alert('Game created successfully!')
-    window.location.href = '/'
+  const onFinish = () => {
+    if (rounds().length === 0) return
+    setStep(0)
+    setGame({
+      id: crypto.randomUUID(),
+      users: gameUsers(),
+      rounds: rounds(),
+      currentRound: 1,
+      currentQuestion: 0,
+    })
   }
 
   return (
@@ -123,6 +111,24 @@ const CreateGame = () => {
           Back to Home
         </A>
       </div>
+
+      <Show when={game()?.id}>
+        <div class="relative z-10 text-center">
+          <h1 class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000 w-1/2 mx-auto">
+            <span class="bg-gradient-to-r from-accent to-pink-500 bg-clip-text text-transparent">Oh</span>, Let’s Launch
+            This Trivia Soirée—Because Clearly, You’re All&nbsp;
+            <span class="bg-gradient-to-br from-blue-600 to-cyan-400 bg-clip-text text-transparent">Geniuses</span>
+            &nbsp; Waiting to Be &nbsp;
+            <span class="bg-gradient-to-tr from-cyan-600 to-orange bg-clip-text text-transparent">Humbled!</span>
+          </h1>
+          <button
+            class="mt-8 bg-primary text-viod text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
+            onClick={() => navigate('/')}
+          >
+            Lets Go
+          </button>
+        </div>
+      </Show>
 
       {/* Flipping Card for Form Steps */}
       <div class="relative w-full max-w-md perspective-1000">
@@ -271,7 +277,7 @@ const CreateGame = () => {
                 <For each={rounds()}>
                   {(round) => (
                     <div class="mb-2 bg-orange-light rounded-md p-2 shadow-xs transition-all duration-300 animate-slide-in">
-                      <div class="flex items-center gap-2 justify-between ">
+                      <div class="flex items-start gap-2 justify-between ">
                         <div class="flex flex-col">
                           <div class="flex items-center gap-2">
                             <BsController class="w-5 h-5 text-void" />
@@ -322,107 +328,17 @@ const CreateGame = () => {
                   Back
                 </button>
                 <button
-                  onClick={nextStep}
+                  onClick={onFinish}
                   class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                   classList={{ 'opacity-50 cursor-not-allowed': rounds().length === 0 }}
                   disabled={rounds().length === 0}
                 >
-                  Next
+                  Finish
                 </button>
               </div>
               <p class="text-void text-xs uppercase text-center mt-4">Rounds should be fun!</p>
             </div>
           </Show>
-
-          {/* Step 4: Filling Questions */}
-          <Show when={step() === 4}>
-            <div class="w-full bg-primary rounded-lg p-6">
-              <div class="flex justify-between mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 4</p>
-                <p class="text-void text-sm uppercase font-bold">Filling Questions</p>
-              </div>
-              <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
-                Game Questions
-              </h2>
-              {isSkippingQuestionsFilling() == undefined && (
-                <div class="flex flex-col items-center gap-4 mb-10">
-                  <p class="text-void uppercase mb-2">Skip and read questions out loud ?</p>
-                  <div class="flex gap-2">
-                    <button
-                      class="bg-green-700 text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                      onClick={() => setIsSkippingQuestionsFilling(true)}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      class="bg-orange-700 text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                      onClick={() => setIsSkippingQuestionsFilling(false)}
-                    >
-                      No
-                    </button>
-                  </div>
-                </div>
-              )}
-              {isSkippingQuestionsFilling() != undefined && (
-                <div class="flex justify-between mt-6">
-                  <button
-                    onClick={prevStep}
-                    class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                  >
-                    Back
-                  </button>
-                  <button
-                    onClick={createGame}
-                    class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                  >
-                    Create Game
-                  </button>
-                </div>
-              )}
-              <p class="text-void text-xs uppercase text-center mt-4">
-                Filling questions to read from sreen or have fun speaking it out
-              </p>
-            </div>
-          </Show>
-          {/* <Show when={step() === 4}>
-            <div class="w-full bg-primary rounded-lg p-6">
-              <div class="flex justify-between mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 4</p>
-                <p class="text-void text-sm uppercase font-bold">Filling Questions</p>
-              </div>
-              <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
-                Fill Questions For Each Round
-              </h2>
-              <p class="text-void uppercase mb-2">Creator: {creatorName()}</p>
-              <div class="max-h-60 overflow-y-auto">
-                <For each={rounds()}>
-                  {(round) => (
-                    <div class="mb-2">
-                      <p class="text-void font-semibold uppercase">{round.name}</p>
-                      <For each={round.users}>
-                        {(user) => <p class="text-void text-sm uppercase pl-4">{user.name}</p>}
-                      </For>
-                    </div>
-                  )}
-                </For>
-              </div>
-              <div class="flex justify-between mt-6">
-                <button
-                  onClick={prevStep}
-                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                >
-                  Back
-                </button>
-                <button
-                  onClick={createGame}
-                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                >
-                  Create Game
-                </button>
-              </div>
-              <p class="text-void text-xs uppercase text-center mt-4">Ready to play!</p>
-            </div>
-          </Show> */}
         </div>
       </div>
     </>
