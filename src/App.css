@@ -116,3 +116,31 @@
     opacity: 0.2;
   }
 }
+
+/* Global scrollbar styles */
+* {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #8000ff #c6d9a3; /* thumb: --color-accent, track: --color-orange-light */
+}
+
+/* Webkit (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 4px; /* Thinnest practical size */
+  height: 4px; /* For horizontal scrollbars */
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 2px; /* Adjusted for thinner scrollbar */
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #8000ff; /* --color-accent */
+  border-radius: 2px; /* Adjusted for thinner scrollbar */
+  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.2); /* Adjusted shadow for smaller size */
+  transition: background 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #8000ffcc; /* --color-accent with 80% opacity (hex equivalent) */
+}

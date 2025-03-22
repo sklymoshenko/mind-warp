@@ -13,6 +13,7 @@ export default (props: { children: any }) => {
       '--float-y': `${floatY}px`,
       '--float-duration': `${floatDuration}s`,
       '--float-delay': `${floatDelay}s`,
+      'font-size': `${Math.random() * 2 + 4}rem`, // Random between 1rem and 3rem
     }
   }
   return (

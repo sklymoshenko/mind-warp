@@ -1,35 +1,73 @@
 // src/components/CreateGame.tsx
-import { createMemo, createSignal, For, Show } from 'solid-js'
+import { createMemo, createSignal, For, on, Show } from 'solid-js'
 import { A } from '@solidjs/router'
 import { IoCloseSharp } from 'solid-icons/io'
+import { BsController, BsStars } from 'solid-icons/bs'
+import { FaSolidDice, FaSolidUserAstronaut } from 'solid-icons/fa'
 
-interface Round {
+type User = {
+  id: string
   name: string
-  users: string[]
+  isAdmin: boolean
 }
 
+interface Round {
+  id: string
+  name: string
+  ranks: RoundRank[]
+  users: User[]
+}
+
+type RoundRank = {
+  id: number
+  label: string
+  isSelected: boolean
+}
+
+const defaultRanks: RoundRank[] = [
+  { id: 100, label: '100', isSelected: true },
+  { id: 200, label: '200', isSelected: true },
+  { id: 300, label: '300', isSelected: true },
+  { id: 400, label: '400', isSelected: true },
+  { id: 500, label: '500', isSelected: true },
+  { id: 700, label: '700', isSelected: false },
+  { id: 900, label: '900', isSelected: false },
+  { id: 1000, label: '1000', isSelected: false },
+]
+
 const CreateGame = () => {
-  const [step, setStep] = createSignal(1)
-  const [creatorName, setCreatorName] = createSignal('')
+  const [step, setStep] = createSignal(3)
+  const [creatorName, setCreatorName] = createSignal('asd')
   const [rounds, setRounds] = createSignal<Round[]>([])
   const [currentRoundName, setCurrentRoundName] = createSignal('')
   const [currentUserName, setCurrentUserName] = createSignal('')
-  const [currentRoundUsers, setCurrentRoundUsers] = createSignal<string[]>([])
+  const [gameUsers, setGameUsers] = createSignal<User[]>([])
+  const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
 
   const emptyRoundName = createMemo(() => currentRoundName().trim() === '')
   const emptyCurrentUserName = createMemo(() => currentUserName().trim() === '')
-  const notEnoughUsers = createMemo(() => currentRoundUsers().length < 4)
+  const notEnoughUsers = createMemo(() => gameUsers().length < 2)
   const sameUser = createMemo(() =>
-    currentRoundUsers().some((user) => user.toLowerCase() === currentUserName().toLowerCase())
+    gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
   )
   const userAsCreator = createMemo(() => creatorName().toLowerCase() === currentUserName().toLowerCase())
 
   const nextStep = () => {
     if (step() === 1 && emptyCreatorName()) return
-    if (step() === 2 && rounds().length === 0) return
+    if (step() === 2 && gameUsers().length < 2) return
+    if (step() === 3 && rounds().length === 0) return
     setStep(step() + 1)
+  }
+
+  const onFirstStepFinish = () => {
+    nextStep()
+    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true }])
+  }
+
+  const onSecondStepFinish = () => {
+    nextStep()
   }
 
   const prevStep = () => {
@@ -38,15 +76,33 @@ const CreateGame = () => {
 
   const addUserToRound = () => {
     if (currentUserName().trim() === '') return
-    setCurrentRoundUsers([...currentRoundUsers(), currentUserName()])
+    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false }])
     setCurrentUserName('')
   }
 
+  const onRankToggle = (rank: RoundRank) => {
+    const updatedRanks = roundRanks().map((r) => {
+      if (r.id === rank.id) {
+        return { ...r, isSelected: !r.isSelected }
+      }
+
+      return r
+    })
+    setRoundRanks(updatedRanks)
+  }
+
   const addRound = () => {
-    if (currentRoundName().trim() === '' || currentRoundUsers().length === 0) return
-    setRounds([...rounds(), { name: currentRoundName(), users: currentRoundUsers() }])
+    // if (currentRoundName().trim() === '' || gameUsers().length === 0) return
+    setRounds([
+      ...rounds(),
+      {
+        name: currentRoundName(),
+        users: gameUsers(),
+        id: crypto.randomUUID(),
+        ranks: roundRanks().filter((r) => r.isSelected),
+      },
+    ])
     setCurrentRoundName('')
-    setCurrentRoundUsers([])
   }
 
   const createGame = () => {
@@ -89,7 +145,7 @@ const CreateGame = () => {
               />
               <button
                 disabled={emptyCreatorName()}
-                onClick={nextStep}
+                onClick={onFirstStepFinish}
                 class="mt-6 w-full bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                 classList={{ 'opacity-50 hover:cursor-not-allowed!': emptyCreatorName() }}
               >
@@ -99,7 +155,7 @@ const CreateGame = () => {
             </div>
           </Show>
 
-          {/* Step 2: Add Rounds */}
+          {/* Step 2: Add users */}
           <Show when={step() === 2}>
             <div class="w-full bg-primary rounded-lg p-6">
               <div class="flex justify-between mb-4">
@@ -110,13 +166,6 @@ const CreateGame = () => {
                 Game Members
               </h2>
               <div class="mb-4">
-                {/* <input
-                  type="text"
-                  value={currentRoundName()}
-                  onInput={(e) => setCurrentRoundName(e.currentTarget.value)}
-                  placeholder="Round Name (e.g., Pop Culture)"
-                  class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
-                /> */}
                 <div class="mt-4 flex flex-col justify-between">
                   <input
                     type="text"
@@ -134,41 +183,132 @@ const CreateGame = () => {
                     disabled={emptyCurrentUserName() || sameUser() || userAsCreator()}
                   >
                     {sameUser() && 'Funny but we cant use same names'}
-                    {userAsCreator() && 'Creator is already a user you dummy'}
+                    {!sameUser() && userAsCreator() && 'Creator is already a user you dummy'}
                     {!sameUser() && !userAsCreator() && 'Add Player'}
                   </button>
                 </div>
                 <div class="mt-4 max-h-32 overflow-y-auto flex flex-wrap gap-2">
-                  <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none" />
-                  <For each={currentRoundUsers()}>
+                  <For each={gameUsers()}>
                     {(user) => (
                       <div class="relative bg-orange-light rounded-md px-2 py-1 mb-1 flex items-center gap-2 shadow-xs hover:shadow-sm transition-all duration-300 animate-slide-in w-fit">
-                        <p class="text-void text-sm font-medium uppercase tracking-wide flex-1">{user}</p>
-                        <button
-                          onClick={() => setCurrentRoundUsers(currentRoundUsers().filter((u) => u !== user))}
-                          class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
-                          aria-label={`Remove player ${user}`}
-                        >
-                          <IoCloseSharp class="w-4 h-4" />
-                        </button>
+                        <p class="text-void text-sm font-medium uppercase tracking-wide flex-1">{user.name}</p>
+                        {!user.isAdmin ? (
+                          <button
+                            onClick={() => setGameUsers(gameUsers().filter((u) => u.id !== user.id))}
+                            class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
+                            aria-label={`Remove player ${user}`}
+                          >
+                            <IoCloseSharp class="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <BsStars class="w-4 h-4 text-yellow-600" title="Admin" />
+                        )}
                       </div>
                     )}
                   </For>
                 </div>
-                {/* <button
+              </div>
+              <div class="flex justify-between mt-6">
+                <button
+                  onClick={prevStep}
+                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={onSecondStepFinish}
+                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                  classList={{ 'opacity-50 cursor-not-allowed': gameUsers().length < 2 }}
+                  disabled={gameUsers().length < 2}
+                >
+                  Next
+                </button>
+              </div>
+              <p class="text-void text-xs uppercase text-center mt-4">Game should have at least 2 players.</p>
+            </div>
+          </Show>
+          <Show when={step() === 3}>
+            <div class="w-full bg-primary rounded-lg p-6">
+              <div class="flex justify-between mb-4">
+                <p class="text-void text-sm uppercase font-bold">Step 3</p>
+                <p class="text-void text-sm uppercase font-bold">Add Rounds</p>
+              </div>
+              <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
+                Round Name
+              </h2>
+              <div class="mb-4">
+                <input
+                  type="text"
+                  value={currentRoundName()}
+                  onInput={(e) => setCurrentRoundName(e.currentTarget.value)}
+                  placeholder="Round Name (e.g., Pop Culture)"
+                  class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <div class="mt-4 flex gap-2">
+                  <For each={roundRanks()}>
+                    {(rank) => (
+                      <div
+                        class="flex items-center mt-1 p-1 bg-orange-light rounded-md hover:bg-accent hover:text-white transition-all duration-300 cursor-pointer font-bold"
+                        classList={{ 'bg-accent! text-white': rank.isSelected }}
+                        title={rank.isSelected ? 'Remove Rank' : 'Add Rank'}
+                        onClick={() => onRankToggle(rank)}
+                      >
+                        {rank.label}
+                      </div>
+                    )}
+                  </For>
+                </div>
+                <button
                   onClick={addRound}
                   class="mt-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
                   classList={{ ' opacity-50 hover:cursor-not-allowed!': emptyRoundName() || notEnoughUsers() }}
                 >
                   Add Round
-                </button> */}
+                </button>
               </div>
-              <div class="max-h-40 overflow-y-auto">
+              <div class="max-h-80 overflow-y-auto">
                 <For each={rounds()}>
                   {(round) => (
-                    <div class="mb-2">
-                      <p class="text-void font-semibold uppercase">{round.name}</p>
-                      <For each={round.users}>{(user) => <p class="text-void text-sm uppercase pl-4">{user}</p>}</For>
+                    <div class="mb-2 bg-orange-light rounded-md p-2 shadow-xs transition-all duration-300 animate-slide-in">
+                      <div class="flex items-center gap-2 justify-between ">
+                        <div class="flex flex-col">
+                          <div class="flex items-center gap-2">
+                            <BsController class="w-5 h-5 text-void" />
+                            <p class="text-void font-semibold uppercase mt-0.5 text-sm truncate overflow-hidden whitespace-nowrap">
+                              {round.name}
+                            </p>
+                          </div>
+                          <div class="flex flex-wrap mr-4 gap-2 text-xs mt-1">
+                            |
+                            <For each={round.ranks}>
+                              {(rank) => <p class="flex items-center rounded-md">{rank.label} </p>}
+                            </For>
+                            |
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setRounds(rounds().filter((u) => u.id !== round.id))}
+                          class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
+                          aria-label={`Remove ${round.name} round`}
+                          title="Remove Round"
+                        >
+                          <IoCloseSharp class="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
+                        <For each={gameUsers()}>
+                          {(user) => (
+                            <div class="flex items-center gap-2 mt-1 p-1 bg-white/50 rounded-sm">
+                              {user.isAdmin ? (
+                                <BsStars class="w-4 h-4 text-yellow-600" />
+                              ) : (
+                                <FaSolidUserAstronaut class="w-4 h-4 text-void" />
+                              )}
+                              <p class="text-void text-sm uppercase mt-0.5">{user.name}</p>
+                            </div>
+                          )}
+                        </For>
+                      </div>
                     </div>
                   )}
                 </For>
@@ -189,12 +329,12 @@ const CreateGame = () => {
                   Next
                 </button>
               </div>
-              <p class="text-void text-xs uppercase text-center mt-4">Game should have at least 2 players.</p>
+              <p class="text-void text-xs uppercase text-center mt-4">Rounds should be fun!</p>
             </div>
           </Show>
 
-          {/* Step 3: Review and Create */}
-          <Show when={step() === 3}>
+          {/* Step 4: Review and Create */}
+          <Show when={step() === 4}>
             <div class="w-full bg-primary rounded-lg p-6">
               <div class="flex justify-between mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 3</p>
@@ -209,7 +349,9 @@ const CreateGame = () => {
                   {(round) => (
                     <div class="mb-2">
                       <p class="text-void font-semibold uppercase">{round.name}</p>
-                      <For each={round.users}>{(user) => <p class="text-void text-sm uppercase pl-4">{user}</p>}</For>
+                      <For each={round.users}>
+                        {(user) => <p class="text-void text-sm uppercase pl-4">{user.name}</p>}
+                      </For>
                     </div>
                   )}
                 </For>
