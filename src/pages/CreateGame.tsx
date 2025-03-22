@@ -43,6 +43,7 @@ const CreateGame = () => {
   const [currentUserName, setCurrentUserName] = createSignal('')
   const [gameUsers, setGameUsers] = createSignal<User[]>([])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
+  const [isSkippingQuestionsFilling, setIsSkippingQuestionsFilling] = createSignal<boolean | undefined>()
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
 
@@ -333,15 +334,64 @@ const CreateGame = () => {
             </div>
           </Show>
 
-          {/* Step 4: Review and Create */}
+          {/* Step 4: Filling Questions */}
           <Show when={step() === 4}>
             <div class="w-full bg-primary rounded-lg p-6">
               <div class="flex justify-between mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 3</p>
-                <p class="text-void text-sm uppercase font-bold">Review</p>
+                <p class="text-void text-sm uppercase font-bold">Step 4</p>
+                <p class="text-void text-sm uppercase font-bold">Filling Questions</p>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
-                Review Your Game
+                Game Questions
+              </h2>
+              {isSkippingQuestionsFilling() == undefined && (
+                <div class="flex flex-col items-center gap-4 mb-10">
+                  <p class="text-void uppercase mb-2">Skip and read questions out loud ?</p>
+                  <div class="flex gap-2">
+                    <button
+                      class="bg-green-700 text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                      onClick={() => setIsSkippingQuestionsFilling(true)}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      class="bg-orange-700 text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                      onClick={() => setIsSkippingQuestionsFilling(false)}
+                    >
+                      No
+                    </button>
+                  </div>
+                </div>
+              )}
+              {isSkippingQuestionsFilling() != undefined && (
+                <div class="flex justify-between mt-6">
+                  <button
+                    onClick={prevStep}
+                    class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={createGame}
+                    class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                  >
+                    Create Game
+                  </button>
+                </div>
+              )}
+              <p class="text-void text-xs uppercase text-center mt-4">
+                Filling questions to read from sreen or have fun speaking it out
+              </p>
+            </div>
+          </Show>
+          {/* <Show when={step() === 4}>
+            <div class="w-full bg-primary rounded-lg p-6">
+              <div class="flex justify-between mb-4">
+                <p class="text-void text-sm uppercase font-bold">Step 4</p>
+                <p class="text-void text-sm uppercase font-bold">Filling Questions</p>
+              </div>
+              <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
+                Fill Questions For Each Round
               </h2>
               <p class="text-void uppercase mb-2">Creator: {creatorName()}</p>
               <div class="max-h-60 overflow-y-auto">
@@ -372,7 +422,7 @@ const CreateGame = () => {
               </div>
               <p class="text-void text-xs uppercase text-center mt-4">Ready to play!</p>
             </div>
-          </Show>
+          </Show> */}
         </div>
       </div>
     </>
