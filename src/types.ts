@@ -8,11 +8,17 @@ export type User = {
   }[]
 }
 
+type Theme = {
+  id: string
+  name: string
+  questions: Question[]
+}
+
 export type Round = {
   id: string
   name: string
   ranks: RoundRank[]
-  questions: Question[]
+  themes: Theme[]
 }
 
 export type Question = {

@@ -1,12 +1,23 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200..700&display=swap');
 @import 'tailwindcss';
 
 @theme {
-  --color-primary: #c6d9a3; /* Soft lime */
+  --color-primary: #e2fe74; /* Soft lime */
   --color-void: #000000; /* Pure black */
   --color-white: #ffffff; /* Pure white */
   --color-accent: #8000ff; /* Bright purple for accents */
   --color-orange: #dcbf95;
   --color-orange-light: #e3ccaa;
+
+  --font-display: 'Oswald', sans-serif;
+
+  --drop-shadow-3xl: 0 35px 35px rgba(0, 0, 0, 0.25);
+}
+
+#root {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
 }
 
 @keyframes float {

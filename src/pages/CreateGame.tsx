@@ -87,7 +87,7 @@ const CreateGame = (props: Props) => {
         name: currentRoundName(),
         id: crypto.randomUUID(),
         ranks: roundRanks().filter((r) => r.isSelected),
-        questions: [],
+        themes: [],
       },
     ])
     setCurrentRoundName('')

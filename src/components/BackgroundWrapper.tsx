@@ -17,7 +17,7 @@ export default (props: { children: any }) => {
     }
   }
   return (
-    <div class="relative w-screen h-screen bg-void flex flex-col items-center justify-center p-6 overflow-hidden">
+    <div class="relative w-screen h-screen bg-void flex flex-col items-center justify-center p-6 overflow-hidden font-display">
       {/* Creative Background with SVG Elements */}
       <div class="absolute inset-0 pointer-events-none">
         <div
