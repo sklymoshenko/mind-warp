@@ -20,6 +20,18 @@
   font-optical-sizing: auto;
 }
 
+.input-colors {
+  color: var(--color-primary);
+  background-color: var(--color-void);
+  accent-color: rgba(226, 254, 116, 0.5);
+}
+
+.revert-input-colors {
+  color: var(--color-void);
+  background-color: var(--color-primary);
+  accent-color: rgba(0, 0, 0, 0.5);
+}
+
 @keyframes float {
   0%,
   100% {

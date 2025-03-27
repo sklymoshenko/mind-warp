@@ -37,7 +37,7 @@ export default function GameDashboard(props: GameDashboardProps) {
         <For each={props.game.rounds}>
           {(round, i) => {
             return (
-              <div class="min-w-[300px] h-fit bg-void text-primary rounded-md p-2 drop-shadow-lg hover:drop-shadow-3xl  hover:cursor-pointer transition-all duration-300">
+              <div class="min-w-[300px] h-fit bg-void text-primary rounded-md p-2 drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
                 <h1 class="font-semibold text-3xl mb-6">
                   Round {i() + 1}: {round.name}
                 </h1>
@@ -49,8 +49,8 @@ export default function GameDashboard(props: GameDashboardProps) {
                       }}
                     </For>
                   </div>
-                  <div class="w-[1px] bg-primary h-20 mx-3" />
-                  <div class="flex flex-col justify-start">
+                  <div class="w-[1px] bg-primary h-20 mx-14" />
+                  <div class="flex flex-col justify-start w-[230px]">
                     <For each={props.game.users}>
                       {(user) => {
                         return (

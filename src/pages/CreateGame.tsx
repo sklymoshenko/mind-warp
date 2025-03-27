@@ -30,11 +30,14 @@ const CreateGame = (props: Props) => {
   const [currentUserName, setCurrentUserName] = createSignal('')
   const [gameUsers, setGameUsers] = createSignal<User[]>([])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
+  const [themes, setThemes] = createSignal<string[]>([])
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
 
   const emptyRoundName = createMemo(() => currentRoundName().trim() === '')
   const emptyCurrentUserName = createMemo(() => currentUserName().trim() === '')
+  const emptyThemes = createMemo(() => themes().filter(Boolean).length != themes().length)
+  const emptyRanks = createMemo(() => roundRanks().filter((r) => r.isSelected).length === 0)
   const notEnoughUsers = createMemo(() => gameUsers().length < 2)
   const sameUser = createMemo(() =>
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
@@ -80,17 +83,25 @@ const CreateGame = (props: Props) => {
   }
 
   const addRound = () => {
-    if (currentRoundName().trim() === '' || gameUsers().length === 0) return
+    if (emptyRoundName() || emptyThemes() || emptyRanks()) return
+
+    const roundThemes = themes().map((theme) => ({
+      id: crypto.randomUUID(),
+      name: theme,
+      questions: [],
+    }))
+
     setRounds([
       ...rounds(),
       {
         name: currentRoundName(),
         id: crypto.randomUUID(),
         ranks: roundRanks().filter((r) => r.isSelected),
-        themes: [],
+        themes: roundThemes,
       },
     ])
     setCurrentRoundName('')
+    setThemes([])
   }
 
   const onFinish = () => {
@@ -106,6 +117,7 @@ const CreateGame = (props: Props) => {
 
     props.onGameCreated(game)
     setGameId(game.id)
+    navigate('/dashboard')
   }
 
   return (
@@ -156,7 +168,7 @@ const CreateGame = (props: Props) => {
                 value={creatorName()}
                 onInput={(e) => setCreatorName(e.currentTarget.value)}
                 placeholder="The Trivia Master"
-                class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent "
               />
               <button
                 disabled={emptyCreatorName()}
@@ -187,7 +199,7 @@ const CreateGame = (props: Props) => {
                     value={currentUserName()}
                     onInput={(e) => setCurrentUserName(e.currentTarget.value)} // Fixed typo
                     placeholder="Add Player"
-                    class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                    class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                   />
                   <button
                     onClick={addUser}
@@ -205,15 +217,15 @@ const CreateGame = (props: Props) => {
                 <div class="mt-4 max-h-32 overflow-y-auto flex flex-wrap gap-2">
                   <For each={gameUsers()}>
                     {(user) => (
-                      <div class="relative bg-orange-light rounded-md px-2 py-1 mb-1 flex items-center gap-2 shadow-xs hover:shadow-sm transition-all duration-300 animate-slide-in w-fit">
-                        <p class="text-void text-sm font-medium uppercase tracking-wide flex-1">{user.name}</p>
+                      <div class="relative bg-void rounded-md px-2 py-1 mb-1 flex items-center gap-2 shadow-xs hover:shadow-sm transition-all duration-300 animate-slide-in w-fit">
+                        <p class="text-primary text-sm font-medium uppercase tracking-wide flex-1">{user.name}</p>
                         {!user.isAdmin ? (
                           <button
                             onClick={() => setGameUsers(gameUsers().filter((u) => u.id !== user.id))}
                             class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
                             aria-label={`Remove player ${user}`}
                           >
-                            <IoCloseSharp class="w-4 h-4" />
+                            <IoCloseSharp class="w-4 h-4 text-primary" />
                           </button>
                         ) : (
                           <BsStars class="w-4 h-4 text-yellow-600" title="Admin" />
@@ -257,14 +269,14 @@ const CreateGame = (props: Props) => {
                   value={currentRoundName()}
                   onInput={(e) => setCurrentRoundName(e.currentTarget.value)}
                   placeholder="Round Name (e.g., Pop Culture)"
-                  class="w-full bg-white text-void placeholder-void/50 border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                  class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <div class="mt-4 flex gap-2">
                   <For each={roundRanks()}>
                     {(rank) => (
                       <div
-                        class="flex items-center mt-1 p-1 bg-orange-light rounded-md hover:bg-accent hover:text-white transition-all duration-300 cursor-pointer font-bold"
-                        classList={{ 'bg-accent! text-white': rank.isSelected }}
+                        class="flex items-center mt-1 p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
+                        classList={{ 'bg-accent! text-primary': rank.isSelected }}
                         title={rank.isSelected ? 'Remove Rank' : 'Add Rank'}
                         onClick={() => onRankToggle(rank)}
                       >
@@ -273,10 +285,33 @@ const CreateGame = (props: Props) => {
                     )}
                   </For>
                 </div>
+                <div class="mt-4 flex flex-col gap-2 ">
+                  <For each={roundRanks().filter((r) => r.isSelected)}>
+                    {(_, i) => {
+                      return (
+                        <input
+                          placeholder={`Theme ${i() + 1}:`}
+                          type="text"
+                          value={themes()[i()] || ''}
+                          onInput={(e) =>
+                            setThemes((prev) => {
+                              prev[i()] = e.currentTarget.value
+                              return [...prev]
+                            })
+                          }
+                          class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-300 animate-slide-in"
+                        />
+                      )
+                    }}
+                  </For>
+                </div>
                 <button
                   onClick={addRound}
                   class="mt-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
-                  classList={{ ' opacity-50 hover:cursor-not-allowed!': emptyRoundName() || notEnoughUsers() }}
+                  classList={{
+                    'opacity-50 hover:cursor-not-allowed!':
+                      emptyRoundName() || notEnoughUsers() || emptyThemes() || emptyRanks(),
+                  }}
                 >
                   Add Round
                 </button>
@@ -284,26 +319,24 @@ const CreateGame = (props: Props) => {
               <div class="max-h-80 overflow-y-auto">
                 <For each={rounds()}>
                   {(round) => (
-                    <div class="mb-2 bg-orange-light rounded-md p-2 shadow-xs transition-all duration-300 animate-slide-in">
-                      <div class="flex items-start gap-2 justify-between ">
+                    <div class="mb-2 bg-void rounded-md p-2 shadow-xs transition-all duration-300 animate-slide-in">
+                      <div class="flex items-start gap-2 justify-between text-primary">
                         <div class="flex flex-col">
                           <div class="flex items-center gap-2">
-                            <BsController class="w-5 h-5 text-void" />
-                            <p class="text-void font-semibold uppercase mt-0.5 text-sm truncate overflow-hidden whitespace-nowrap">
+                            <BsController class="w-5 h-5 text-accent" />
+                            <p class="text-primary font-semibold uppercase mt-0.5 text-sm truncate overflow-hidden whitespace-nowrap">
                               {round.name}
                             </p>
                           </div>
-                          <div class="flex flex-wrap mr-4 gap-2 text-xs mt-1">
-                            |
+                          <div class="flex flex-wrap mr-4 gap-2 text-xs my-2">
                             <For each={round.ranks}>
                               {(rank) => <p class="flex items-center rounded-md">{rank.label} </p>}
                             </For>
-                            |
                           </div>
                         </div>
                         <button
                           onClick={() => setRounds(rounds().filter((u) => u.id !== round.id))}
-                          class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
+                          class="w-5 h-5 flex items-center justify-center text-accent hover:bg-primary transition-all duration-200 hover:cursor-pointer"
                           aria-label={`Remove ${round.name} round`}
                           title="Remove Round"
                         >
@@ -311,15 +344,20 @@ const CreateGame = (props: Props) => {
                         </button>
                       </div>
                       <div class="flex flex-wrap gap-2">
+                        <For each={round.themes}>
+                          {(theme) => <p class="text-center text-primary font-bold rounded-md p-1">{theme.name}</p>}
+                        </For>
+                      </div>
+                      <div class="flex flex-wrap gap-2">
                         <For each={gameUsers()}>
                           {(user) => (
-                            <div class="flex items-center gap-2 mt-1 p-1 bg-white/50 rounded-sm">
+                            <div class="flex items-center gap-2 mt-1 p-1 bg-primary rounded-sm">
+                              <p class="text-void text-sm uppercase mt-0.5">{user.name}</p>
                               {user.isAdmin ? (
                                 <BsStars class="w-4 h-4 text-yellow-600" />
                               ) : (
-                                <FaSolidUserAstronaut class="w-4 h-4 text-void" />
+                                <FaSolidUserAstronaut class="w-4 h-4 text-accent" />
                               )}
-                              <p class="text-void text-sm uppercase mt-0.5">{user.name}</p>
                             </div>
                           )}
                         </For>
