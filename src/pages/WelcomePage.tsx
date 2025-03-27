@@ -1,6 +1,7 @@
 // src/components/Welcome.tsx
 import { useNavigate } from '@solidjs/router'
 import { createEffect, createSignal, onMount } from 'solid-js'
+import mockGame from '../data/mockGame'
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = createSignal(false)
@@ -11,7 +12,7 @@ const Welcome = () => {
   })
 
   createEffect(() => {
-    navigate('/dashboard')
+    navigate(`/game/${mockGame.id}/round/${mockGame.currentRound}`)
   })
 
   return (

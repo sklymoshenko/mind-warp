@@ -357,8 +357,8 @@ export const mockGame: Game = {
   id: 'game-123456',
   users: mockUsers,
   rounds: mockRounds,
-  currentRound: 1,
-  currentQuestion: 0,
+  currentRound: 'round-1',
+  currentQuestion: '',
 }
 
 export default mockGame

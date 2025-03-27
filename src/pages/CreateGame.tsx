@@ -107,17 +107,17 @@ const CreateGame = (props: Props) => {
   const onFinish = () => {
     if (rounds().length === 0) return
     setStep(0)
-    const game = {
+    const game: Game = {
       id: crypto.randomUUID(),
       users: gameUsers(),
       rounds: rounds(),
-      currentRound: 1,
-      currentQuestion: 0,
+      currentRound: '',
+      currentQuestion: '',
     }
 
     props.onGameCreated(game)
     setGameId(game.id)
-    navigate('/dashboard')
+    navigate('/game/' + game.id)
   }
 
   return (

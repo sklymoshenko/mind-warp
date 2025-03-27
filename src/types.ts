@@ -39,6 +39,6 @@ export type Game = {
   id: string
   users: User[]
   rounds: Round[]
-  currentRound: number
-  currentQuestion: number
+  currentRound: Round['id']
+  currentQuestion: Question['id']
 }
