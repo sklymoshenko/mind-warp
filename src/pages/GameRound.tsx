@@ -1,5 +1,5 @@
-import { createMemo, createSignal, For } from 'solid-js'
-import { Game, Round, User } from '../types'
+import { createEffect, createMemo, createSignal, For } from 'solid-js'
+import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
 import QuestionModal from '../components/QuestionModal'
@@ -7,9 +7,20 @@ import QuestionModal from '../components/QuestionModal'
 type Props = {
   round: Round
   users: Game['users']
+  currentQuestion: Question['id']
+  onQuestionSelect: (question: Question['id']) => void
+  onQuestionAnswered: (question: Question['id'], isCorrect: boolean) => void
 }
 
 const GameRound = (props: Props) => {
+  const [isModalOpen, setIsModalOpen] = createSignal(false)
+  const [activeTheme, setActiveTheme] = createSignal<Theme>()
+
+  const activeQuestion = () => {
+    const allQuestions = props.round.themes.flatMap((theme) => theme.questions)
+    return allQuestions.find((question) => question.id === props.currentQuestion)
+  }
+
   const scores = () => {
     return props.users.reduce(
       (acc, curr) => {
@@ -31,18 +42,37 @@ const GameRound = (props: Props) => {
     )
   })
 
-  const [isActive, setIsActive] = createSignal<string | null>(null)
+  const closeQuestion = () => setIsModalOpen(false)
 
-  const currentQuestion = createMemo(() => {
-    const [themeId, rankId] = isActive()?.split(' ') || []
-    const theme = props.round.themes.find((theme) => theme.id === themeId)
-    const rank = props.round.ranks.find((rank) => rank.id === Number(rankId))
-    return theme?.questions.find((question) => question.points === rank?.id)
-  })
+  const handleCorrect = () => {
+    props.onQuestionAnswered(activeQuestion()?.id || '', true)
+    closeQuestion() // Close the modal after answering
+  }
+
+  const handleWrong = () => {
+    props.onQuestionAnswered(activeQuestion()?.id || '', false)
+    // Add logic for wrong answer
+    closeQuestion() // Close the modal after answering
+  }
+
+  const handleQuestionSelect = (q: Question, t: Theme) => {
+    props.onQuestionSelect(q.id)
+    setActiveTheme(t)
+
+    setIsModalOpen(true)
+  }
 
   return (
     <>
-      <QuestionModal question={currentQuestion()?.text || ''} onClose={() => console.log('close')} />
+      <QuestionModal
+        isOpen={isModalOpen()}
+        onClose={closeQuestion}
+        themeTitle={activeTheme()?.name || 'Theme'}
+        points={activeQuestion()?.points || 0}
+        questionText={activeQuestion()?.text || ''}
+        onCorrect={handleCorrect}
+        onWrong={handleWrong}
+      />
       {/* Back to Home Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <A
@@ -64,19 +94,25 @@ const GameRound = (props: Props) => {
                       {theme.name}
                     </span>
                     <div class="flex flex-col text-7xl gap-2">
-                      <For each={props.round.ranks}>
-                        {(rank) => {
+                      <For each={theme.questions}>
+                        {(question) => {
                           return (
                             <span
-                              onClick={() => setIsActive(theme.id + ' ' + rank.id)}
+                              onClick={() => handleQuestionSelect(question, theme)}
                               class="child relative hover:cursor-pointer"
                               classList={{
-                                'click-red': isActive() === theme.id + ' ' + rank.id,
-                                'hover-rank': isActive() !== theme.id + ' ' + rank.id,
+                                'click-green': question.isCorrect === true,
+                                'click-red': question.isCorrect === false,
+                                'hover-rank': question.isCorrect === null,
                               }}
                             >
-                              <span classList={{ 'line-cross bg-red-600': isActive() === theme.id + ' ' + rank.id }} />
-                              {rank.label}
+                              <span
+                                classList={{
+                                  'line-cross bg-red-600': question.isCorrect === false,
+                                  'line-cross bg-green-600': question.isCorrect === true,
+                                }}
+                              />
+                              {question.points}
                             </span>
                           )
                         }}

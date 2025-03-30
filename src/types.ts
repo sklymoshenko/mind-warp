@@ -8,7 +8,7 @@ export type User = {
   }[]
 }
 
-type Theme = {
+export type Theme = {
   id: string
   name: string
   questions: Question[]

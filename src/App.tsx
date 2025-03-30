@@ -15,6 +15,36 @@ export default () => {
     return game().rounds.find((r) => r.id === game().currentRound)
   })
 
+  const onQuestionSelect = (question: Game['currentQuestion']) => {
+    setGame((prev) => ({
+      ...prev,
+      currentQuestion: question,
+    }))
+  }
+
+  const onQuestionAnswered = (question: Game['currentQuestion'], isCorrect: boolean) => {
+    const newRoundIndex = game().rounds.findIndex((r) => r.id === game().currentRound)
+
+    if (newRoundIndex === -1) return
+    const newRound = { ...game().rounds[newRoundIndex] }
+
+    const newThemes = newRound.themes.map((theme) => {
+      const newQuestions = theme.questions.map((q) => {
+        if (q.id === question) {
+          return { ...q, isCorrect }
+        }
+        return q
+      })
+      return { ...theme, questions: newQuestions }
+    })
+
+    const updatedRound = { ...newRound, themes: newThemes }
+    game().rounds[newRoundIndex] = updatedRound
+
+    const newGame = { ...game() }
+    setGame(newGame)
+  }
+
   return (
     <BackgroundWrapper>
       <Router>
@@ -29,7 +59,16 @@ export default () => {
         {currentRound() && (
           <Route
             path="/game/:gameid/round/:roundId"
-            component={(props) => <GameRound round={currentRound()!} users={game().users} {...props} />}
+            component={(props) => (
+              <GameRound
+                round={currentRound()!}
+                users={game().users}
+                currentQuestion={game().currentQuestion}
+                onQuestionSelect={onQuestionSelect}
+                onQuestionAnswered={onQuestionAnswered}
+                {...props}
+              />
+            )}
           />
         )}
       </Router>

@@ -1,53 +1,81 @@
-import { createSignal, Show } from 'solid-js'
+// src/components/QuestionModal.tsx
+import { Component, Show, JSX } from 'solid-js'
+// Import desired icons from solid-icons (using Tabler Icons set 'tb' as an example)
+import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 
-type Props = {
-  question: string
+interface QuestionModalProps {
+  isOpen: boolean
   onClose: () => void
+  themeTitle: string
+  points: number
+  questionText: string
+  onCorrect: () => void
+  onWrong: () => void
 }
 
-export default function QuestionModal(props: Props) {
-  const [answered, setAnswered] = createSignal(false)
-  const [isCorrect, setIsCorrect] = createSignal(false)
-
-  const handleAnswer = (correct: boolean) => {
-    setIsCorrect(correct)
-    setAnswered(true)
-
-    setTimeout(() => {
-      setAnswered(false)
-      props.onClose()
-    }, 10000) // Auto-close after 2s
+const QuestionModal: Component<QuestionModalProps> = (props) => {
+  const stopPropagation = (e: MouseEvent) => {
+    e.stopPropagation()
   }
 
   return (
-    <div class="fixed inset-0 bg-black backdrop-blur-sm flex items-center justify-center z-[100]">
-      <div class="bg-white dark:bg-neutral-900 text-center px-10 py-8 rounded-2xl shadow-2xl w-[90%] max-w-xl relative">
-        <h2 class="text-3xl font-bold mb-4 text-gray-800 dark:text-white">{props.question}</h2>
-
-        <div class="mt-6 flex justify-center gap-6">
-          <button
-            onClick={() => handleAnswer(true)}
-            class="bg-green-500 text-white px-6 py-2 rounded-xl text-lg hover:bg-green-600 transition"
-          >
-            Correct
-          </button>
-          <button
-            onClick={() => handleAnswer(false)}
-            class="bg-red-500 text-white px-6 py-2 rounded-xl text-lg hover:bg-red-600 transition"
-          >
-            Incorrect
-          </button>
-        </div>
-
-        <Show when={answered()}>
-          <div
-            class={`absolute inset-0 flex items-center justify-center text-6xl font-black uppercase tracking-widest pointer-events-none 
-              ${isCorrect() ? 'text-green-400 animate-pulse' : 'text-red-500 animate-bounce'}`}
-          >
-            {isCorrect() ? 'Correct!' : 'Wrong!'}
+    <Show when={props.isOpen}>
+      <div
+        class="fixed inset-0 z-[51] flex items-center justify-center bg-[var(--color-void)]/80 backdrop-blur-sm transition-opacity duration-300 ease-out slide-in"
+        onClick={props.onClose}
+        aria-modal="true"
+        role="dialog"
+      >
+        <div
+          data-open={props.isOpen ? '' : null}
+          // Combined styles for the container, added padding `p-6`
+          class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-[var(--color-primary)]/50 bg-[var(--color-void)] p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
+          onClick={stopPropagation}
+        >
+          <div class="mb-5 flex items-start justify-between gap-4">
+            {' '}
+            <h2 class="flex items-center text-xl font-bold text-[var(--color-primary)]">
+              <TbTag class="mr-2 h-5 w-5 flex-shrink-0" />
+              <span>{props.themeTitle}</span>
+            </h2>
+            <span class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-3 py-0.5 text-sm font-semibold text-[var(--text-on-primary)]">
+              <TbAward class="mr-1 h-4 w-4" />
+              {props.points} pts
+            </span>
           </div>
-        </Show>
+
+          <div class="mb-6">
+            {' '}
+            <p class="text-lg leading-relaxed text-[var(--color-white)]">{props.questionText}</p>
+          </div>
+
+          <div class="flex justify-end gap-4">
+            {' '}
+            <button
+              onClick={() => {
+                props.onWrong()
+                props.onClose()
+              }}
+              class="inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+            >
+              <TbX class="mr-1.5 h-5 w-5" />
+              <span>Wrong</span>
+            </button>
+            <button
+              onClick={() => {
+                props.onCorrect()
+                props.onClose()
+              }}
+              class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+            >
+              <TbCheck class="mr-1.5 h-5 w-5" />
+              <span>Correct</span>
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </Show>
   )
 }
+
+export default QuestionModal
