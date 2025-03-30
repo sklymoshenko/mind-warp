@@ -151,7 +151,7 @@ const CreateGame = (props: Props) => {
       </Show>
 
       {/* Flipping Card for Form Steps */}
-      <div class="relative w-full max-w-md perspective-1000">
+      <div class="relative w-full max-w-md">
         <div class="relative w-full">
           {/* Step 1: Enter Your Name */}
           <Show when={step() === 1}>
