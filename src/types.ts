@@ -2,10 +2,7 @@ export type User = {
   id: string
   name: string
   isAdmin: boolean
-  roundScore: {
-    roundId: string
-    score: number
-  }[]
+  roundScore: Record<Round['id'], number>
 }
 
 export type Theme = {
@@ -41,4 +38,5 @@ export type Game = {
   rounds: Round[]
   currentRound: Round['id']
   currentQuestion: Question['id']
+  currentUser: User['id']
 }

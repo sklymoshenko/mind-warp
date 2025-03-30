@@ -6,28 +6,28 @@ const mockUsers: User[] = [
     id: 'user-1',
     name: 'Trivia Master',
     isAdmin: true,
-    roundScore: [
-      { roundId: 'round-1', score: 1200 },
-      { roundId: 'round-2', score: 800 },
-    ],
+    roundScore: {
+      'round-1': 1200,
+      'round-2': 800,
+    },
   },
   {
     id: 'user-2',
     name: 'Quiz Champion',
     isAdmin: false,
-    roundScore: [
-      { roundId: 'round-1', score: 900 },
-      { roundId: 'round-2', score: 1000 },
-    ],
+    roundScore: {
+      'round-1': 900,
+      'round-2': 1000,
+    },
   },
   {
     id: 'user-3',
     name: 'Knowledge Seeker',
     isAdmin: false,
-    roundScore: [
-      { roundId: 'round-1', score: 700 },
-      { roundId: 'round-2', score: 900 },
-    ],
+    roundScore: {
+      'round-1': 700,
+      'round-2': 900,
+    },
   },
 ]
 
@@ -359,6 +359,7 @@ export const mockGame: Game = {
   rounds: mockRounds,
   currentRound: 'round-1',
   currentQuestion: '',
+  currentUser: 'user-1',
 }
 
 export default mockGame

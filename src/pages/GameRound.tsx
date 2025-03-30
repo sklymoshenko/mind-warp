@@ -8,8 +8,9 @@ type Props = {
   round: Round
   users: Game['users']
   currentQuestion: Question['id']
+  currentUser: User['id']
   onQuestionSelect: (question: Question['id']) => void
-  onQuestionAnswered: (question: Question['id'], isCorrect: boolean) => void
+  onQuestionAnswered: (question: Question, isCorrect: boolean) => void
 }
 
 const GameRound = (props: Props) => {
@@ -18,13 +19,13 @@ const GameRound = (props: Props) => {
 
   const activeQuestion = () => {
     const allQuestions = props.round.themes.flatMap((theme) => theme.questions)
-    return allQuestions.find((question) => question.id === props.currentQuestion)
+    return allQuestions.find((question) => question.id === props.currentQuestion)!
   }
 
   const scores = () => {
     return props.users.reduce(
       (acc, curr) => {
-        acc[curr.id] = curr.roundScore.find((score) => score.roundId === props.round.id)?.score || 0
+        acc[curr.id] = curr.roundScore[props.round.id] || 0
         return acc
       },
       {} as Record<User['id'], number>
@@ -45,12 +46,12 @@ const GameRound = (props: Props) => {
   const closeQuestion = () => setIsModalOpen(false)
 
   const handleCorrect = () => {
-    props.onQuestionAnswered(activeQuestion()?.id || '', true)
+    props.onQuestionAnswered(activeQuestion(), true)
     closeQuestion() // Close the modal after answering
   }
 
   const handleWrong = () => {
-    props.onQuestionAnswered(activeQuestion()?.id || '', false)
+    props.onQuestionAnswered(activeQuestion(), false)
     // Add logic for wrong answer
     closeQuestion() // Close the modal after answering
   }
@@ -76,13 +77,14 @@ const GameRound = (props: Props) => {
       {/* Back to Home Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <A
-          href="/"
+          href="#"
+          onClick={() => window.history.back()}
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300"
         >
-          Back to Home
+          Back
         </A>
       </div>
-      <div class="flex flex-col justify-between h-[70%] z-50">
+      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] z-50">
         <div class="flex flex-col items-center text-primary mx-auto">
           <h1 class="text-5xl font-bold mb-20">{props.round.name} </h1>
           <div class="flex justify-center gap-4">
@@ -90,10 +92,10 @@ const GameRound = (props: Props) => {
               {(theme) => {
                 return (
                   <div class="flex flex-col items-center font-semibold min-w-[200px] group">
-                    <span class="text-4xl mb-2 group-hover:text-green-600 group-hover:scale-120 transition-all duration-300">
+                    <span class="lg:text-3xl xl:text-4xl mb-2 group-hover:text-green-600 group-hover:scale-120 transition-all duration-300">
                       {theme.name}
                     </span>
-                    <div class="flex flex-col text-7xl gap-2">
+                    <div class="flex flex-col lg:text-5xl xl:text-7xl gap-2">
                       <For each={theme.questions}>
                         {(question) => {
                           return (
@@ -124,13 +126,16 @@ const GameRound = (props: Props) => {
             </For>
           </div>
         </div>
-        <div class="flex justify-between p-2 gap-12">
+        <div class="flex justify-between p-2 gap-12 lg:mt-10 xl:mt-0">
           <For each={props.users}>
             {(user) => {
               return (
                 <div class="flex flex-col items-center justify-between gap-4">
                   <div class="text-3xl font-bold text-primary flex items-center gap-2">
-                    <span>{user.name}</span> {winningUser() === user.id && <TbConfetti class="text-orange-300" />}
+                    <span classList={{ 'turn-indicator animate-pulse': user.id === props.currentUser }}>
+                      {user.name}
+                    </span>{' '}
+                    {winningUser() === user.id && <TbConfetti class="text-orange-300" />}
                   </div>
                   <span
                     class="text-2xl text-gray-500 ml-2 mb-0.5"

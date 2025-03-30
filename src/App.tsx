@@ -3,7 +3,7 @@ import BackgroundWrapper from './components/BackgroundWrapper'
 import CreateGame from './pages/CreateGame'
 import WelcomePage from './pages/WelcomePage'
 import { Router, Route } from '@solidjs/router'
-import { Game } from './types'
+import { Game, Question, User } from './types'
 import { createMemo, createSignal } from 'solid-js'
 import GameDashboard from './pages/Dashboard'
 import mockGame from './data/mockGame'
@@ -22,15 +22,25 @@ export default () => {
     }))
   }
 
-  const onQuestionAnswered = (question: Game['currentQuestion'], isCorrect: boolean) => {
-    const newRoundIndex = game().rounds.findIndex((r) => r.id === game().currentRound)
+  const newUserTurn = () => {
+    const userIndex = game().users.findIndex((u) => u.id === game().currentUser)
 
-    if (newRoundIndex === -1) return
-    const newRound = { ...game().rounds[newRoundIndex] }
+    if (userIndex === -1) return
+
+    const nextUserIndex = userIndex + 1 > game().users.length - 1 ? 0 : userIndex + 1
+
+    setGame((prev) => ({
+      ...prev,
+      currentUser: prev.users[nextUserIndex].id,
+    }))
+  }
+
+  const updateRoundQuestion = (question: Question, isCorrect: boolean, currentRoundIndex: number) => {
+    const newRound = { ...game().rounds[currentRoundIndex] }
 
     const newThemes = newRound.themes.map((theme) => {
       const newQuestions = theme.questions.map((q) => {
-        if (q.id === question) {
+        if (q.id === question.id) {
           return { ...q, isCorrect }
         }
         return q
@@ -38,11 +48,31 @@ export default () => {
       return { ...theme, questions: newQuestions }
     })
 
-    const updatedRound = { ...newRound, themes: newThemes }
-    game().rounds[newRoundIndex] = updatedRound
+    return { ...newRound, themes: newThemes }
+  }
+
+  const updateUser = (question: Question, isCorrect: boolean, userIndex: number): User => {
+    const newUser = { ...game().users[userIndex] }
+    newUser.roundScore[game().currentRound] = isCorrect
+      ? newUser.roundScore[game().currentRound] + question.points
+      : newUser.roundScore[game().currentRound] - question.points
+
+    return newUser
+  }
+
+  const onQuestionAnswered = (question: Question, isCorrect: boolean) => {
+    const currentRoundIndex = game().rounds.findIndex((r) => r.id === game().currentRound)
+    if (currentRoundIndex === -1) return
+
+    game().rounds[currentRoundIndex] = updateRoundQuestion(question, isCorrect, currentRoundIndex)
+
+    const userIndex = game().users.findIndex((u) => u.id === game().currentUser)
+    if (userIndex === -1) return
+    game().users[userIndex] = updateUser(question, isCorrect, userIndex)
 
     const newGame = { ...game() }
     setGame(newGame)
+    newUserTurn()
   }
 
   return (
@@ -66,6 +96,7 @@ export default () => {
                 currentQuestion={game().currentQuestion}
                 onQuestionSelect={onQuestionSelect}
                 onQuestionAnswered={onQuestionAnswered}
+                currentUser={game().currentUser}
                 {...props}
               />
             )}

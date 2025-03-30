@@ -11,10 +11,6 @@ const Welcome = () => {
     setTimeout(() => setIsLoaded(true), 100)
   })
 
-  createEffect(() => {
-    navigate(`/game/${mockGame.id}/round/${mockGame.currentRound}`)
-  })
-
   return (
     <div class="relative z-10 text-center">
       <h1

@@ -14,7 +14,7 @@ export default function GameDashboard(props: GameDashboardProps) {
 
   const scores = props.game.users.reduce(
     (acc, curr) => {
-      const totalScore = curr.roundScore.reduce((acc, score) => acc + score.score, 0)
+      const totalScore = Object.values(curr.roundScore).reduce((acc, score) => acc + score, 0)
       acc[curr.id] = totalScore
       return acc
     },
@@ -34,12 +34,12 @@ export default function GameDashboard(props: GameDashboardProps) {
   }
 
   const onRoundClick = (round: Round) => {
-    props.onUpdateGame({ ...props.game, currentRound: round.id })
+    props.onUpdateGame({ ...props.game, currentRound: round.id, currentUser: props.game.users[0].id })
     navigate(`/game/${props.game.id}/round/${round.id}`)
   }
 
   return (
-    <div class="flex flex-col justify-between h-[70%]">
+    <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%]">
       <div class="mx-auto flex gap-12">
         <For each={props.game.rounds}>
           {(round, i) => {
@@ -66,11 +66,7 @@ export default function GameDashboard(props: GameDashboardProps) {
                         return (
                           <div class="flex items-end justify-between">
                             <span class="text-2xl font-bold">{user.name}</span>
-                            <span class="text-sm text-gray-500 ml-2 mb-0.5">
-                              {user.roundScore
-                                .filter((score) => score.roundId === round.id)
-                                .reduce((acc, score) => acc + score.score, 0)}
-                            </span>
+                            <span class="text-sm text-gray-500 ml-2 mb-0.5">{user.roundScore[round.id]}</span>
                           </div>
                         )
                       }}
@@ -82,7 +78,7 @@ export default function GameDashboard(props: GameDashboardProps) {
           }}
         </For>
       </div>
-      <div class="flex justify-between p-2 gap-12">
+      <div class="flex justify-between p-2 gap-12 ">
         <For each={props.game.users}>
           {(user) => {
             return (

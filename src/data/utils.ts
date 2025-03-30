@@ -1,0 +1,98 @@
+function generateQuizResponses(): { wrongResponses: string[]; correctResponses: string[] } {
+  const wrongResponses: string[] = [
+    'Oh, you *almost* had it. Just kidding.',
+    "That's... a choice.",
+    "I'm genuinely impressed by how wrong that is.",
+    "Is that the best you've got?",
+    "Clearly, you've been studying... something else.",
+    'Swing and a miss! Did you even see the ball?',
+    'Better luck in your next life.',
+    "I'm not sure what answer you were aiming for, but it wasn't that.",
+    'My disappointment is palpable. Can you feel it?',
+    'Wow. Just... wow.',
+    'That answer is a testament to the human capacity for error.',
+    'Congratulations on being uniquely incorrect.',
+    "I'm starting to think you're doing this on purpose.",
+    "That's... special.",
+    "We have a new leader in the 'Most Wrong Answers' category!",
+    'You tried. And failed. Spectacularly.',
+    'The correct answer is laughing at you right now.',
+    'Did you get that answer from a fortune cookie?',
+    "That's not just wrong, it's offensively wrong.",
+    "Let's just pretend that never happened. For both our sakes.",
+    'That answer is about as accurate as a weather forecast from a toddler.',
+    "I'm not sure what game you think you're playing.",
+    "The correct answer is so obvious, it's almost insulting that you missed it.",
+    "That's a bold answer. Incredibly, hilariously bold.",
+    'My internal error log is filling up thanks to you.',
+    'You might want to consider a different hobby.',
+    "The answer is right there! Oh wait, no it isn't, because you picked that.",
+    "I'm speechless. Truly. (Mostly because of your answer.)",
+    "You're really phoning it in, aren't you?",
+    'That answer is a tragedy in three words (or however many you used).',
+    "I've heard better answers from a broken record.",
+    "You're not even in the right ballpark. You're in a completely different sport.",
+    'That answer is as clear as mud.',
+    "I'm starting to suspect you're allergic to correct answers.",
+    "That's... certainly memorable. For all the wrong reasons.",
+    "I'm not sure what your thought process was there, but I'm guessing it involved chaos.",
+    "The answer is so simple, it's almost embarrassing that you got it wrong.",
+    'One point for... existing?',
+    'That answer is a masterpiece of misconception.',
+    "We're going to have to agree to disagree... vehemently.",
+  ]
+
+  const correctResponses: string[] = [
+    "Oh, look who finally got one right. Don't get used to it.",
+    'Correct. By some fluke of nature, perhaps?',
+    "Yep, you actually managed that. Don't expect a parade.",
+    'Well, well, well. The broken clock strikes twice.',
+    'You got it. Now, try not to mess up the next one.',
+    "Yes, that's the answer. Did you peek?",
+    'Good job. Now, was that genuine knowledge or a lucky guess?',
+    'Spot on. For once in your life, maybe?',
+    "Exactly. You're occasionally competent.",
+    "You're on a roll... a very short, likely to end roll.",
+    "My congratulations. You've achieved the minimum required to not be completely hopeless.",
+    "That's the correct response. Try to savor this moment; it's rare.",
+    "You managed to get that one right. I'm almost impressed. Almost.",
+    "Yes, that's correct. Don't let it go to your head the size of Jupiter.",
+    'One point for you. Try not to spend it all on celebrating this minor victory.',
+    "Correct. You're making progress... at a snail's pace.",
+    "That's the one. Remember this feeling; it might be the last time.",
+    "You actually knew that? I'm genuinely surprised.",
+    "Correct. You're a shining beacon of occasional accuracy.",
+    "Yes. You're technically correct. Which, as we all know, is the least interesting kind of correct.",
+    "That's the answer. Now, can you explain it to the rest of us who already knew?",
+    "Excellent. You've proven that even you can get one right eventually.",
+    'Correct. Try not to look so smug; it might have been a fluke.',
+    "Another one right. Are you sure you haven't been replaced by a more knowledgeable doppelganger?",
+    "Yep, you nailed it. Let's move on before you break the streak.",
+    "Correct. Don't get any big ideas about winning.",
+    "That's the answer we were looking for. Eventually. After all the wrong ones.",
+    'Good for you. You answered correctly. The bar was pretty low, though.',
+    "Correct. Try to contain your excitement; it's just a quiz.",
+    "Well done. You've managed to avoid utter failure on this one.",
+    'That is correct. Perhaps you should retire now, at your peak.',
+    "Yes, you're right. Don't expect a medal or anything.",
+    "Correct. Let's hope you remember it for the next time this question comes up in a thousand years.",
+    "You actually got that? Maybe there's hope for you yet. Nah, probably not.",
+    "That's correct. Try to act like this is normal for you.",
+    'Yes, the answer is correct. What a truly unremarkable event.',
+    "Correct. You're on a winning streak of one. Cherish it.",
+    "That's right. Don't let this momentary success fool you.",
+    "You've done it. You've answered correctly. The universe remains unchanged.",
+    'Correct. Now, brace yourself for questions that might actually challenge you.',
+  ]
+
+  return { wrongResponses, correctResponses }
+}
+
+export function getQuizResponse(isCorrect: boolean): string {
+  const { wrongResponses, correctResponses } = generateQuizResponses()
+  if (isCorrect) {
+    return correctResponses[Math.floor(Math.random() * correctResponses.length)]
+  } else {
+    return wrongResponses[Math.floor(Math.random() * wrongResponses.length)]
+  }
+}

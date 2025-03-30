@@ -53,7 +53,7 @@ const CreateGame = (props: Props) => {
 
   const onFirstStepFinish = () => {
     nextStep()
-    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true, roundScore: [] }])
+    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true, roundScore: {} }])
   }
 
   const onSecondStepFinish = () => {
@@ -66,7 +66,7 @@ const CreateGame = (props: Props) => {
 
   const addUser = () => {
     if (currentUserName().trim() === '') return
-    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false, roundScore: [] }])
+    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false, roundScore: {} }])
     setCurrentUserName('')
   }
 
@@ -113,11 +113,11 @@ const CreateGame = (props: Props) => {
       rounds: rounds(),
       currentRound: '',
       currentQuestion: '',
+      currentUser: gameUsers()[0].id,
     }
 
     props.onGameCreated(game)
     setGameId(game.id)
-    navigate('/game/' + game.id)
   }
 
   return (
@@ -143,7 +143,7 @@ const CreateGame = (props: Props) => {
           </h1>
           <button
             class="mt-8 bg-primary text-viod text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/game/' + gameId())}
           >
             Lets Go
           </button>
