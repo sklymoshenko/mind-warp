@@ -30,7 +30,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     setOverlayText('')
   })
 
-  const handleAnwserSubmit = (isCorrect: boolean) => {
+  const handleAnswerSubmit = (isCorrect: boolean) => {
     setIsCorrect(isCorrect)
     setOverlayText(getQuizResponse(isCorrect))
 
@@ -91,14 +91,14 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
             <div class="flex justify-end gap-4">
               {' '}
               <button
-                onClick={() => handleAnwserSubmit(false)}
+                onClick={() => handleAnswerSubmit(false)}
                 class="inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
               >
                 <TbX class="mr-1.5 h-5 w-5" />
                 <span>Wrong</span>
               </button>
               <button
-                onClick={() => handleAnwserSubmit(true)}
+                onClick={() => handleAnswerSubmit(true)}
                 class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
               >
                 <TbCheck class="mr-1.5 h-5 w-5" />

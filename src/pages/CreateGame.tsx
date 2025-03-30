@@ -142,7 +142,7 @@ const CreateGame = (props: Props) => {
             <span class="bg-gradient-to-tr from-cyan-600 to-orange bg-clip-text text-transparent">Humbled!</span>
           </h1>
           <button
-            class="mt-8 bg-primary text-viod text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
+            class="mt-8 bg-primary text-void text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
             onClick={() => navigate('/game/' + gameId())}
           >
             Lets Go
