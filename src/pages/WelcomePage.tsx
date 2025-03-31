@@ -1,7 +1,6 @@
 // src/components/Welcome.tsx
 import { useNavigate } from '@solidjs/router'
-import { createEffect, createSignal, onMount } from 'solid-js'
-import mockGame from '../data/mockGame'
+import { createSignal, onMount } from 'solid-js'
 
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = createSignal(false)
