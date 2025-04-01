@@ -74,7 +74,7 @@ const GameRound = (props: Props) => {
         onCorrect={handleCorrect}
         onWrong={handleWrong}
       />
-      {/* Back to Home Link */}
+      {/*Back Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <A
           href="#"

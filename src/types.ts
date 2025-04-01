@@ -39,4 +39,7 @@ export type Game = {
   currentRound: Round['id']
   currentQuestion: Question['id']
   currentUser: User['id']
+  isFinished: boolean
+  winner?: User['id']
+  finishDate?: number
 }

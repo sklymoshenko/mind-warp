@@ -42,18 +42,31 @@ export default function GameDashboard(props: GameDashboardProps) {
 
   const handleFinish = () => {
     setIsGameFinished(true)
+    const updatedGame: Game = {
+      ...props.game,
+      isFinished: true,
+      currentRound: '',
+      currentQuestion: '',
+      currentUser: '',
+      winner: winningUser(),
+      finishDate: Date.now(),
+    }
 
-    setTimeout(() => {
-      setIsGameFinished(false)
-      navigate('/')
-    }, 10000)
+    const gamesHistory: Game[] = JSON.parse(localStorage.getItem('gamesHistory') || '[]')
+    gamesHistory.push(updatedGame)
+    localStorage.setItem('gamesHistory', JSON.stringify(gamesHistory))
+    localStorage.removeItem('currentGame')
   }
 
   return (
     <>
       <Show when={isGameFinished()}>
         <GameFinished
-          onClose={() => setIsGameFinished(false)}
+          onClose={() => {
+            debugger
+            setIsGameFinished(true)
+            navigate('/')
+          }}
           isOpen={isGameFinished()}
           users={props.game.users}
           winner={winningUser()}

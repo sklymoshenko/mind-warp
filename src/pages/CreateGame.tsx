@@ -17,7 +17,7 @@ const defaultRanks: RoundRank[] = [
 ]
 
 type Props = {
-  onGameCreated: (game: Game) => void
+  onGameUpdate: (game: Game) => void
 }
 
 const CreateGame = (props: Props) => {
@@ -114,21 +114,21 @@ const CreateGame = (props: Props) => {
       currentRound: '',
       currentQuestion: '',
       currentUser: gameUsers()[0].id,
+      isFinished: false,
     }
 
-    props.onGameCreated(game)
     setGameId(game.id)
+    props.onGameUpdate(game)
   }
 
   return (
     <>
-      {/* Back to Home Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <A
           href="/"
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300"
         >
-          Back to Home
+          Back
         </A>
       </div>
 
