@@ -84,7 +84,7 @@ const GameRound = (props: Props) => {
           Back
         </A>
       </div>
-      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] z-50">
+      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[90%] 2xl:h-[70%] z-50">
         <div class="flex flex-col items-center text-primary mx-auto">
           <h1 class="text-5xl font-bold mb-20">{props.round.name} </h1>
           <div class="flex justify-center gap-4">

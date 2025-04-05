@@ -4,7 +4,7 @@ import CreateGame from './pages/CreateGame'
 import WelcomePage from './pages/WelcomePage'
 import { Router, Route } from '@solidjs/router'
 import { Game, Question, User } from './types'
-import { createEffect, createMemo, createSignal } from 'solid-js'
+import { createMemo, createSignal } from 'solid-js'
 import GameDashboard from './pages/Dashboard'
 import mockGame from './data/mockGame'
 import GameRound from './pages/GameRound'
@@ -12,7 +12,7 @@ import GameHistory from './pages/GameHistory'
 
 const Main = () => {
   const storageGame = localStorage.getItem('currentGame')
-  const [game, setGame] = createSignal<Game>(storageGame ? JSON.parse(storageGame) : undefined)
+  const [game, setGame] = createSignal<Game>(storageGame ? JSON.parse(storageGame) : mockGame)
 
   const currentRound = createMemo(() => {
     return game()?.rounds.find((r) => r.id === game().currentRound)

@@ -63,7 +63,6 @@ export default function GameDashboard(props: GameDashboardProps) {
       <Show when={isGameFinished()}>
         <GameFinished
           onClose={() => {
-            debugger
             setIsGameFinished(true)
             navigate('/')
           }}

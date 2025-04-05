@@ -1,17 +1,18 @@
 // src/components/QuestionModal.tsx
-import { Component, Show, JSX, createSignal, on, onCleanup } from 'solid-js'
+import { Component, Show, createSignal, onCleanup, createEffect, createMemo } from 'solid-js'
 // Import desired icons from solid-icons (using Tabler Icons set 'tb' as an example)
 import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
-
+import { Duration } from 'luxon'
 interface QuestionModalProps {
   isOpen: boolean
   onClose: () => void
   themeTitle: string
   points: number
   questionText: string
-  onCorrect: () => void
-  onWrong: () => void
+  questionTime?: number
+  onCorrect: (timeAnswered: number) => void
+  onWrong: (timeAnswered: number) => void
 }
 
 const QuestionModal: Component<QuestionModalProps> = (props) => {
@@ -21,14 +22,52 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   }
 
   const [timeOut, setTimeOut] = createSignal<number>()
+  const [timer, setTimer] = createSignal<number>()
   const [overlayText, setOverlayText] = createSignal('')
+  const [questionTime, setQuestionTime] = createSignal(props.questionTime || 180)
 
-  onCleanup(() => {
+  const cleanup = () => {
     if (timeOut()) {
       clearTimeout(timeOut())
     }
     setOverlayText('')
+    clearInterval(timer())
+    setTimer(undefined)
+    setQuestionTime(props.questionTime || 180)
+  }
+  onCleanup(() => {
+    cleanup()
   })
+
+  createEffect(() => {
+    if (!props.isOpen) {
+      cleanup()
+    } else {
+      startTimer()
+    }
+  }, [props.isOpen])
+
+  const startTimer = () => {
+    const timer = setInterval(() => {
+      setQuestionTime((prev) => {
+        if (prev <= 0) {
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    setTimer(timer)
+  }
+
+  createEffect(() => {
+    console.log(questionTime())
+  })
+
+  const formatTime = (seconds: number) => {
+    const duration = Duration.fromObject({ seconds })
+    return duration.toFormat('m:ss')
+  }
 
   const handleAnswerSubmit = (isCorrect: boolean) => {
     setIsCorrect(isCorrect)
@@ -36,7 +75,8 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
 
     const timeoutId = setTimeout(() => {
       setOverlayText('')
-      isCorrect ? props.onCorrect() : props.onWrong()
+      const timeAnswered = (props.questionTime || 180) - questionTime()
+      isCorrect ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
     }, 5000)
 
     setTimeOut(timeoutId)
@@ -52,9 +92,14 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
       clearTimeout(timeOut())
     }
 
-    isCorrect() ? props.onCorrect() : props.onWrong()
+    const timeAnswered = (props.questionTime || 180) - questionTime()
+    isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
     setOverlayText('')
   }
+
+  const isTimeOver = createMemo(() => {
+    return questionTime() === 0
+  })
 
   return (
     <Show when={props.isOpen}>
@@ -69,6 +114,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
             data-open={props.isOpen ? '' : null}
             // Combined styles for the container, added padding `p-6`
             class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-[var(--color-primary)]/50 bg-[var(--color-void)] p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
+            classList={{ 'border-red-600/50': isTimeOver() }}
             onClick={stopPropagation}
           >
             <div class="mb-5 flex items-start justify-between gap-4">
@@ -77,10 +123,27 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
                 <TbTag class="mr-2 h-5 w-5 flex-shrink-0" />
                 <span>{props.themeTitle}</span>
               </h2>
-              <span class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-3 py-0.5 text-sm font-semibold text-[var(--text-on-primary)]">
-                <TbAward class="mr-1 h-4 w-4" />
-                {props.points} pts
-              </span>
+              <div class="flex gap-4 items-center">
+                <span
+                  class="text-white/50"
+                  classList={{
+                    'text-green-600/50!': questionTime() >= 100,
+                    'text-yellow-600/50!': questionTime() < 100 && questionTime() >= 40,
+                    'text-red-600/50!': questionTime() < 40,
+                    'animate-pulse': questionTime() <= 10,
+                  }}
+                >
+                  {formatTime(questionTime())}
+                </span>
+
+                <span
+                  class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-3 py-0.5 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200"
+                  classList={{ 'bg-red-600/50 text-white': isTimeOver() }}
+                >
+                  <TbAward class="mr-1 h-4 w-4" />
+                  {isTimeOver() ? `- ${props.points}` : props.points}pts
+                </span>
+              </div>
             </div>
 
             <div class="mb-6">

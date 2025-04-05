@@ -24,6 +24,7 @@ export type Question = {
   answer: string
   isCorrect: boolean | null
   points: RoundRank['id']
+  timeAnswered: number
 }
 
 export type RoundRank = {
