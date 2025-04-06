@@ -49,15 +49,15 @@ const GameHistory = () => {
       <h1 class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight text-center mb-8">
         Games History
       </h1>
-      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%]">
-        <div class="mx-auto flex flex-col gap-12">
+      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] lg:w-[60%]">
+        <div class="flex flex-col gap-12">
           <For each={gamesHistory()}>
             {(game) => {
               const gameWinner = game.users.find((u) => u.id === game.winner!)
               const winnerScore = Object.values(gameWinner!.roundScore).reduce((a, b) => a + b, 0)
               return (
-                <div class="flex justify-between items-end bg-void text-primary w-[600px]">
-                  <div class="p-4 bg-void text-primary flex gap-4 items-end">
+                <div class="flex justify-between items-center bg-void text-primary">
+                  <div class="p-4 bg-void text-primary  flex gap-4 items-end">
                     <span class="text-4xl">{DateTime.fromMillis(game.finishDate!).toLocaleString()}</span>
                     <div class="flex gap-4">
                       <span class="text-3xl ">
@@ -75,7 +75,7 @@ const GameHistory = () => {
                     </div>
                   </div>
                   <button
-                    class="p-4 hover:cursor-pointer"
+                    class="hover:cursor-pointer"
                     title="Remove game history"
                     onclick={() => handleGameHistoryRemove(game)}
                   >

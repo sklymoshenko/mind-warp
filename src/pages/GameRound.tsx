@@ -1,8 +1,10 @@
-import { createEffect, createMemo, createSignal, For } from 'solid-js'
+import { createMemo, createSignal, For } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
 import QuestionModal from '../components/QuestionModal'
+import Popover from '../components/Popover'
+import AnsweredPopover, { QuestionPopover } from '../components/AnsweredPopover'
 
 type Props = {
   round: Round
@@ -16,6 +18,8 @@ type Props = {
 const GameRound = (props: Props) => {
   const [isModalOpen, setIsModalOpen] = createSignal(false)
   const [activeTheme, setActiveTheme] = createSignal<Theme>()
+  const [questionPopover, setQuestionPopover] = createSignal<QuestionPopover>()
+  const [answeredQuestionsMap, setAnsweredQuestionsMap] = createSignal<Record<Question['id'], QuestionPopover>>({})
 
   const activeQuestion = () => {
     const allQuestions = props.round.themes.flatMap((theme) => theme.questions)
@@ -45,18 +49,70 @@ const GameRound = (props: Props) => {
 
   const closeQuestion = () => setIsModalOpen(false)
 
-  const handleCorrect = () => {
+  const handleCorrect = (timeAnswered: number) => {
+    const question = activeQuestion()
+    question.timeAnswered = timeAnswered
+
     props.onQuestionAnswered(activeQuestion(), true)
     closeQuestion() // Close the modal after answering
   }
 
-  const handleWrong = () => {
+  const handleWrong = (timeAnswered: number) => {
+    const question = activeQuestion()
+    question.timeAnswered = timeAnswered
+
     props.onQuestionAnswered(activeQuestion(), false)
     // Add logic for wrong answer
     closeQuestion() // Close the modal after answering
   }
 
+  const answeredBy = () => {
+    const userIndex = props.users.findIndex((user) => user.id === props.currentUser)
+    let index = userIndex - 1
+
+    if (index < 0) {
+      index = props.users.length - 1
+    }
+
+    return props.users[index]
+  }
+
   const handleQuestionSelect = (q: Question, t: Theme) => {
+    if (q.timeAnswered) {
+      if (questionPopover()?.id !== q.id) {
+        setQuestionPopover(undefined)
+      }
+
+      if (questionPopover()?.id === q.id) {
+        setQuestionPopover(undefined)
+        return
+      }
+
+      if (answeredQuestionsMap()[q.id]) {
+        setQuestionPopover(answeredQuestionsMap()[q.id])
+        return
+      }
+
+      const answeredByUser = answeredBy()
+      const qPopover: QuestionPopover = {
+        id: q.id,
+        time: q.timeAnswered,
+        isCorrect: q.isCorrect,
+        user: answeredByUser.name,
+      }
+
+      if (answeredByUser) {
+        setAnsweredQuestionsMap((prev) => ({
+          ...prev,
+          [q.id]: qPopover,
+        }))
+
+        setQuestionPopover(qPopover)
+      }
+
+      return
+    }
+
     props.onQuestionSelect(q.id)
     setActiveTheme(t)
 
@@ -99,23 +155,30 @@ const GameRound = (props: Props) => {
                       <For each={theme.questions}>
                         {(question) => {
                           return (
-                            <span
-                              onClick={() => handleQuestionSelect(question, theme)}
-                              class="child relative hover:cursor-pointer"
-                              classList={{
-                                'click-green': question.isCorrect === true,
-                                'click-red': question.isCorrect === false,
-                                'hover-rank': question.isCorrect === null,
-                              }}
+                            <Popover
+                              content={<AnsweredPopover question={questionPopover()} />}
+                              placement="top"
+                              offset={8}
+                              isVisible={questionPopover()?.id === question.id}
                             >
                               <span
+                                onClick={() => handleQuestionSelect(question, theme)}
+                                class="child relative hover:cursor-pointer"
                                 classList={{
-                                  'line-cross bg-red-600': question.isCorrect === false,
-                                  'line-cross bg-green-600': question.isCorrect === true,
+                                  'click-green': question.isCorrect === true,
+                                  'click-red': question.isCorrect === false,
+                                  'hover-rank': question.isCorrect === null,
                                 }}
-                              />
-                              {question.points}
-                            </span>
+                              >
+                                <span
+                                  classList={{
+                                    'line-cross bg-red-600': question.isCorrect === false,
+                                    'line-cross bg-green-600': question.isCorrect === true,
+                                  }}
+                                />
+                                {question.points}
+                              </span>
+                            </Popover>
                           )
                         }}
                       </For>

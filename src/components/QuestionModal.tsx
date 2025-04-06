@@ -104,7 +104,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-[51] flex items-center justify-center bg-[var(--color-void)]/80 backdrop-blur-sm transition-opacity duration-300 ease-out slide-in"
+        class="fixed inset-0 z-[51] flex items-center justify-center bg-void/80 backdrop-blur-sm transition-opacity duration-300 ease-out slide-in"
         onClick={handleOverlayClick}
         aria-modal="true"
         role="dialog"
@@ -113,13 +113,13 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
           <div
             data-open={props.isOpen ? '' : null}
             // Combined styles for the container, added padding `p-6`
-            class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-[var(--color-primary)]/50 bg-[var(--color-void)] p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
+            class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-primary/50 bg-void p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
             classList={{ 'border-red-600/50': isTimeOver() }}
             onClick={stopPropagation}
           >
             <div class="mb-5 flex items-start justify-between gap-4">
               {' '}
-              <h2 class="flex items-center text-xl font-bold text-[var(--color-primary)]">
+              <h2 class="flex items-center text-xl font-bold text-primary">
                 <TbTag class="mr-2 h-5 w-5 flex-shrink-0" />
                 <span>{props.themeTitle}</span>
               </h2>
