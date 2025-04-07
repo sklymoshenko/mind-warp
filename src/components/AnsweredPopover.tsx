@@ -19,11 +19,15 @@ const AnsweredPopover = (props: Props) => {
   return (
     <>
       {props.question && (
-        <div class="flex w-fit gap-2 text-primary text-xl">
-          <span>Answered by: {props.question.user}</span>|<span>Time: {formatTime(props.question.time)}</span>|
-          <span classList={{ 'text-green-600': props.question.isCorrect!, 'text-red-600': !props.question.isCorrect! }}>
-            {props.question.isCorrect ? 'Correct' : 'Incorrect'}
-          </span>
+        <div class="flex flex-col gap-2">
+          <div class="flex w-fit gap-2 text-primary text-xl">
+            <span>Answered by: {props.question.user}</span>|<span>Time: {formatTime(props.question.time || 0)}</span>|
+            <span
+              classList={{ 'text-green-600': props.question.isCorrect!, 'text-red-600': !props.question.isCorrect! }}
+            >
+              {props.question.isCorrect ? 'Correct' : 'Incorrect'}
+            </span>
+          </div>
         </div>
       )}
     </>

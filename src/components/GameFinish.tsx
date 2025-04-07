@@ -1,5 +1,5 @@
 // GameFinish.tsx
-import { onMount, onCleanup, For, createSignal } from 'solid-js'
+import { onMount, onCleanup, For } from 'solid-js'
 import confetti from 'canvas-confetti'
 import { User } from '../types'
 import { sarcasticCongrats } from '../data/utils'
@@ -35,6 +35,7 @@ const GameFinish = (props: Props) => {
 
   // Confetti animation configuration
   const launchConfetti = (): void => {
+    console.log('launching fireworks')
     const duration: number = 5 * 1000
     const animationEnd: number = Date.now() + duration
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 }
@@ -64,6 +65,7 @@ const GameFinish = (props: Props) => {
 
   // Fireworks effect
   const launchFireworks = (): void => {
+    console.log('launching fireworks')
     confetti({
       particleCount: 100,
       angle: 60,
@@ -106,7 +108,7 @@ const GameFinish = (props: Props) => {
 
       {/* Content container */}
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/3 min-w-[400px] transform transition-all duration-300 h-fit">
-        <h1 class="bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/50 text-5xl min-h-[300px]">
+        <h1 class="bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/50 text-5xl min-h-[300px] text-center">
           {getRandomCongrats(winningUser().name)}
         </h1>
 

@@ -126,6 +126,7 @@ const GameRound = (props: Props) => {
         onClose={closeQuestion}
         themeTitle={activeTheme()?.name || 'Theme'}
         points={activeQuestion()?.points || 0}
+        questionTime={props.round.time.id}
         questionText={activeQuestion()?.text || ''}
         onCorrect={handleCorrect}
         onWrong={handleWrong}

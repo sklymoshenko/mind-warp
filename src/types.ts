@@ -16,6 +16,7 @@ export type Round = {
   name: string
   ranks: RoundRank[]
   themes: Theme[]
+  time: RoundTime
 }
 
 export type Question = {
@@ -24,10 +25,16 @@ export type Question = {
   answer: string
   isCorrect: boolean | null
   points: RoundRank['id']
-  timeAnswered: number
+  timeAnswered?: number
 }
 
 export type RoundRank = {
+  id: number
+  label: string
+  isSelected: boolean
+}
+
+export type RoundTime = {
   id: number
   label: string
   isSelected: boolean

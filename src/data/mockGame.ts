@@ -343,12 +343,14 @@ const mockRounds: Round[] = [
     name: 'Pop Culture',
     ranks: popCultureRanks,
     themes: popCultureThemes,
+    time: { id: 180, label: '3m', isSelected: true },
   },
   {
     id: 'round-2',
     name: 'Science & Nature',
     ranks: scienceRanks,
     themes: scienceThemes,
+    time: { id: 120, label: '2m', isSelected: true },
   },
 ]
 
@@ -360,6 +362,7 @@ export const mockGame: Game = {
   currentRound: 'round-1',
   currentQuestion: '',
   currentUser: 'user-1',
+  isFinished: false,
 }
 
 export default mockGame

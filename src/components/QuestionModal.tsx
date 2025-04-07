@@ -4,6 +4,7 @@ import { Component, Show, createSignal, onCleanup, createEffect, createMemo } fr
 import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
 import { Duration } from 'luxon'
+import { RoundTime } from '../types'
 interface QuestionModalProps {
   isOpen: boolean
   onClose: () => void

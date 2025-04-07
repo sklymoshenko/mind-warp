@@ -3,7 +3,7 @@ import { A, useNavigate } from '@solidjs/router'
 import { IoCloseSharp } from 'solid-icons/io'
 import { BsController, BsStars } from 'solid-icons/bs'
 import { FaSolidUserAstronaut } from 'solid-icons/fa'
-import { RoundRank, Round, User, Game } from '../types'
+import { RoundRank, Round, User, Game, RoundTime } from '../types'
 
 const defaultRanks: RoundRank[] = [
   { id: 100, label: '100', isSelected: true },
@@ -14,6 +14,17 @@ const defaultRanks: RoundRank[] = [
   { id: 700, label: '700', isSelected: false },
   { id: 900, label: '900', isSelected: false },
   { id: 1000, label: '1000', isSelected: false },
+]
+
+const defaultTimes: RoundTime[] = [
+  { id: 30, label: '30s', isSelected: false },
+  { id: 60, label: '60s', isSelected: false },
+  { id: 90, label: '1m 30s', isSelected: false },
+  { id: 120, label: '2m', isSelected: false },
+  { id: 150, label: '2m 30s', isSelected: false },
+  { id: 180, label: '3m', isSelected: true },
+  { id: 210, label: '3m 30s', isSelected: false },
+  { id: 240, label: '4m', isSelected: false },
 ]
 
 type Props = {
@@ -30,6 +41,7 @@ const CreateGame = (props: Props) => {
   const [currentUserName, setCurrentUserName] = createSignal('')
   const [gameUsers, setGameUsers] = createSignal<User[]>([])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
+  const [roundTimes, setRoundTimes] = createSignal<RoundTime[]>(defaultTimes)
   const [themes, setThemes] = createSignal<string[]>([])
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
@@ -38,6 +50,7 @@ const CreateGame = (props: Props) => {
   const emptyCurrentUserName = createMemo(() => currentUserName().trim() === '')
   const emptyThemes = createMemo(() => themes().filter(Boolean).length != themes().length)
   const emptyRanks = createMemo(() => roundRanks().filter((r) => r.isSelected).length === 0)
+  const emptyTime = createMemo(() => roundTimes().filter((t) => t.isSelected).length === 0)
   const notEnoughUsers = createMemo(() => gameUsers().length < 2)
   const sameUser = createMemo(() =>
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
@@ -83,7 +96,7 @@ const CreateGame = (props: Props) => {
   }
 
   const addRound = () => {
-    if (emptyRoundName() || emptyThemes() || emptyRanks()) return
+    if (emptyRoundName() || emptyThemes() || emptyRanks() || emptyTime()) return
 
     const roundThemes = themes().map((theme) => ({
       id: crypto.randomUUID(),
@@ -98,6 +111,7 @@ const CreateGame = (props: Props) => {
         id: crypto.randomUUID(),
         ranks: roundRanks().filter((r) => r.isSelected),
         themes: roundThemes,
+        time: roundTimes().find((t) => t.isSelected)!,
       },
     ])
     setCurrentRoundName('')
@@ -152,7 +166,7 @@ const CreateGame = (props: Props) => {
 
       {/* Flipping Card for Form Steps */}
       <div class="relative w-full max-w-md">
-        <div class="relative w-full">
+        <div class="relative w-full overflow-y-auto max-h-[9a0vh]">
           {/* Step 1: Enter Your Name */}
           <Show when={step() === 1}>
             <div class="w-full bg-primary rounded-lg p-6">
@@ -285,6 +299,20 @@ const CreateGame = (props: Props) => {
                     )}
                   </For>
                 </div>
+                <div class="mt-4 flex gap-2">
+                  <For each={roundTimes()}>
+                    {(time) => (
+                      <div
+                        class="flex items-center mt-1 p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
+                        classList={{ 'bg-accent! text-primary': time.isSelected }}
+                        title={time.isSelected ? 'Choose Time' : 'Remove Time'}
+                        onClick={() => setRoundTimes(roundTimes().map((t) => ({ ...t, isSelected: t.id === time.id })))}
+                      >
+                        {time.label}
+                      </div>
+                    )}
+                  </For>
+                </div>
                 <div class="mt-4 flex flex-col gap-2 ">
                   <For each={roundRanks().filter((r) => r.isSelected)}>
                     {(_, i) => {
@@ -327,6 +355,9 @@ const CreateGame = (props: Props) => {
                             <p class="text-primary font-semibold uppercase mt-0.5 text-sm truncate overflow-hidden whitespace-nowrap">
                               {round.name}
                             </p>
+                            <span class="text-primary/50 mt-0.5 text-sm truncate overflow-hidden whitespace-nowrap">
+                              {round.time.label}
+                            </span>
                           </div>
                           <div class="flex flex-wrap mr-4 gap-2 text-xs my-2">
                             <For each={round.ranks}>
