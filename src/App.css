@@ -178,8 +178,24 @@
     }
   }
 
+  /* New animation for user entries */
+  @keyframes slide-down {
+    0% {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .animate-slide-in {
     animation: slide-in 0.3s ease-out forwards;
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.3s ease-out forwards;
   }
 
   .animate-fade-in {

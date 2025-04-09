@@ -130,6 +130,8 @@ const GameRound = (props: Props) => {
         questionText={activeQuestion()?.text || ''}
         onCorrect={handleCorrect}
         onWrong={handleWrong}
+        users={props.users}
+        currentUser={props.currentUser}
       />
       {/*Back Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
