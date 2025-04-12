@@ -13,6 +13,7 @@ type Props = {
   currentUser: User['id']
   onQuestionSelect: (question: Question['id']) => void
   onQuestionAnswered: (question: Question, isCorrect: boolean, userId: User['id']) => void
+  updateForExtraAnswerer: (question: Question, isCorrect: boolean, userId: User['id']) => void
 }
 
 const GameRound = (props: Props) => {
@@ -53,27 +54,18 @@ const GameRound = (props: Props) => {
         continue
       }
 
-      props.onQuestionAnswered(activeQuestion(), isCorrect, userId)
+      props.updateForExtraAnswerer(activeQuestion(), isCorrect, userId)
     }
 
     setIsModalOpen(false)
   }
 
-  const handleCorrect = (timeAnswered: number) => {
+  const handleAnswerSubmit = (timeAnswered: number, isCorrect: boolean) => {
     const question = activeQuestion()
     question.timeAnswered = timeAnswered
 
-    props.onQuestionAnswered(activeQuestion(), true, props.currentUser)
-    setIsModalOpen(false) // Close the modal after answering
-  }
-
-  const handleWrong = (timeAnswered: number) => {
-    const question = activeQuestion()
-    question.timeAnswered = timeAnswered
-
-    props.onQuestionAnswered(activeQuestion(), false, props.currentUser)
-    // Add logic for wrong answer
-    setIsModalOpen(false) // Close the modal after answering
+    props.onQuestionAnswered(activeQuestion(), isCorrect, props.currentUser)
+    setIsModalOpen(false)
   }
 
   const answeredBy = () => {
@@ -138,8 +130,7 @@ const GameRound = (props: Props) => {
         points={activeQuestion()?.points || 0}
         questionTime={props.round.time.id}
         questionText={activeQuestion()?.text || ''}
-        onCorrect={handleCorrect}
-        onWrong={handleWrong}
+        onAnswerSubmit={handleAnswerSubmit}
         users={props.users}
         currentUser={props.currentUser}
       />

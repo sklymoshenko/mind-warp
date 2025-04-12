@@ -6,18 +6,18 @@ import { getQuizResponse } from '../data/utils'
 import { Duration } from 'luxon'
 import { User } from '../types'
 
-interface QuestionModalProps {
+type QuestionModalProps = {
   isOpen: boolean
   onClose: (extraAnswerers: ExtraAnswerers) => void
   themeTitle: string
   points: number
   questionText: string
   questionTime?: number
-  onCorrect: (timeAnswered: number) => void
-  onWrong: (timeAnswered: number) => void
+  onAnswerSubmit: (timeAnswered: number, isCorrect: boolean) => void
   users: User[]
   currentUser: User['id']
 }
+
 export type ExtraAnswerers = Record<User['id'], [number, boolean | null]>
 
 const QuestionModal: Component<QuestionModalProps> = (props) => {
@@ -114,16 +114,16 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
 
     // Everyone answered
     if (mainUserAnswered && extraAnswered) {
-      props.onClose(extraAnswerers())
       const timeAnswered = (props.questionTime || 180) - questionTime()
-      isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
+      props.onAnswerSubmit(timeAnswered, !!isCorrect())
+      props.onClose(extraAnswerers())
       return
     }
 
     // User answered and no1 wants to answer anymore
     if (mainUserAnswered && !extraAnswerersExists) {
       const timeAnswered = (props.questionTime || 180) - questionTime()
-      isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
+      props.onAnswerSubmit(timeAnswered, !!isCorrect())
       return
     }
 
@@ -203,7 +203,9 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
 
               <div class="mb-6">
-                <p class="text-lg leading-relaxed text-[var(--color-white)]">{props.questionText}</p>
+                <p class="text-lg leading-relaxed text-[var(--color-white)] text-center">
+                  {props.questionText || 'Read the question'}
+                </p>
               </div>
               <div class="flex justify-end gap-4">
                 <button

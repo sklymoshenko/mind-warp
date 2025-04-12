@@ -81,6 +81,15 @@ const Main = () => {
     }
   }
 
+  const onUpdateForExtraAnswerer = (question: Question, isCorrect: boolean, userId: User['id']) => {
+    const userIndex = game().users.findIndex((u) => u.id === userId)
+    if (userIndex === -1) return
+    game().users[userIndex] = updateUser(question, isCorrect, userIndex)
+
+    const newGame = { ...game() }
+    setGame(newGame)
+  }
+
   const handleGameUpdate = (updatedGame: Game) => {
     setGame(updatedGame)
     localStorage.setItem('currentGame', JSON.stringify(updatedGame))
@@ -107,6 +116,7 @@ const Main = () => {
                 currentQuestion={game().currentQuestion}
                 onQuestionSelect={onQuestionSelect}
                 onQuestionAnswered={onQuestionAnswered}
+                updateForExtraAnswerer={onUpdateForExtraAnswerer}
                 currentUser={game().currentUser}
                 {...props}
               />
