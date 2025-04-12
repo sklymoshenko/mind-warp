@@ -5,11 +5,10 @@ import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
 import { Duration } from 'luxon'
 import { User } from '../types'
-import { FaSolidAnglesDown, FaSolidAnglesUp } from 'solid-icons/fa'
 
 interface QuestionModalProps {
   isOpen: boolean
-  onClose: () => void
+  onClose: (extraAnswerers: ExtraAnswerers) => void
   themeTitle: string
   points: number
   questionText: string
@@ -19,6 +18,7 @@ interface QuestionModalProps {
   users: User[]
   currentUser: User['id']
 }
+export type ExtraAnswerers = Record<User['id'], [number, boolean | null]>
 
 const QuestionModal: Component<QuestionModalProps> = (props) => {
   const [isCorrect, setIsCorrect] = createSignal<boolean | null>(null)
@@ -26,23 +26,21 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     e.stopPropagation()
   }
 
-  const [timeOut, setTimeOut] = createSignal<number>()
   const [timer, setTimer] = createSignal<number>()
   const [overlayText, setOverlayText] = createSignal('')
   const [questionTime, setQuestionTime] = createSignal(props.questionTime || 180)
-  const [showExtraAnswers, setShowExtraAnswers] = createSignal(false)
-  const [extraAnswerers, setExtraAnswerers] = createSignal<Record<User['id'], number>>({})
   const [users] = createSignal<User[]>(props.users.filter((user) => user.id !== props.currentUser))
+  const [extraAnswerers, setExtraAnswerers] = createSignal<ExtraAnswerers>({})
 
   const cleanup = () => {
-    if (timeOut()) {
-      clearTimeout(timeOut())
-    }
     setOverlayText('')
     clearInterval(timer())
     setTimer(undefined)
     setQuestionTime(props.questionTime || 180)
+    setExtraAnswerers({})
+    setIsCorrect(null)
   }
+
   onCleanup(() => {
     cleanup()
   })
@@ -52,6 +50,12 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
       cleanup()
     } else {
       startTimer()
+      const extraAnswerers = users().reduce((acc, user) => {
+        acc[user.id] = [1, null]
+        return acc
+      }, {} as ExtraAnswerers)
+
+      setExtraAnswerers(extraAnswerers)
     }
   }, [props.isOpen])
 
@@ -73,32 +77,58 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     return duration.toFormat('m:ss')
   }
 
+  const handleExtraAnswer = (user: User, isCorrect: boolean) => {
+    setExtraAnswerers((prev) => {
+      const newExtraAnswerers = { ...prev }
+      newExtraAnswerers[user.id] = [newExtraAnswerers[user.id]?.[0], isCorrect]
+      return newExtraAnswerers
+    })
+  }
+
   const handleAnswerSubmit = (isCorrect: boolean) => {
     setIsCorrect(isCorrect)
     setOverlayText(getQuizResponse(isCorrect))
-
-    const timeoutId = setTimeout(() => {
-      setOverlayText('')
-      const timeAnswered = (props.questionTime || 180) - questionTime()
-      isCorrect ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
-    }, 5000)
-
-    setTimeOut(timeoutId)
+    clearInterval(timer())
+    setTimer(undefined)
   }
 
   const handleOverlayClick = () => {
-    if (!overlayText()) {
-      props.onClose()
+    const extraAnswerersValues = Object.values(extraAnswerers())
+
+    const mainUserAnswered = isCorrect() !== null
+    const extraAnswerersExists = extraAnswerersValues.length > 0
+    const extraAnswering = extraAnswerersExists && !!extraAnswerersValues.some(([_, isCorrect]) => isCorrect === null)
+    const extraAnswered = extraAnswerersExists && !!extraAnswerersValues.every(([_, isCorrect]) => isCorrect !== null)
+
+    // No1 has answered yet just close the modal
+    if (!mainUserAnswered && !extraAnswering && !extraAnswered) {
+      props.onClose({})
       return
     }
 
-    if (timeOut()) {
-      clearTimeout(timeOut())
+    // User already answered and waiting for extra answerers -> clicking on overlay with text
+    if (mainUserAnswered && extraAnswering) {
+      setOverlayText('')
+      return
     }
 
-    const timeAnswered = (props.questionTime || 180) - questionTime()
-    isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
-    setOverlayText('')
+    // Everyone answered
+    if (mainUserAnswered && extraAnswered) {
+      props.onClose(extraAnswerers())
+      const timeAnswered = (props.questionTime || 180) - questionTime()
+      isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
+      return
+    }
+
+    // User answered and no1 wants to answer anymore
+    if (mainUserAnswered && !extraAnswerersExists) {
+      const timeAnswered = (props.questionTime || 180) - questionTime()
+      isCorrect() ? props.onCorrect(timeAnswered) : props.onWrong(timeAnswered)
+      return
+    }
+
+    // Extra answerers answered but main user hasnt yet
+    return
   }
 
   const isTimeOver = createMemo(() => {
@@ -112,13 +142,14 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
         delete newExtraAnswerers[user.id]
 
         for (const id in newExtraAnswerers) {
-          newExtraAnswerers[id] = newExtraAnswerers[id] - 1 == 0 ? 1 : newExtraAnswerers[id] - 1
+          const userIndex = newExtraAnswerers[id][0]
+          newExtraAnswerers[id] = userIndex - 1 == 0 ? [1, null] : [userIndex - 1, null]
         }
 
         return newExtraAnswerers
       }
 
-      newExtraAnswerers[user.id] = Object.keys(prev).length + 1
+      newExtraAnswerers[user.id] = [Object.keys(prev).length + 1, null]
       return newExtraAnswerers
     })
   }
@@ -136,7 +167,10 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
             <div
               data-open={props.isOpen ? '' : null}
               class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-primary/50 bg-void p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
-              classList={{ 'border-red-600/50': isTimeOver() }}
+              classList={{
+                'border-red-600/50': isTimeOver() || (!isCorrect() && isCorrect() != null),
+                'border-green-600/50': !!isCorrect() && isCorrect() != null,
+              }}
               onClick={stopPropagation}
             >
               <div class="mb-5 flex items-start justify-between gap-4">
@@ -169,64 +203,78 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
 
               <div class="mb-6">
-                {' '}
                 <p class="text-lg leading-relaxed text-[var(--color-white)]">{props.questionText}</p>
               </div>
-              <div class="flex justify-between">
+              <div class="flex justify-end gap-4">
                 <button
-                  class="text-primary hover:cursor-pointer hover:text-primary/50 transition-colors duration-200 ease-in-out"
-                  title="Answer Queue"
-                  onClick={() => setShowExtraAnswers(!showExtraAnswers())}
+                  onClick={() => handleAnswerSubmit(false)}
+                  class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
                 >
-                  {showExtraAnswers() ? <FaSolidAnglesUp class="h-4 w-4" /> : <FaSolidAnglesDown class="h-4 w-4" />}
+                  <TbX class="mr-1.5 h-5 w-5" />
+                  <span>Wrong</span>
                 </button>
-                <div class="flex justify-end gap-4">
-                  {' '}
-                  <button
-                    onClick={() => handleAnswerSubmit(false)}
-                    class="inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
-                  >
-                    <TbX class="mr-1.5 h-5 w-5" />
-                    <span>Wrong</span>
-                  </button>
-                  <button
-                    onClick={() => handleAnswerSubmit(true)}
-                    class="inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
-                  >
-                    <TbCheck class="mr-1.5 h-5 w-5" />
-                    <span>Correct</span>
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleAnswerSubmit(true)}
+                  class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+                >
+                  <TbCheck class="mr-1.5 h-5 w-5" />
+                  <span>Correct</span>
+                </button>
               </div>
             </div>
-            <div
-              class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-8 min-w-[500px]"
-              classList={{
-                'opacity-0': !showExtraAnswers(),
-                'animate-slide-down': showExtraAnswers(),
-              }}
-            >
+            <p class="text-lg font-bold text-primary">Answer Queue</p>
+            <div class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[500px] rounded-md border border-primary/50 ">
               <For each={users()}>
                 {(user) => {
+                  const data = createMemo(() => extraAnswerers()?.[user.id])
                   return (
-                    <div
-                      class="flex flex-col items-center justify-between gap-4 wrap"
-                      onclick={(e) => {
-                        e.stopPropagation()
-                        onExtraSelect(user)
-                      }}
-                    >
-                      <div class="text-xl font-bold text-primary flex items-center gap-2">
+                    <div class="flex items-center gap-4 flex-wrap hover:cursor-pointer transition-all duration-300 ease-in-out">
+                      <div
+                        class="text-xl font-bold text-primary flex items-center justify-around gap-2 hover:text-primary/50 transition-all duration-300 ease-in-out"
+                        onclick={(e) => {
+                          e.stopPropagation()
+                          onExtraSelect(user)
+                        }}
+                      >
                         <span
                           class="opacity-0"
                           classList={{
-                            'opacity-0': !extraAnswerers()[user.id],
-                            'animate-slide-down': !!extraAnswerers()[user.id],
+                            'opacity-0': !data,
+                            'animate-slide-down': !!data,
                           }}
                         >
-                          {extraAnswerers()[user.id]}
+                          {data()?.[0]}
                         </span>
-                        <span>{user.name}</span>
+                        <span
+                          classList={{
+                            'text-green-600/50': data()?.[1] == true,
+                            'text-red-600/50': data()?.[1] == false,
+                          }}
+                        >
+                          {user.name}
+                        </span>
+                      </div>
+                      <div
+                        class="items-center gap-2 opacity-0"
+                        classList={{
+                          hidden: !data(),
+                          'animate-slide-down flex visible!': !!data(),
+                        }}
+                      >
+                        <TbX
+                          class="h-5 w-5 text-accent hover:text-accent/50 transition-all duration-300 ease-in-out hover:cursor-pointer"
+                          onclick={(e) => {
+                            e.stopPropagation()
+                            handleExtraAnswer(user, false)
+                          }}
+                        />
+                        <TbCheck
+                          class="h-5 w-5 text-primary hover:text-primary/50 transition-all duration-300 ease-in-out hover:cursor-pointer"
+                          onclick={(e) => {
+                            e.stopPropagation()
+                            handleExtraAnswer(user, true)
+                          }}
+                        />
                       </div>
                     </div>
                   )

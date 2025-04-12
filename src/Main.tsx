@@ -63,19 +63,22 @@ const Main = () => {
     return newUser
   }
 
-  const onQuestionAnswered = (question: Question, isCorrect: boolean) => {
+  const onQuestionAnswered = (question: Question, isCorrect: boolean, userId: User['id']) => {
     const currentRoundIndex = game().rounds.findIndex((r) => r.id === game().currentRound)
     if (currentRoundIndex === -1) return
 
     game().rounds[currentRoundIndex] = updateRoundQuestion(question, isCorrect, currentRoundIndex)
 
-    const userIndex = game().users.findIndex((u) => u.id === game().currentUser)
+    const userIndex = game().users.findIndex((u) => u.id === userId)
     if (userIndex === -1) return
     game().users[userIndex] = updateUser(question, isCorrect, userIndex)
 
     const newGame = { ...game() }
     setGame(newGame)
-    newUserTurn()
+
+    if (userId === game().currentUser) {
+      newUserTurn()
+    }
   }
 
   const handleGameUpdate = (updatedGame: Game) => {

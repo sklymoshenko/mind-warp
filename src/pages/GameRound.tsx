@@ -2,7 +2,7 @@ import { createMemo, createSignal, For } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
-import QuestionModal from '../components/QuestionModal'
+import QuestionModal, { ExtraAnswerers } from '../components/QuestionModal'
 import Popover from '../components/Popover'
 import AnsweredPopover, { QuestionPopover } from '../components/AnsweredPopover'
 
@@ -12,7 +12,7 @@ type Props = {
   currentQuestion: Question['id']
   currentUser: User['id']
   onQuestionSelect: (question: Question['id']) => void
-  onQuestionAnswered: (question: Question, isCorrect: boolean) => void
+  onQuestionAnswered: (question: Question, isCorrect: boolean, userId: User['id']) => void
 }
 
 const GameRound = (props: Props) => {
@@ -47,23 +47,33 @@ const GameRound = (props: Props) => {
     )
   })
 
-  const closeQuestion = () => setIsModalOpen(false)
+  const closeQuestion = (extraAnswerers: ExtraAnswerers) => {
+    for (const [userId, [, isCorrect]] of Object.entries(extraAnswerers)) {
+      if (isCorrect === null) {
+        continue
+      }
+
+      props.onQuestionAnswered(activeQuestion(), isCorrect, userId)
+    }
+
+    setIsModalOpen(false)
+  }
 
   const handleCorrect = (timeAnswered: number) => {
     const question = activeQuestion()
     question.timeAnswered = timeAnswered
 
-    props.onQuestionAnswered(activeQuestion(), true)
-    closeQuestion() // Close the modal after answering
+    props.onQuestionAnswered(activeQuestion(), true, props.currentUser)
+    setIsModalOpen(false) // Close the modal after answering
   }
 
   const handleWrong = (timeAnswered: number) => {
     const question = activeQuestion()
     question.timeAnswered = timeAnswered
 
-    props.onQuestionAnswered(activeQuestion(), false)
+    props.onQuestionAnswered(activeQuestion(), false, props.currentUser)
     // Add logic for wrong answer
-    closeQuestion() // Close the modal after answering
+    setIsModalOpen(false) // Close the modal after answering
   }
 
   const answeredBy = () => {
