@@ -2,7 +2,7 @@
 import { createSignal, For, Show } from 'solid-js'
 import { Game, Round, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
-import { useNavigate } from '@solidjs/router'
+import { A, useNavigate } from '@solidjs/router'
 import GameFinished from '../components/GameFinish'
 
 interface GameDashboardProps {
@@ -60,6 +60,14 @@ export default function GameDashboard(props: GameDashboardProps) {
 
   return (
     <>
+      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
+        <A
+          href="/"
+          class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 hover:cursor-pointer"
+        >
+          Back
+        </A>
+      </div>
       <Show when={isGameFinished()}>
         <GameFinished
           onClose={() => {

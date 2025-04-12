@@ -248,23 +248,24 @@
 * {
   /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #8000ff #c6d9a3; /* thumb: --color-accent, track: --color-orange-light */
+  scrollbar-color: #1c0138 transparent; /* thumb: --color-accent, track: transparent */
 }
 
 /* Webkit (Chrome, Safari, Edge) */
 *::-webkit-scrollbar {
-  width: 4px; /* Thinnest practical size */
-  height: 4px; /* For horizontal scrollbars */
+  width: 2px; /* Thinnest practical size */
+  height: 2px; /* For horizontal scrollbars */
 }
 
 *::-webkit-scrollbar-track {
-  border-radius: 2px; /* Adjusted for thinner scrollbar */
+  background: transparent;
+  border-radius: 2px;
 }
 
 *::-webkit-scrollbar-thumb {
   background: #8000ff; /* --color-accent */
-  border-radius: 2px; /* Adjusted for thinner scrollbar */
-  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.2); /* Adjusted shadow for smaller size */
+  border-radius: 2px;
+  box-shadow: inset 0 0 1px rgba(0, 0, 0, 0.2);
   transition: background 0.3s ease;
 }
 

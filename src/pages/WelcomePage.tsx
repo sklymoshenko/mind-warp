@@ -3,10 +3,9 @@ import { useNavigate } from '@solidjs/router'
 import { createSignal, onMount, Show } from 'solid-js'
 import { Game } from '../types'
 
-type Props = {}
-
 const Welcome = () => {
   const [isLoaded, setIsLoaded] = createSignal(false)
+  const [gameInProgress, setGameInProgress] = createSignal<Game | null>(null)
   const navigate = useNavigate()
 
   const showHistory = () => {
@@ -20,7 +19,7 @@ const Welcome = () => {
     const game: Game | null = gameStr ? JSON.parse(gameStr) : null
 
     if (game) {
-      navigate(`/game/${game!.id}`)
+      setGameInProgress(game)
     }
   })
 
@@ -50,13 +49,25 @@ const Welcome = () => {
         >
           Mind Warp
         </h1>
-
-        <button
-          class="mt-8 bg-primary text-void text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-white hover:text-void transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
-          onClick={() => navigate('/create-game')}
-        >
-          Create New Game
-        </button>
+        <div class="flex gap-4" classList={{ 'flex-col': gameInProgress() === null }}>
+          <button
+            class="mt-8 bg-primary text-void text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-primary/80 hover:text-void transition-all duration-300 hover:cursor-pointer"
+            classList={{
+              'animate-[pulse_2s_infinite]': gameInProgress() === null,
+            }}
+            onClick={() => navigate('/create-game')}
+          >
+            Create New Game
+          </button>
+          <Show when={gameInProgress() !== null}>
+            <button
+              class="mt-8 bg-accent text-white text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-accent/80 transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
+              onClick={() => navigate(`/game/${gameInProgress()!.id}`)}
+            >
+              Continue Game
+            </button>
+          </Show>
+        </div>
       </div>
     </>
   )

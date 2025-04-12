@@ -50,7 +50,7 @@ const GameHistory = () => {
         Games History
       </h1>
       <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] lg:w-[60%]">
-        <div class="flex flex-col gap-12 overflow-y-auto">
+        <div class="flex flex-col gap-12 overflow-y-auto pr-2">
           <For each={gamesHistory()}>
             {(game) => {
               const gameWinner = game.users.find((u) => u.id === game.winner!)
