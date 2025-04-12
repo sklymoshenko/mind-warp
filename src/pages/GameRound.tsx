@@ -124,10 +124,6 @@ const GameRound = (props: Props) => {
     setIsModalOpen(true)
   }
 
-  createEffect(() => {
-    console.log(props.round)
-  })
-
   return (
     <>
       <QuestionModal

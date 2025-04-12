@@ -102,31 +102,42 @@ const CreateGame = (props: Props) => {
 
   const addRound = () => {
     if (emptyRoundName() || emptyThemes() || emptyRanks() || emptyTime()) return
+    const ranks = roundRanks().filter((r) => r.isSelected)
 
     const roundThemes = themes().map((theme) => ({
       id: crypto.randomUUID(),
       name: theme,
-      questions: questions()[theme] || [],
+      questions: ranks.map((r) => ({
+        id: crypto.randomUUID(),
+        text: '',
+        answer: '',
+        points: r.id,
+        isCorrect: null,
+        timeAnswered: undefined,
+      })),
     }))
 
-    debugger
+    const newRound: Round = {
+      name: currentRoundName(),
+      id: crypto.randomUUID(),
+      ranks: ranks,
+      themes: roundThemes,
+      time: roundTimes().find((t) => t.isSelected)!,
+    }
 
-    setRounds([
-      ...rounds(),
-      {
-        name: currentRoundName(),
-        id: crypto.randomUUID(),
-        ranks: roundRanks().filter((r) => r.isSelected),
-        themes: roundThemes,
-        time: roundTimes().find((t) => t.isSelected)!,
-      },
-    ])
+    setRounds((prev) => {
+      const newRounds = [...prev]
+      newRounds.push(newRound)
+      return newRounds
+    })
+
     setCurrentRoundName('')
     setThemes([])
   }
 
   const onFinish = () => {
     if (rounds().length === 0) return
+
     setStep(0)
     const game: Game = {
       id: crypto.randomUUID(),
@@ -147,14 +158,19 @@ const CreateGame = (props: Props) => {
   }
 
   const onQuestionsComplete = () => {
-    const round = rounds()[rounds().length - 1]
-    const themes = round.themes.map((theme) => ({
-      ...theme,
-      questions: questions()[theme.id] || [],
-    }))
+    const newRounds = rounds().map((round) => {
+      const themes = round.themes.map((theme) => ({
+        ...theme,
+        questions: theme.questions.map((q, i) => ({
+          ...q,
+          text: questions()[theme.id][i]?.text || '',
+        })),
+      }))
 
-    setRounds(rounds().map((r) => ({ ...r, themes })))
+      return { ...round, themes }
+    })
 
+    setRounds(newRounds)
     prevStep()
   }
 
@@ -494,7 +510,11 @@ const CreateGame = (props: Props) => {
                                             prev[theme.id] = []
                                           }
 
-                                          prev[theme.id][j()] = { ...prev[theme.id][j()], text: e.currentTarget.value }
+                                          prev[theme.id][j()] = {
+                                            ...prev[theme.id][j()],
+                                            points: rank.id,
+                                            text: e.currentTarget.value,
+                                          }
                                           return prev
                                         })
                                       }}

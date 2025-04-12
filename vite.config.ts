@@ -4,7 +4,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   optimizeDeps: {
-    disabled: true, // this remove react is not defined
+    noDiscovery: true,
   },
   plugins: [solid(), tailwindcss()],
   server: {
