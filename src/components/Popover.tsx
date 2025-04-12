@@ -1,4 +1,4 @@
-import { createEffect, createSignal, JSX, Show } from 'solid-js'
+import { createEffect, createSignal, JSX } from 'solid-js'
 
 type PopoverProps = {
   children: JSX.Element

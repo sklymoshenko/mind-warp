@@ -1,4 +1,4 @@
-import { createEffect, createMemo, createSignal, For } from 'solid-js'
+import { createMemo, createSignal, For } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'

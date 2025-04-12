@@ -1,5 +1,5 @@
 // src/components/QuestionModal.tsx
-import { Component, Show, createSignal, onCleanup, createEffect, createMemo, For, on } from 'solid-js'
+import { Component, Show, createSignal, createEffect, createMemo, For, on } from 'solid-js'
 // Import desired icons from solid-icons (using Tabler Icons set 'tb' as an example)
 import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
