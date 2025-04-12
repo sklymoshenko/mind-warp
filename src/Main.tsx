@@ -56,9 +56,8 @@ const Main = () => {
 
   const updateUser = (question: Question, isCorrect: boolean, userIndex: number): User => {
     const newUser = { ...game().users[userIndex] }
-    newUser.roundScore[game().currentRound] = isCorrect
-      ? newUser.roundScore[game().currentRound] + question.points
-      : newUser.roundScore[game().currentRound] - question.points
+    const score = newUser.roundScore[game().currentRound] || 0
+    newUser.roundScore[game().currentRound] = isCorrect ? score + question.points : score - question.points
 
     return newUser
   }

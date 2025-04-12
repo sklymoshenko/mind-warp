@@ -1,5 +1,5 @@
 // src/components/QuestionModal.tsx
-import { Component, Show, createSignal, onCleanup, createEffect, createMemo, For } from 'solid-js'
+import { Component, Show, createSignal, onCleanup, createEffect, createMemo, For, on } from 'solid-js'
 // Import desired icons from solid-icons (using Tabler Icons set 'tb' as an example)
 import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
@@ -8,12 +8,12 @@ import { User } from '../types'
 
 type QuestionModalProps = {
   isOpen: boolean
-  onClose: (extraAnswerers: ExtraAnswerers) => void
+  updateExtraAnswerers: (extraAnswerers: ExtraAnswerers) => void
   themeTitle: string
   points: number
   questionText: string
   questionTime?: number
-  onAnswerSubmit: (timeAnswered: number, isCorrect: boolean) => void
+  onAnswerSubmit: (timeAnswered: number, isCorrect: boolean | null) => void
   users: User[]
   currentUser: User['id']
 }
@@ -21,56 +21,60 @@ type QuestionModalProps = {
 export type ExtraAnswerers = Record<User['id'], [number, boolean | null]>
 
 const QuestionModal: Component<QuestionModalProps> = (props) => {
+  let countdown: number | undefined = undefined
   const [isCorrect, setIsCorrect] = createSignal<boolean | null>(null)
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation()
   }
 
-  const [timer, setTimer] = createSignal<number>()
   const [overlayText, setOverlayText] = createSignal('')
   const [questionTime, setQuestionTime] = createSignal(props.questionTime || 180)
-  const [users] = createSignal<User[]>(props.users.filter((user) => user.id !== props.currentUser))
   const [extraAnswerers, setExtraAnswerers] = createSignal<ExtraAnswerers>({})
+
+  const answerQueue = () => {
+    return props.users.filter((user) => user.id !== props.currentUser)
+  }
 
   const cleanup = () => {
     setOverlayText('')
-    clearInterval(timer())
-    setTimer(undefined)
     setQuestionTime(props.questionTime || 180)
     setExtraAnswerers({})
     setIsCorrect(null)
+    clearCountdown()
   }
 
-  onCleanup(() => {
-    cleanup()
-  })
+  const clearCountdown = () => {
+    clearInterval(countdown)
+    countdown = undefined
+  }
 
-  createEffect(() => {
-    if (!props.isOpen) {
-      cleanup()
-    } else {
-      startTimer()
-      const extraAnswerers = users().reduce((acc, user) => {
-        acc[user.id] = [1, null]
-        return acc
-      }, {} as ExtraAnswerers)
-
-      setExtraAnswerers(extraAnswerers)
-    }
-  }, [props.isOpen])
-
-  const startTimer = () => {
-    const timer = setInterval(() => {
-      setQuestionTime((prev) => {
-        if (prev <= 0) {
-          return 0
-        }
-        return prev - 1
-      })
+  const startCountdown = () => {
+    countdown = setInterval(() => {
+      setQuestionTime((prev) => (prev - 1 === 0 ? 0 : prev - 1))
     }, 1000)
-
-    setTimer(timer)
   }
+
+  createEffect(
+    // this make sure it only runs when props.isOpen changes
+    // Not any other dependency
+    // Plain createEffect in this case will rerun on `answerQueue()` change
+    on(
+      () => props.isOpen,
+      (isOpen) => {
+        if (!isOpen) {
+          cleanup()
+        } else {
+          startCountdown()
+          const extraAnswerers = answerQueue().reduce((acc, user) => {
+            acc[user.id] = [1, null]
+            return acc
+          }, {} as ExtraAnswerers)
+
+          setExtraAnswerers(extraAnswerers)
+        }
+      }
+    )
+  )
 
   const formatTime = (seconds: number) => {
     const duration = Duration.fromObject({ seconds })
@@ -88,8 +92,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   const handleAnswerSubmit = (isCorrect: boolean) => {
     setIsCorrect(isCorrect)
     setOverlayText(getQuizResponse(isCorrect))
-    clearInterval(timer())
-    setTimer(undefined)
+    clearCountdown()
   }
 
   const handleOverlayClick = () => {
@@ -99,10 +102,10 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     const extraAnswerersExists = extraAnswerersValues.length > 0
     const extraAnswering = extraAnswerersExists && !!extraAnswerersValues.some(([_, isCorrect]) => isCorrect === null)
     const extraAnswered = extraAnswerersExists && !!extraAnswerersValues.every(([_, isCorrect]) => isCorrect !== null)
-
     // No1 has answered yet just close the modal
     if (!mainUserAnswered && !extraAnswering && !extraAnswered) {
-      props.onClose({})
+      props.onAnswerSubmit(0, null)
+      cleanup()
       return
     }
 
@@ -115,8 +118,8 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     // Everyone answered
     if (mainUserAnswered && extraAnswered) {
       const timeAnswered = (props.questionTime || 180) - questionTime()
+      props.updateExtraAnswerers(extraAnswerers())
       props.onAnswerSubmit(timeAnswered, !!isCorrect())
-      props.onClose(extraAnswerers())
       return
     }
 
@@ -157,10 +160,15 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-[51] flex items-center justify-center bg-void/80 backdrop-blur-sm transition-opacity duration-300 ease-out slide-in"
+        class="fixed inset-0 z-[51] flex items-center justify-center backdrop-blur-sm transition-all duration-300 ease-out slide-in"
         onClick={handleOverlayClick}
         aria-modal="true"
         role="dialog"
+        classList={{
+          'bg-void/80': isCorrect() === null || overlayText() !== '',
+          'bg-red-600/10': isTimeOver() || (isCorrect() === false && overlayText() === ''),
+          'bg-green-600/10': isCorrect() === true && overlayText() === '',
+        }}
       >
         <Show when={!overlayText()}>
           <div class="flex flex-col min-w-[500px] items-center">
@@ -168,8 +176,8 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               data-open={props.isOpen ? '' : null}
               class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-primary/50 bg-void p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
               classList={{
-                'border-red-600/50': isTimeOver() || (!isCorrect() && isCorrect() != null),
-                'border-green-600/50': !!isCorrect() && isCorrect() != null,
+                'border-red-600/50': isTimeOver() || isCorrect() === false,
+                'border-green-600/50': isCorrect() === true,
               }}
               onClick={stopPropagation}
             >
@@ -194,10 +202,10 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
 
                   <span
                     class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-3 py-0.5 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200"
-                    classList={{ 'bg-red-600/50 text-white': isTimeOver() }}
+                    classList={{ 'bg-red-600/50 text-white': isTimeOver() || isCorrect() === false }}
                   >
                     <TbAward class="mr-1 h-4 w-4" />
-                    {isTimeOver() ? `- ${props.points}` : props.points}pts
+                    {isTimeOver() || isCorrect() === false ? `- ${props.points}` : props.points}pts
                   </span>
                 </div>
               </div>
@@ -226,7 +234,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
             </div>
             <p class="text-lg font-bold text-primary">Answer Queue</p>
             <div class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[500px] rounded-md border border-primary/50 ">
-              <For each={users()}>
+              <For each={answerQueue()}>
                 {(user) => {
                   const data = createMemo(() => extraAnswerers()?.[user.id])
                   return (

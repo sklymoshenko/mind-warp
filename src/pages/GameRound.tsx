@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For } from 'solid-js'
+import { createEffect, createMemo, createSignal, For } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
@@ -48,7 +48,7 @@ const GameRound = (props: Props) => {
     )
   })
 
-  const closeQuestion = (extraAnswerers: ExtraAnswerers) => {
+  const updateExtraAnswerers = (extraAnswerers: ExtraAnswerers) => {
     for (const [userId, [, isCorrect]] of Object.entries(extraAnswerers)) {
       if (isCorrect === null) {
         continue
@@ -56,11 +56,14 @@ const GameRound = (props: Props) => {
 
       props.updateForExtraAnswerer(activeQuestion(), isCorrect, userId)
     }
-
-    setIsModalOpen(false)
   }
 
-  const handleAnswerSubmit = (timeAnswered: number, isCorrect: boolean) => {
+  const handleAnswerSubmit = (timeAnswered: number, isCorrect: boolean | null) => {
+    if (isCorrect === null) {
+      setIsModalOpen(false)
+      return
+    }
+
     const question = activeQuestion()
     question.timeAnswered = timeAnswered
 
@@ -121,11 +124,15 @@ const GameRound = (props: Props) => {
     setIsModalOpen(true)
   }
 
+  createEffect(() => {
+    console.log(props.round)
+  })
+
   return (
     <>
       <QuestionModal
         isOpen={isModalOpen()}
-        onClose={closeQuestion}
+        updateExtraAnswerers={updateExtraAnswerers}
         themeTitle={activeTheme()?.name || 'Theme'}
         points={activeQuestion()?.points || 0}
         questionTime={props.round.time.id}

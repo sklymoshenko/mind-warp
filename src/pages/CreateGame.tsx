@@ -1,9 +1,10 @@
 import { createMemo, createSignal, For, Show } from 'solid-js'
 import { A, useNavigate } from '@solidjs/router'
-import { IoCloseSharp } from 'solid-icons/io'
+import { IoCloseSharp, IoEyeSharp } from 'solid-icons/io'
 import { BsController, BsStars } from 'solid-icons/bs'
 import { FaSolidUserAstronaut } from 'solid-icons/fa'
-import { RoundRank, Round, User, Game, RoundTime } from '../types'
+import { RoundRank, Round, User, Game, RoundTime, Question, Theme } from '../types'
+import { BiSolidHide } from 'solid-icons/bi'
 
 const defaultRanks: RoundRank[] = [
   { id: 100, label: '100', isSelected: true },
@@ -28,6 +29,7 @@ const defaultTimes: RoundTime[] = [
 ]
 
 type Props = {
+  game?: Game
   onGameUpdate: (game: Game) => void
 }
 
@@ -35,14 +37,16 @@ const CreateGame = (props: Props) => {
   const navigate = useNavigate()
   const [gameId, setGameId] = createSignal<Game['id']>('')
   const [step, setStep] = createSignal(1)
-  const [creatorName, setCreatorName] = createSignal('')
-  const [rounds, setRounds] = createSignal<Round[]>([])
-  const [currentRoundName, setCurrentRoundName] = createSignal('')
-  const [currentUserName, setCurrentUserName] = createSignal('')
-  const [gameUsers, setGameUsers] = createSignal<User[]>([])
+  const [creatorName, setCreatorName] = createSignal(props.game?.users[0].name || '')
+  const [rounds, setRounds] = createSignal<Round[]>(props.game?.rounds || [])
+  const [currentRoundName, setCurrentRoundName] = createSignal(props.game?.rounds[0].name || '')
+  const [currentUserName, setCurrentUserName] = createSignal(props.game?.users[1].name || '')
+  const [gameUsers, setGameUsers] = createSignal<User[]>(props.game?.users || [])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
   const [roundTimes, setRoundTimes] = createSignal<RoundTime[]>(defaultTimes)
-  const [themes, setThemes] = createSignal<string[]>([])
+  const [themes, setThemes] = createSignal<string[]>(props.game?.rounds[0].themes.map((theme) => theme.name) || [])
+  const [questions, setQuestions] = createSignal<Record<Theme['id'], Question[]>>({})
+  const [hiddenThemes, setHiddenThemes] = createSignal<Record<string, boolean>>({})
 
   const emptyCreatorName = createMemo(() => creatorName().trim() === '')
 
@@ -51,6 +55,7 @@ const CreateGame = (props: Props) => {
   const emptyThemes = createMemo(() => themes().filter(Boolean).length != themes().length)
   const emptyRanks = createMemo(() => roundRanks().filter((r) => r.isSelected).length === 0)
   const emptyTime = createMemo(() => roundTimes().filter((t) => t.isSelected).length === 0)
+
   const notEnoughUsers = createMemo(() => gameUsers().length < 2)
   const sameUser = createMemo(() =>
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
@@ -101,8 +106,10 @@ const CreateGame = (props: Props) => {
     const roundThemes = themes().map((theme) => ({
       id: crypto.randomUUID(),
       name: theme,
-      questions: [],
+      questions: questions()[theme] || [],
     }))
+
+    debugger
 
     setRounds([
       ...rounds(),
@@ -133,6 +140,22 @@ const CreateGame = (props: Props) => {
 
     setGameId(game.id)
     props.onGameUpdate(game)
+  }
+
+  const onHideTheme = (themeId: string) => {
+    setHiddenThemes((prev) => ({ ...prev, [themeId]: !prev[themeId] }))
+  }
+
+  const onQuestionsComplete = () => {
+    const round = rounds()[rounds().length - 1]
+    const themes = round.themes.map((theme) => ({
+      ...theme,
+      questions: questions()[theme.id] || [],
+    }))
+
+    setRounds(rounds().map((r) => ({ ...r, themes })))
+
+    prevStep()
   }
 
   return (
@@ -166,7 +189,7 @@ const CreateGame = (props: Props) => {
 
       {/* Flipping Card for Form Steps */}
       <div class="relative w-full max-w-md">
-        <div class="relative w-full overflow-y-auto max-h-[9a0vh]">
+        <div class="relative w-full overflow-y-auto max-h-[90vh]">
           {/* Step 1: Enter Your Name */}
           <Show when={step() === 1}>
             <div class="w-full bg-primary rounded-lg p-6">
@@ -277,7 +300,7 @@ const CreateGame = (props: Props) => {
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
                 Round Name
               </h2>
-              <div class="mb-4">
+              <div>
                 <input
                   type="text"
                   value={currentRoundName()}
@@ -285,7 +308,8 @@ const CreateGame = (props: Props) => {
                   placeholder="Round Name (e.g., Pop Culture)"
                   class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                 />
-                <div class="mt-4 flex gap-2">
+                <p class="text-void text-sm uppercase font-bold mt-2">Round points</p>
+                <div class="flex gap-2">
                   <For each={roundRanks()}>
                     {(rank) => (
                       <div
@@ -299,7 +323,8 @@ const CreateGame = (props: Props) => {
                     )}
                   </For>
                 </div>
-                <div class="mt-4 flex gap-2">
+                <p class="text-void text-sm uppercase font-bold mt-2">Question Time Limit</p>
+                <div class="flex gap-2">
                   <For each={roundTimes()}>
                     {(time) => (
                       <div
@@ -335,7 +360,7 @@ const CreateGame = (props: Props) => {
                 </div>
                 <button
                   onClick={addRound}
-                  class="mt-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
+                  class="my-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
                   classList={{
                     'opacity-50 hover:cursor-not-allowed!':
                       emptyRoundName() || notEnoughUsers() || emptyThemes() || emptyRanks(),
@@ -405,15 +430,107 @@ const CreateGame = (props: Props) => {
                   Back
                 </button>
                 <button
+                  onClick={nextStep}
+                  class="bg-accent text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent/50 hover:text-white hover:cursor-pointer transition-all duration-300"
+                  classList={{ 'opacity-50 cursor-not-allowed!': rounds().length === 0 }}
+                  disabled={rounds().length === 0}
+                >
+                  Fill Questions
+                </button>
+                <button
                   onClick={onFinish}
                   class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
-                  classList={{ 'opacity-50 cursor-not-allowed': rounds().length === 0 }}
+                  classList={{ 'opacity-50 cursor-not-allowed!': rounds().length === 0 }}
                   disabled={rounds().length === 0}
                 >
                   Finish
                 </button>
               </div>
               <p class="text-void text-xs uppercase text-center mt-4">Rounds should be fun!</p>
+            </div>
+          </Show>
+          <Show when={step() === 4}>
+            <div class="w-full bg-primary rounded-lg p-6">
+              <div class="flex justify-between mb-4">
+                <p class="text-void text-sm uppercase font-bold">Step 4</p>
+                <p class="text-void text-sm uppercase font-bold">Add Questions</p>
+              </div>
+              <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
+                Questions
+              </h2>
+
+              <div class="space-y-8">
+                <For each={rounds()}>
+                  {(round) => (
+                    <div>
+                      <h3 class="text-xl font-bold text-void mb-4">Round: {round.name}</h3>
+
+                      <For each={round.themes}>
+                        {(theme) => (
+                          <div class="mb-6">
+                            <div class="flex w-full justify-between items-center">
+                              <h4 class="text-lg font-semibold text-void mb-3">Theme: {theme.name}</h4>
+                              <button
+                                class="text-void hover:cursor-pointer hover:text-void/50 hover:scale-110 transition-all duration-300"
+                                onclick={() => onHideTheme(theme.id)}
+                              >
+                                {hiddenThemes()[theme.id] ? (
+                                  <IoEyeSharp class="w-6 h-6" />
+                                ) : (
+                                  <BiSolidHide class="w-6 h-6" />
+                                )}
+                              </button>
+                            </div>
+
+                            <div class="space-y-4">
+                              <For each={round.ranks}>
+                                {(rank, j) => (
+                                  <div class="flex items-start gap-4">
+                                    <textarea
+                                      value={questions()[theme.id]?.[j()]?.text || ''}
+                                      onInput={(e) => {
+                                        setQuestions((prev) => {
+                                          if (!prev[theme.id]) {
+                                            prev[theme.id] = []
+                                          }
+
+                                          prev[theme.id][j()] = { ...prev[theme.id][j()], text: e.currentTarget.value }
+                                          return prev
+                                        })
+                                      }}
+                                      placeholder={`${theme.name} question for ${rank.id} points`}
+                                      class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-300"
+                                      classList={{
+                                        'opacity-20 blur-[4px] pointer-events-none': hiddenThemes()[theme.id],
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </For>
+                            </div>
+                          </div>
+                        )}
+                      </For>
+                    </div>
+                  )}
+                </For>
+              </div>
+
+              <div class="flex justify-between mt-6">
+                <button
+                  onClick={prevStep}
+                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                >
+                  Back
+                </button>
+                <button
+                  onClick={onQuestionsComplete}
+                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                >
+                  Complete
+                </button>
+              </div>
+              <p class="text-void text-xs uppercase text-center mt-4">Fill in all questions to continue!</p>
             </div>
           </Show>
         </div>
