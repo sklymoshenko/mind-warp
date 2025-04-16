@@ -80,34 +80,36 @@ export default function GameDashboard(props: GameDashboardProps) {
           scores={scores}
         />
       </Show>
-      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%]">
-        <div class="mx-auto flex gap-12">
+      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
+        <div class="mx-auto flex gap-12 sm:flex-nowrap flex-wrap max-w-full sm:max-w-none">
           <For each={props.game.rounds}>
             {(round, i) => {
               return (
                 <div
-                  class="min-w-[300px] h-fit bg-void text-primary rounded-md p-2 drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
+                  class="min-w-[100px] sm:min-w-[300px] h-fit bg-void text-primary rounded-md p-2 drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
                   onclick={() => onRoundClick(round)}
                 >
-                  <h1 class="font-semibold text-3xl mb-6">
+                  <h1 class="font-semibold text-xl mb-4 sm:text-3xl sm:mb-6">
                     Round {i() + 1}: {round.name}
                   </h1>
                   <div class="flex items-center justify-between">
                     <div class="flex flex-col">
                       <For each={round.themes}>
                         {(theme) => {
-                          return <div class="font-medium text-2xl">{theme.name}</div>
+                          return <div class="font-medium text-lg sm:text-2xl">{theme.name}</div>
                         }}
                       </For>
                     </div>
-                    <div class="w-[1px] bg-primary h-20 mx-14" />
+                    <div class="w-[1px] bg-primary h-20 mx-4 sm:mx-14" />
                     <div class="flex flex-col justify-start w-[230px]">
                       <For each={props.game.users}>
                         {(user) => {
                           return (
                             <div class="flex items-end justify-between">
-                              <span class="text-2xl font-bold">{user.name}</span>
-                              <span class="text-sm text-gray-500 ml-2 mb-0.5">{user.roundScore[round.id]}</span>
+                              <span class="text-lg sm:text-2xl font-bold">{user.name}</span>
+                              <span class="text-xs sm:text-sm text-gray-500 ml-2 mb-0.5">
+                                {user.roundScore[round.id]}
+                              </span>
                             </div>
                           )
                         }}
@@ -120,17 +122,17 @@ export default function GameDashboard(props: GameDashboardProps) {
           </For>
         </div>
         <button
-          class="mx-auto w-[300px] p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
+          class="my-4 sm:my-0 mx-auto w-full sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
           onclick={handleFinish}
         >
           Finish
         </button>
-        <div class="flex justify-between p-2 gap-12 ">
+        <div class="flex-col justify-between p-2 gap-12 flex-wrap sm:flex-nowrap sm:flex-row mt-4 sm:mt-0">
           <For each={props.game.users}>
             {(user) => {
               return (
-                <div class="flex flex-col items-center justify-between gap-4">
-                  <div class="text-3xl font-bold text-primary flex items-center gap-2">
+                <div class="flex flex-col items-center justify-between gap-2 sm:gap-4">
+                  <div class="text-lg sm:text-3xl font-bold text-primary flex items-center gap-4 sm:gap-2">
                     <span>{user.name}</span> {winningUser() === user.id && <TbConfetti class="text-orange-300" />}
                   </div>
                   <span

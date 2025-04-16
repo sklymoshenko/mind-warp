@@ -39,7 +39,7 @@ const Welcome = () => {
           </button>
         </div>
       </Show>
-      <div class="relative z-10 text-center">
+      <div class="relative z-10 text-center ">
         <h1
           class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000"
           classList={{

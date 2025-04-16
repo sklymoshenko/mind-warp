@@ -5,6 +5,7 @@ import { BsController, BsStars } from 'solid-icons/bs'
 import { FaSolidUserAstronaut } from 'solid-icons/fa'
 import { RoundRank, Round, User, Game, RoundTime, Question, Theme } from '../types'
 import { BiSolidHide } from 'solid-icons/bi'
+import { v4 as uuidv4 } from 'uuid'
 
 const defaultRanks: RoundRank[] = [
   { id: 100, label: '100', isSelected: true },
@@ -32,6 +33,13 @@ type Props = {
   game?: Game
   onGameUpdate: (game: Game) => void
 }
+
+const createUUID = () => {
+  return uuidv4()
+}
+
+const cardClasses = 'w-full bg-primary rounded-lg p-2 md:p-6'
+const buttonClasses = 'text-sm sm:text-lg'
 
 const CreateGame = (props: Props) => {
   const navigate = useNavigate()
@@ -67,11 +75,12 @@ const CreateGame = (props: Props) => {
     if (step() === 2 && gameUsers().length < 2) return
     if (step() === 3 && rounds().length === 0) return
     setStep(step() + 1)
+    scrollToTop()
   }
 
   const onFirstStepFinish = () => {
     nextStep()
-    setGameUsers([{ name: creatorName(), id: crypto.randomUUID(), isAdmin: true, roundScore: {} }])
+    setGameUsers([{ name: creatorName(), id: createUUID(), isAdmin: true, roundScore: {} }])
   }
 
   const onSecondStepFinish = () => {
@@ -80,11 +89,12 @@ const CreateGame = (props: Props) => {
 
   const prevStep = () => {
     setStep(step() - 1)
+    scrollToTop()
   }
 
   const addUser = () => {
     if (currentUserName().trim() === '') return
-    setGameUsers([...gameUsers(), { id: crypto.randomUUID(), name: currentUserName(), isAdmin: false, roundScore: {} }])
+    setGameUsers([...gameUsers(), { id: createUUID(), name: currentUserName(), isAdmin: false, roundScore: {} }])
     setCurrentUserName('')
   }
 
@@ -105,10 +115,10 @@ const CreateGame = (props: Props) => {
     const ranks = roundRanks().filter((r) => r.isSelected)
 
     const roundThemes = themes().map((theme) => ({
-      id: crypto.randomUUID(),
+      id: createUUID(),
       name: theme,
       questions: ranks.map((r) => ({
-        id: crypto.randomUUID(),
+        id: createUUID(),
         text: '',
         answer: '',
         points: r.id,
@@ -119,7 +129,7 @@ const CreateGame = (props: Props) => {
 
     const newRound: Round = {
       name: currentRoundName(),
-      id: crypto.randomUUID(),
+      id: createUUID(),
       ranks: ranks,
       themes: roundThemes,
       time: roundTimes().find((t) => t.isSelected)!,
@@ -140,7 +150,7 @@ const CreateGame = (props: Props) => {
 
     setStep(0)
     const game: Game = {
-      id: crypto.randomUUID(),
+      id: createUUID(),
       users: gameUsers(),
       rounds: rounds(),
       currentRound: '',
@@ -153,6 +163,10 @@ const CreateGame = (props: Props) => {
     props.onGameUpdate(game)
   }
 
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const onHideTheme = (themeId: string) => {
     setHiddenThemes((prev) => ({ ...prev, [themeId]: !prev[themeId] }))
   }
@@ -163,7 +177,7 @@ const CreateGame = (props: Props) => {
         ...theme,
         questions: theme.questions.map((q, i) => ({
           ...q,
-          text: questions()[theme.id][i]?.text || '',
+          text: questions()[theme.id]?.[i]?.text || '',
         })),
       }))
 
@@ -187,7 +201,7 @@ const CreateGame = (props: Props) => {
 
       <Show when={gameId()}>
         <div class="relative z-10 text-center">
-          <h1 class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000 w-1/2 mx-auto">
+          <h1 class="text-2xl sm:text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000 w-1/2 mx-auto">
             <span class="bg-gradient-to-r from-accent to-pink-500 bg-clip-text text-transparent">Oh</span>, Let’s Launch
             This Trivia Soirée—Because Clearly, You’re All&nbsp;
             <span class="bg-gradient-to-br from-blue-600 to-cyan-400 bg-clip-text text-transparent">Geniuses</span>
@@ -204,12 +218,12 @@ const CreateGame = (props: Props) => {
       </Show>
 
       {/* Flipping Card for Form Steps */}
-      <div class="relative w-full max-w-md">
+      <div class="relative w-full max-w-sm sm:max-w-md mt-12 sm:m-0">
         <div class="relative w-full overflow-y-auto max-h-[90vh]">
           {/* Step 1: Enter Your Name */}
           <Show when={step() === 1}>
-            <div class="w-full bg-primary rounded-lg p-6">
-              <div class="flex justify-between mb-4">
+            <div class={cardClasses}>
+              <div class="flex justify-between mb-2 sm:mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 1</p>
                 <p class="text-void text-sm uppercase font-bold">Admin Name</p>
               </div>
@@ -226,7 +240,7 @@ const CreateGame = (props: Props) => {
               <button
                 disabled={emptyCreatorName()}
                 onClick={onFirstStepFinish}
-                class="mt-6 w-full bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                class={`${buttonClasses} mt-6 w-full bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300`}
                 classList={{ 'opacity-50 hover:cursor-not-allowed!': emptyCreatorName() }}
               >
                 {emptyCreatorName() ? 'We need to know name of Creator' : 'Next'}
@@ -237,7 +251,7 @@ const CreateGame = (props: Props) => {
 
           {/* Step 2: Add users */}
           <Show when={step() === 2}>
-            <div class="w-full bg-primary rounded-lg p-6">
+            <div class={cardClasses}>
               <div class="flex justify-between mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 2</p>
                 <p class="text-void text-sm uppercase font-bold">Add Players</p>
@@ -245,7 +259,7 @@ const CreateGame = (props: Props) => {
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
                 Game Members
               </h2>
-              <div class="mb-4">
+              <div class="mb-2 sm:mb-4">
                 <div class="mt-4 flex flex-col justify-between">
                   <input
                     type="text"
@@ -288,7 +302,7 @@ const CreateGame = (props: Props) => {
                   </For>
                 </div>
               </div>
-              <div class="flex justify-between mt-6">
+              <div class="flex justify-between mt-2 sm:mt-6">
                 <button
                   onClick={prevStep}
                   class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
@@ -308,7 +322,7 @@ const CreateGame = (props: Props) => {
             </div>
           </Show>
           <Show when={step() === 3}>
-            <div class="w-full bg-primary rounded-lg p-6">
+            <div class={cardClasses + 'overflow-auto'}>
               <div class="flex justify-between mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 3</p>
                 <p class="text-void text-sm uppercase font-bold">Add Rounds</p>
@@ -325,11 +339,11 @@ const CreateGame = (props: Props) => {
                   class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
                 />
                 <p class="text-void text-sm uppercase font-bold mt-2">Round points</p>
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap sm:flex-nowrap">
                   <For each={roundRanks()}>
                     {(rank) => (
                       <div
-                        class="flex items-center mt-1 p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
+                        class="text-sm sm:text-lg flex items-center mt-1 p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
                         classList={{ 'bg-accent! text-primary': rank.isSelected }}
                         title={rank.isSelected ? 'Remove Rank' : 'Add Rank'}
                         onClick={() => onRankToggle(rank)}
@@ -340,11 +354,11 @@ const CreateGame = (props: Props) => {
                   </For>
                 </div>
                 <p class="text-void text-sm uppercase font-bold mt-2">Question Time Limit</p>
-                <div class="flex gap-2">
+                <div class="flex gap-2 flex-wrap sm:flex-nowrap">
                   <For each={roundTimes()}>
                     {(time) => (
                       <div
-                        class="flex items-center mt-1 p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
+                        class="text-sm sm:text-lg  flex items-center mt-1 py-1 px-2 sm:p-1 bg-void text-primary rounded-md hover:bg-accent transition-all duration-300 cursor-pointer font-bold"
                         classList={{ 'bg-accent! text-primary': time.isSelected }}
                         title={time.isSelected ? 'Choose Time' : 'Remove Time'}
                         onClick={() => setRoundTimes(roundTimes().map((t) => ({ ...t, isSelected: t.id === time.id })))}
@@ -441,13 +455,13 @@ const CreateGame = (props: Props) => {
               <div class="flex justify-between mt-6">
                 <button
                   onClick={prevStep}
-                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                  class="text-sm sm:text-lg bg-void text-primary font-bold uppercase py-2 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                 >
                   Back
                 </button>
                 <button
                   onClick={nextStep}
-                  class="bg-accent text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent/50 hover:text-white hover:cursor-pointer transition-all duration-300"
+                  class="text-sm sm:text-lg bg-accent text-primary font-bold uppercase py-2 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-accent/50 hover:text-white hover:cursor-pointer transition-all duration-300"
                   classList={{ 'opacity-50 cursor-not-allowed!': rounds().length === 0 }}
                   disabled={rounds().length === 0}
                 >
@@ -455,7 +469,7 @@ const CreateGame = (props: Props) => {
                 </button>
                 <button
                   onClick={onFinish}
-                  class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
+                  class="text-sm sm:text-lg bg-void text-primary font-bold uppercase py-2 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                   classList={{ 'opacity-50 cursor-not-allowed!': rounds().length === 0 }}
                   disabled={rounds().length === 0}
                 >
@@ -466,7 +480,7 @@ const CreateGame = (props: Props) => {
             </div>
           </Show>
           <Show when={step() === 4}>
-            <div class="w-full bg-primary rounded-lg p-6">
+            <div class={cardClasses}>
               <div class="flex justify-between mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 4</p>
                 <p class="text-void text-sm uppercase font-bold">Add Questions</p>

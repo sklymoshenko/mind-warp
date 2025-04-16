@@ -10,7 +10,9 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.0.14",
-    "solid-js": "^1.9.5"
+    "@types/uuid": "^10.0.0",
+    "solid-js": "^1.9.5",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@solidjs/router": "^0.15.3",
