@@ -3,7 +3,7 @@
 BINARY=mindwarp
 BIN_DIR=bin
 
-.PHONY: all build-dev build-prod run-dev run-prod test clean
+.PHONY: all build-dev build-prod run-dev run-prod test clean mdown mup test-dev test-prod
 
 all: build-dev
 
@@ -58,3 +58,21 @@ test:
 
 clean:
 	rm -f $(BIN_DIR)/$(BINARY)
+
+
+#--------------------------------
+# Migration targets
+#--------------------------------
+
+mdown:
+	@echo "Loading environment variables from .env.development"
+	@bash -c 'set -a; . .env.development; set +a; \
+	echo "Migrating down..."; \
+	goose -dir migrations postgres "postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@$$POSTGRES_HOST:$$POSTGRES_PORT/$$POSTGRES_DB?sslmode=$$POSTGRES_SSLMODE" down'
+
+mup:
+	@echo "Loading environment variables from .env.development"
+	@bash -c 'set -a; . .env.development; set +a; \
+	echo "Migrating up..."; \
+	goose -dir migrations postgres "postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@$$POSTGRES_HOST:$$POSTGRES_PORT/$$POSTGRES_DB?sslmode=$$POSTGRES_SSLMODE" up'
+
