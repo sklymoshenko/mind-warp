@@ -147,10 +147,10 @@ const GameRound = (props: Props) => {
           Back
         </A>
       </div>
-      <div class="flex flex-col justify-between h-full mt-10 sm:mt-0 sm:h-[60%] xl:h-[90%] 2xl:h-[70%] z-50 overflow-auto">
+      <div class="flex flex-col justify-between h-full mt-10 sm:mt-0 sm:h-[60%] xl:h-[90%] 2xl:h-[70%] z-50 overflow-y-auto overflow-x-hidden">
         <div class="flex flex-col items-center text-primary mx-auto">
           <h1 class="text-3xl sm:text-5xl font-bold mb-20">{props.round.name} </h1>
-          <div class="flex justify-center gap-4 sm:flex-nowrap flex-wrap max-w-[99%] :max-w-none">
+          <div class="flex justify-center gap-4 sm:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none">
             <For each={props.round.themes}>
               {(theme) => {
                 return (

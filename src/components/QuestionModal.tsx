@@ -32,7 +32,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   const [extraAnswerers, setExtraAnswerers] = createSignal<ExtraAnswerers>({})
 
   const answerQueue = () => {
-    return props.users.filter((user) => user.id !== props.currentUser)
+    return [...props.users, ...props.users, ...props.users].filter((user) => user.id !== props.currentUser)
   }
 
   const cleanup = () => {
@@ -233,12 +233,12 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
             </div>
             <p class="text-lg font-bold text-primary">Answer Queue</p>
-            <div class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[90%] sm:min-w-[500px] rounded-md border border-primary/50 ">
+            <div class="flex justify-between gap-6 w-full flex-wrap p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[90%] sm:min-w-[500px] rounded-md border border-primary/50 ">
               <For each={answerQueue()}>
                 {(user) => {
                   const data = createMemo(() => extraAnswerers()?.[user.id])
                   return (
-                    <div class="flex items-center gap-4 flex-wrap hover:cursor-pointer transition-all duration-300 ease-in-out">
+                    <div class="flex flex-col items-center gap-2 flex-wrap hover:cursor-pointer transition-all duration-300 ease-in-out">
                       <div
                         class="text-sm sm:text-xl font-bold text-primary flex items-center justify-around gap-2 hover:text-primary/50 transition-all duration-300 ease-in-out"
                         onclick={(e) => {
@@ -265,7 +265,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
                         </span>
                       </div>
                       <div
-                        class="items-center gap-2 opacity-0"
+                        class="items-center gap-2 opacity-0 mr-2"
                         classList={{
                           hidden: !data(),
                           'animate-slide-down flex visible!': !!data(),
@@ -290,6 +290,19 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
                   )
                 }}
               </For>
+            </div>
+            <div class="flex flex-col justify-center items-center gap-1 mt-2">
+              <span class="text-sm font-bold text-white/50">Tip:</span>
+              <p class="text-sm font-bold text-white/50">
+                If only current user wants to answer the question, please deselect users from the queue by clicking on
+                them.
+              </p>
+              <p class="text-sm font-bold text-white/50">
+                When other users want to answer, select them in order and then choose if they answered correctly.{' '}
+              </p>
+              <p class="text-sm font-bold text-white/50">
+                When everyone has answered click outiside of a window to submit your answer.
+              </p>
             </div>
           </div>
         </Show>
