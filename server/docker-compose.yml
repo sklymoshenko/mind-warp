@@ -1,0 +1,21 @@
+services:
+  postgres_prod:
+    image: postgres:17
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+
+  adminer_prod:
+    image: adminer
+    restart: always
+    ports:
+      - '8081:8080'
+
+volumes:
+  postgres_prod_data:
