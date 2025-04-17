@@ -171,7 +171,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
         }}
       >
         <Show when={!overlayText()}>
-          <div class="flex flex-col min-w-[500px] items-center">
+          <div class="flex flex-col min-w-[90%] sm:min-w-[500px] items-center">
             <div
               data-open={props.isOpen ? '' : null}
               class="relative z-50 m-4 flex w-full max-w-lg scale-95 flex-col overflow-hidden rounded-md border border-primary/50 bg-void p-6 shadow-[0_0_25px_rgba(226,254,116,0.2)] transition-all duration-300 ease-out opacity-0 data-[open]:scale-100 data-[open]:opacity-100"
@@ -181,15 +181,15 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               }}
               onClick={stopPropagation}
             >
-              <div class="mb-5 flex items-start justify-between gap-4">
+              <div class="mb-5 flex items-center sm:items-start justify-between gap-4">
                 {' '}
-                <h2 class="flex items-center text-xl font-bold text-primary">
+                <h2 class="flex items-center text-sm sm:text-xl font-bold text-primary">
                   <TbTag class="mr-2 h-5 w-5 flex-shrink-0" />
                   <span>{props.themeTitle}</span>
                 </h2>
                 <div class="flex gap-4 items-center">
                   <span
-                    class="text-white/50"
+                    class="text-white/50 text-sm sm:text-normal"
                     classList={{
                       'text-green-600/50!': questionTime() >= 100,
                       'text-yellow-600/50!': questionTime() < 100 && questionTime() >= 40,
@@ -201,10 +201,10 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
                   </span>
 
                   <span
-                    class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-3 py-0.5 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200"
+                    class="mt-1 inline-flex flex-shrink-0 items-center rounded-full bg-[var(--color-primary)] px-2 py-0.5 sm:px-3 sm:py-0.5 text-xs sm:text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200"
                     classList={{ 'bg-red-600/50 text-white': isTimeOver() || isCorrect() === false }}
                   >
-                    <TbAward class="mr-1 h-4 w-4" />
+                    <TbAward class="mr-1 h-3 w-3 sm:h-4 sm:w-4" />
                     {isTimeOver() || isCorrect() === false ? `- ${props.points}` : props.points}pts
                   </span>
                 </div>
@@ -233,14 +233,14 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
             </div>
             <p class="text-lg font-bold text-primary">Answer Queue</p>
-            <div class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[500px] rounded-md border border-primary/50 ">
+            <div class="flex justify-between w-full p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[90%] sm:min-w-[500px] rounded-md border border-primary/50 ">
               <For each={answerQueue()}>
                 {(user) => {
                   const data = createMemo(() => extraAnswerers()?.[user.id])
                   return (
                     <div class="flex items-center gap-4 flex-wrap hover:cursor-pointer transition-all duration-300 ease-in-out">
                       <div
-                        class="text-xl font-bold text-primary flex items-center justify-around gap-2 hover:text-primary/50 transition-all duration-300 ease-in-out"
+                        class="text-sm sm:text-xl font-bold text-primary flex items-center justify-around gap-2 hover:text-primary/50 transition-all duration-300 ease-in-out"
                         onclick={(e) => {
                           e.stopPropagation()
                           onExtraSelect(user)
@@ -296,7 +296,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
         <Show when={overlayText()}>
           <div class="absolute inset-0 flex items-center justify-center z-50">
             <div
-              class="bg-gradient-to-br from-blue-600 to-cyan-400 bg-clip-text text-transparent text-4xl font-bold p-2"
+              class="bg-gradient-to-br from-blue-600 to-cyan-400 bg-clip-text text-transparent text-4xl font-bold p-2 text-center"
               classList={{
                 'bg-gradient-to-br from-green-800 to-green-200': !!isCorrect(),
                 'bg-gradient-to-br from-red-800 to-red-200': !isCorrect(),

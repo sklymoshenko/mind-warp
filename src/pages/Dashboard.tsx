@@ -80,7 +80,7 @@ export default function GameDashboard(props: GameDashboardProps) {
           scores={scores}
         />
       </Show>
-      <div class="flex flex-col justify-between lg:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
+      <div class="flex flex-col justify-between h-[90%] sm:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
         <div class="mx-auto flex gap-12 sm:flex-nowrap flex-wrap max-w-full sm:max-w-none">
           <For each={props.game.rounds}>
             {(round, i) => {
@@ -127,7 +127,7 @@ export default function GameDashboard(props: GameDashboardProps) {
         >
           Finish
         </button>
-        <div class="flex-col justify-between p-2 gap-12 flex-wrap sm:flex-nowrap sm:flex-row mt-4 sm:mt-0">
+        <div class="flex flex-col sm:flex-row justify-between p-2 gap-12 flex-wrap sm:flex-nowrap mt-4 sm:mt-0">
           <For each={props.game.users}>
             {(user) => {
               return (

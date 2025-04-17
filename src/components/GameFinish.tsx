@@ -107,12 +107,12 @@ const GameFinish = (props: Props) => {
       <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={props.onClose}></div>
 
       {/* Content container */}
-      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/3 min-w-[400px] transform transition-all duration-300 h-fit">
+      <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/3 min-w-[300px] sm:min-w-[400px] transform transition-all duration-300 h-fit">
         <h1 class="bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/50 text-5xl min-h-[300px] text-center">
           {getRandomCongrats(winningUser().name)}
         </h1>
 
-        <div class="flex flex-col justify-between p-2 gap-12">
+        <div class="flex flex-col justify-between p-2 gap-4 sm:gap-12">
           <For each={sortedUsers()}>
             {(user, i) => {
               return (
