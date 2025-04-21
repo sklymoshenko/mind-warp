@@ -61,8 +61,8 @@ func init() {
 }
 
 // Info logs an unformatted info message
-func Info(msg string) {
-	log.Info().Msg(msg)
+func Info(msg string, v ...interface{}) {
+	log.Info().Msgf(msg, v...)
 }
 
 // Infof logs a formatted info message

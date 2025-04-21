@@ -3,8 +3,6 @@
 -- 0001_initial_schema.sql
 -- Comprehensive initial schema for Trivia Game and Templates
 
-BEGIN;
-
 -- Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -129,14 +127,10 @@ CREATE INDEX idx_answers_question ON answers(question_id);
 CREATE INDEX idx_games_name_fts ON games USING GIN (to_tsvector('simple', name));
 CREATE INDEX idx_templates_name_fts ON game_templates USING GIN (to_tsvector('simple', name));
 
-COMMIT;
-
 -- +goose StatementEnd
 
 -- +goose Down
 -- +goose StatementBegin
-
-BEGIN;
 
 -- Drop Full-text search indexes
 DROP INDEX IF EXISTS idx_templates_name_fts;
@@ -168,5 +162,4 @@ DROP TABLE IF EXISTS users;
 -- Drop extension
 DROP EXTENSION IF EXISTS "uuid-ossp";
 
-COMMIT;
 -- +goose StatementEnd

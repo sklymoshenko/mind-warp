@@ -1,27 +1,40 @@
 package api
 
 import (
+	"mindwarp/db"
+
 	"github.com/gin-gonic/gin"
 )
 
 type Server struct {
-	port   string
-	router *gin.Engine
+	port        string
+	router      *gin.Engine
+	Db          *db.DB
+	authService *AuthService
 }
 
 func NewServer() *Server {
 	return &Server{
-		port:   ":8080",
-		router: gin.Default(),
+		port:        ":8080",
+		router:      gin.Default(),
+		authService: NewAuthService(),
+		Db:          db.CreateDB(),
 	}
 }
 
 func (s *Server) Start() {
-	// Hello world route
-	s.router.GET("/hello", func(c *gin.Context) {
-		c.JSON(200, gin.H{"message": "Hello, World!"})
-	})
+	// Public routes (no auth required)
+	public := s.router.Group("/")
+	s.AddAuthRoutes(public) // Login/register endpoints
 
-	// Run server on port 8080
+	// Protected routes (require auth)
+	protected := s.router.Group("/")
+	protected.Use(s.AuthMiddleware())
+	s.AddUserRoutes(protected)
+
 	s.router.Run(s.port)
+}
+
+func (s *Server) AuthService() *AuthService {
+	return s.authService
 }

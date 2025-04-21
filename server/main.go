@@ -2,7 +2,6 @@ package main
 
 import (
 	"mindwarp/api"
-	"mindwarp/db"
 	"os"
 
 	"github.com/joho/godotenv"
@@ -17,9 +16,8 @@ func init() {
 }
 
 func main() {
-	db := db.CreateDB()
 	server := api.NewServer()
 	server.Start()
 
-	defer db.Close()
+	defer server.Db.Close()
 }
