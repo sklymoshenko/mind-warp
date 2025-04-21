@@ -13,7 +13,7 @@ func (db *DB) GetUserByEmail(email string) (*User, error) {
 
 func (db *DB) GetUserByID(id string) (*User, error) {
 	var user User
-	err := db.conn.QueryRow(context.Background(), "SELECT id, email FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email)
+	err := db.conn.QueryRow(context.Background(), "SELECT id, email, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email, &user.Name)
 	if err != nil {
 		return nil, err
 	}

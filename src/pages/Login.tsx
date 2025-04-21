@@ -3,21 +3,28 @@ import { useApi } from '../hooks/useApi'
 import { IoDiceSharp } from 'solid-icons/io'
 import { toast } from 'solid-toast'
 import ErrorToast from '../components/ErrorToast'
-
+import { useLocation, useNavigate } from '@solidjs/router'
+import { useAuth } from '../context/AuthContext'
+import { User } from '../types'
 const Login = () => {
   const [email, setEmail] = createSignal('')
   const [password, setPassword] = createSignal('')
   const [error, setError] = createSignal('')
   const { post, isLoading } = useApi('auth/login')
-
+  const navigate = useNavigate()
   const emptyFields = () => email() === '' || password() === ''
+  const { setUser } = useAuth()
+
+  const loc = useLocation()
+  const params = new URLSearchParams(loc.search)
+  const next = params.get('next') || '/dashboard'
 
   const handleLogin = async () => {
-    const { data, error } = await post({ email: email(), password: password() })
+    const { data, error } = await post<User>({ email: email(), password: password() })
     if (error) {
       setError(error)
       toast.custom((t) => <ErrorToast toast={t} error={error} title="Login failed" />, {
-        duration: 105000,
+        duration: 5000,
       })
     }
 
@@ -25,7 +32,8 @@ const Login = () => {
       setError('')
       setEmail('')
       setPassword('')
-      console.log(data)
+      setUser(data)
+      navigate(next, { replace: true })
     }
   }
 

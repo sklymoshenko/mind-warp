@@ -12,6 +12,9 @@ import GameHistory from './pages/GameHistory'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import { Toaster } from 'solid-toast'
+import Dashboard from './pages/Dahsboard'
+import AuthGuard from './components/AuthQuard'
+import { AuthProvider } from './context/AuthContext'
 
 const Main = () => {
   const storageGame = localStorage.getItem('currentGame')
@@ -98,39 +101,51 @@ const Main = () => {
   }
 
   return (
-    <BackgroundWrapper>
-      <Router>
-        <Route path="/" component={WelcomePage} />
-        <Route path="/create-game" component={(props) => <CreateGame onGameUpdate={handleGameUpdate} {...props} />} />
-        {game() && (
+    <AuthProvider>
+      <BackgroundWrapper>
+        <Router>
+          <Route path="/" component={WelcomePage} />
+          <Route path="/create-game" component={(props) => <CreateGame onGameUpdate={handleGameUpdate} {...props} />} />
+          {game() && (
+            <Route
+              path="/game/:gameId"
+              component={(props) => <GameDashboard onUpdateGame={setGame} game={game()!} {...props} />}
+            />
+          )}
+          {currentRound() && (
+            <Route
+              path="/game/:gameid/round/:roundId"
+              component={(props) => (
+                <GameRound
+                  round={currentRound()!}
+                  users={game().users}
+                  currentQuestion={game().currentQuestion}
+                  onQuestionSelect={onQuestionSelect}
+                  onQuestionAnswered={onQuestionAnswered}
+                  updateForExtraAnswerer={onUpdateForExtraAnswerer}
+                  currentUser={game().currentUser}
+                  {...props}
+                />
+              )}
+            />
+          )}
+          <Route path={'games-history'} component={GameHistory} />
+          <Route path={'login'} component={Login} />
+          <Route path={'register'} component={Register} />
           <Route
-            path="/game/:gameId"
-            component={(props) => <GameDashboard onUpdateGame={setGame} game={game()!} {...props} />}
+            path={'dashboard'}
+            component={() => {
+              return (
+                <AuthGuard>
+                  <Dashboard />
+                </AuthGuard>
+              )
+            }}
           />
-        )}
-        {currentRound() && (
-          <Route
-            path="/game/:gameid/round/:roundId"
-            component={(props) => (
-              <GameRound
-                round={currentRound()!}
-                users={game().users}
-                currentQuestion={game().currentQuestion}
-                onQuestionSelect={onQuestionSelect}
-                onQuestionAnswered={onQuestionAnswered}
-                updateForExtraAnswerer={onUpdateForExtraAnswerer}
-                currentUser={game().currentUser}
-                {...props}
-              />
-            )}
-          />
-        )}
-        <Route path={'games-history'} component={GameHistory} />
-        <Route path={'login'} component={Login} />
-        <Route path={'register'} component={Register} />
-      </Router>
-      <Toaster position="top-right" />
-    </BackgroundWrapper>
+        </Router>
+        <Toaster position="top-right" />
+      </BackgroundWrapper>
+    </AuthProvider>
   )
 }
 

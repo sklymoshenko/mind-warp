@@ -41,4 +41,5 @@ func (s *Server) GetAllUsers(c *gin.Context) {
 
 func (s *Server) AddUserRoutes(group *gin.RouterGroup) {
 	group.GET("/me", s.GetCurrentUser)
+	group.GET("/users", s.GetAllUsers)
 }

@@ -3,6 +3,7 @@ import { useApi } from '../hooks/useApi'
 import { IoDiceSharp } from 'solid-icons/io'
 import { toast } from 'solid-toast'
 import ErrorToast from '../components/ErrorToast'
+import { useLocation, useNavigate } from '@solidjs/router'
 
 const Register = () => {
   const [username, setUsername] = createSignal('')
@@ -10,7 +11,11 @@ const Register = () => {
   const [password, setPassword] = createSignal('')
   const [error, setError] = createSignal('asd')
   const { post, isLoading } = useApi('auth/register')
+  const navigate = useNavigate()
 
+  const loc = useLocation()
+  const params = new URLSearchParams(loc.search)
+  const next = params.get('next') || '/dashboard'
   const emptyFields = () => username() === '' || email() === '' || password() === ''
 
   const handleRegister = async () => {
@@ -18,7 +23,7 @@ const Register = () => {
     if (error) {
       setError(error)
       toast.custom((t) => <ErrorToast toast={t} error={error} title="Registration failed" />, {
-        duration: 105000,
+        duration: 5000,
       })
     }
 
@@ -27,7 +32,7 @@ const Register = () => {
       setUsername('')
       setEmail('')
       setPassword('')
-      console.log(data)
+      navigate(next, { replace: true })
     }
   }
 
