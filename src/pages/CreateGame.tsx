@@ -235,7 +235,7 @@ const CreateGame = (props: Props) => {
                 value={creatorName()}
                 onInput={(e) => setCreatorName(e.currentTarget.value)}
                 placeholder="The Trivia Master"
-                class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent "
+                class="w-full input-colors"
               />
               <button
                 disabled={emptyCreatorName()}
@@ -266,7 +266,7 @@ const CreateGame = (props: Props) => {
                     value={currentUserName()}
                     onInput={(e) => setCurrentUserName(e.currentTarget.value)} // Fixed typo
                     placeholder="Add Player"
-                    class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                    class="w-full input-colors"
                   />
                   <button
                     onClick={addUser}
@@ -336,7 +336,7 @@ const CreateGame = (props: Props) => {
                   value={currentRoundName()}
                   onInput={(e) => setCurrentRoundName(e.currentTarget.value)}
                   placeholder="Round Name (e.g., Pop Culture)"
-                  class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent"
+                  class="w-full input-colors"
                 />
                 <p class="text-void text-sm uppercase font-bold mt-2">Round points</p>
                 <div class="flex gap-2 flex-wrap sm:flex-nowrap">
@@ -382,7 +382,7 @@ const CreateGame = (props: Props) => {
                               return [...prev]
                             })
                           }
-                          class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-300 animate-slide-in"
+                          class="w-full input-colors animate-slide-in"
                         />
                       )
                     }}
@@ -533,7 +533,7 @@ const CreateGame = (props: Props) => {
                                         })
                                       }}
                                       placeholder={`${theme.name} question for ${rank.id} points`}
-                                      class="w-full input-colors border-2 border-void rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-accent transition-all duration-300"
+                                      class="w-full input-colors"
                                       classList={{
                                         'opacity-20 blur-[4px] pointer-events-none': hiddenThemes()[theme.id],
                                       }}

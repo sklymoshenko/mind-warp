@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/argon2id"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type loginRequest struct {
@@ -22,17 +23,47 @@ type registerRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
+type FieldError struct {
+	Field string `json:"field"`
+	Tag   string `json:"tag"`
+	Param string `json:"param,omitempty"`
+}
+
+type ValidationErrorResponse struct {
+	ValidationErrors []FieldError `json:"validationErrors"`
+}
+
+func validateRequest(c *gin.Context, err error) (ValidationErrorResponse, error) {
+	// collect all validator errors
+	verrs, ok := err.(validator.ValidationErrors)
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return ValidationErrorResponse{}, err
+	}
+
+	out := ValidationErrorResponse{}
+	for _, fe := range verrs {
+		out.ValidationErrors = append(out.ValidationErrors, FieldError{
+			Field: fe.Field(), // e.g. “Email”
+			Tag:   fe.Tag(),   // e.g. “email” or “min”
+			Param: fe.Param(), // e.g. “8” for min=8
+		})
+	}
+
+	return out, nil
+}
+
 func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
 	user, err := s.Db.GetUserByEmail(req.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Error while getting user: " + err.Error()})
 		return
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(req.Password, user.Password)
 
 	if err != nil || !match {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid login or password: " + err.Error()})
 		return
 	}
 
@@ -92,7 +123,13 @@ func (s *Server) Login(c *gin.Context) {
 func (s *Server) Register(c *gin.Context) {
 	var req registerRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		out, err := validateRequest(c, err)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to validate request" + err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, out)
 		return
 	}
 

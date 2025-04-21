@@ -9,6 +9,9 @@ import GameDashboard from './pages/Dashboard'
 import mockGame from './data/mockGame'
 import GameRound from './pages/GameRound'
 import GameHistory from './pages/GameHistory'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import { Toaster } from 'solid-toast'
 
 const Main = () => {
   const storageGame = localStorage.getItem('currentGame')
@@ -123,7 +126,10 @@ const Main = () => {
           />
         )}
         <Route path={'games-history'} component={GameHistory} />
+        <Route path={'login'} component={Login} />
+        <Route path={'register'} component={Register} />
       </Router>
+      <Toaster position="top-right" />
     </BackgroundWrapper>
   )
 }

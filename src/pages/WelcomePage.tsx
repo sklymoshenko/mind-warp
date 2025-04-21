@@ -68,6 +68,20 @@ const Welcome = () => {
             </button>
           </Show>
         </div>
+        <div class="flex flex-col gap-4 sm:mt-32">
+          <button
+            class="text-primary text-lg sm:text-xl font-bold uppercase hover:text-primary/50 transition-all duration-300 hover:cursor-pointer"
+            onClick={() => navigate('/login')}
+          >
+            Login
+          </button>
+          <button
+            class="text-accent text-lg sm:text-xl font-bold uppercase hover:text-accent/50 transition-all duration-300 hover:cursor-pointer"
+            onClick={() => navigate('/register')}
+          >
+            Register
+          </button>
+        </div>
       </div>
     </>
   )
