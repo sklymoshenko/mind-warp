@@ -1,0 +1,107 @@
+[
+  {
+    "name": "Admin",
+    "email": "admin@example.com",
+    "password": "adminpassword"
+  },
+  {
+    "name": "Mario",
+    "email": "user1@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Zelda",
+    "email": "user2@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Master Chief",
+    "email": "user3@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Kratos",
+    "email": "user4@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Lara Croft",
+    "email": "user5@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Solid Snake",
+    "email": "user6@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Cloud",
+    "email": "user7@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Geralt",
+    "email": "user8@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Ezio",
+    "email": "user9@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Commander Shepard",
+    "email": "user10@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Doomguy",
+    "email": "user11@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Pacman",
+    "email": "user12@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Sonic",
+    "email": "user13@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Link",
+    "email": "user14@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Samus Aran",
+    "email": "user15@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Nathan Drake",
+    "email": "user16@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Joel",
+    "email": "user17@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Ellie",
+    "email": "user18@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Arthur Morgan",
+    "email": "user19@example.com",
+    "password": "password123"
+  },
+  {
+    "name": "Agent 47",
+    "email": "user20@example.com",
+    "password": "password123"
+  }
+]

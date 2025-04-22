@@ -139,7 +139,7 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	user := &db.User{
+	user := db.User{
 		Name:     req.Username,
 		Email:    req.Email,
 		Password: hashedPassword,
