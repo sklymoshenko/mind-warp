@@ -12,9 +12,10 @@ import GameHistory from './pages/GameHistory'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import { Toaster } from 'solid-toast'
-import Dashboard from './pages/Dahsboard'
 import AuthGuard from './components/AuthQuard'
 import { AuthProvider } from './context/AuthContext'
+import Overview from './pages/Overview'
+import MyGames from './pages/MyGames'
 
 const Main = () => {
   const storageGame = localStorage.getItem('currentGame')
@@ -137,12 +138,23 @@ const Main = () => {
             component={() => {
               return (
                 <AuthGuard>
-                  <Dashboard />
+                  <Overview />
+                </AuthGuard>
+              )
+            }}
+          />
+          <Route
+            path={'games/me'}
+            component={() => {
+              return (
+                <AuthGuard>
+                  <MyGames />
                 </AuthGuard>
               )
             }}
           />
         </Router>
+
         <Toaster position="top-right" />
       </BackgroundWrapper>
     </AuthProvider>

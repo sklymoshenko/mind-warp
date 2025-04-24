@@ -42,6 +42,8 @@ export type RoundTime = {
 
 export type Game = {
   id: string
+  name: string
+  description: string
   users: User[]
   rounds: Round[]
   currentRound: Round['id']

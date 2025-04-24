@@ -7,8 +7,8 @@ import { useLocation, useNavigate } from '@solidjs/router'
 import { useAuth } from '../context/AuthContext'
 import { User } from '../types'
 const Login = () => {
-  const [email, setEmail] = createSignal('')
-  const [password, setPassword] = createSignal('')
+  const [email, setEmail] = createSignal('admin@example.com')
+  const [password, setPassword] = createSignal('adminpassword')
   const [error, setError] = createSignal('')
   const { post, isLoading } = useApi('auth/login')
   const navigate = useNavigate()

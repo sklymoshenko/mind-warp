@@ -32,6 +32,17 @@ dev-up:
 # Stop development environment
 dev-down:
 	docker compose -f docker-compose.dev.yml --env-file .env.development down
+	make kill-port-5432
+# Kill processes listening on port 5432 (useful if docker-compose down fails to release the port)
+kill-port-5432:
+	@echo "Attempting to kill processes listening on port 5432..."
+	@PIDS=$$(lsof -ti :5432); \
+	if [ -n "$$PIDS" ]; then \
+		echo "Found PIDs on port 5432: $$PIDS. Terminating..."; \
+		kill -9 $$PIDS || echo "Could not kill all processes, or no processes were found."; \
+	else \
+		echo "No processes found listening on port 5432."; \
+	fi
 
 
 # Start production environment (uses .env)

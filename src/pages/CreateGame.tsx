@@ -32,6 +32,7 @@ const defaultTimes: RoundTime[] = [
 type Props = {
   game?: Game
   onGameUpdate: (game: Game) => void
+  isTemplate?: boolean
 }
 
 const createUUID = () => {
@@ -45,7 +46,8 @@ const CreateGame = (props: Props) => {
   const navigate = useNavigate()
   const [gameId, setGameId] = createSignal<Game['id']>('')
   const [step, setStep] = createSignal(1)
-  const [creatorName, setCreatorName] = createSignal(props.game?.users[0].name || '')
+  const [gameName, setGameName] = createSignal(props.game?.name || '')
+  const [gameDescription, setGameDescription] = createSignal(props.game?.description || '')
   const [rounds, setRounds] = createSignal<Round[]>(props.game?.rounds || [])
   const [currentRoundName, setCurrentRoundName] = createSignal(props.game?.rounds[0].name || '')
   const [currentUserName, setCurrentUserName] = createSignal(props.game?.users[1].name || '')
@@ -56,7 +58,7 @@ const CreateGame = (props: Props) => {
   const [questions, setQuestions] = createSignal<Record<Theme['id'], Question[]>>({})
   const [hiddenThemes, setHiddenThemes] = createSignal<Record<string, boolean>>({})
 
-  const emptyCreatorName = createMemo(() => creatorName().trim() === '')
+  const emptyGameName = createMemo(() => gameName().trim() === '')
 
   const emptyRoundName = createMemo(() => currentRoundName().trim() === '')
   const emptyCurrentUserName = createMemo(() => currentUserName().trim() === '')
@@ -68,10 +70,9 @@ const CreateGame = (props: Props) => {
   const sameUser = createMemo(() =>
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
   )
-  const userAsCreator = createMemo(() => creatorName().toLowerCase() === currentUserName().toLowerCase())
 
   const nextStep = () => {
-    if (step() === 1 && emptyCreatorName()) return
+    if (step() === 1 && emptyGameName()) return
     if (step() === 2 && gameUsers().length < 2) return
     if (step() === 3 && rounds().length === 0) return
     setStep(step() + 1)
@@ -80,7 +81,7 @@ const CreateGame = (props: Props) => {
 
   const onFirstStepFinish = () => {
     nextStep()
-    setGameUsers([{ name: creatorName(), id: createUUID(), isAdmin: true, roundScore: {} }])
+    setGameName(gameName())
   }
 
   const onSecondStepFinish = () => {
@@ -153,6 +154,8 @@ const CreateGame = (props: Props) => {
       id: createUUID(),
       users: gameUsers(),
       rounds: rounds(),
+      name: gameName(),
+      description: gameDescription() ?? 'Pretty cool game: ' + gameName(),
       currentRound: '',
       currentQuestion: '',
       currentUser: gameUsers()[0].id,
@@ -190,14 +193,16 @@ const CreateGame = (props: Props) => {
 
   return (
     <>
-      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
-        <A
-          href="/"
-          class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300"
-        >
-          Back
-        </A>
-      </div>
+      <Show when={!props.isTemplate}>
+        <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
+          <A
+            href="/"
+            class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300"
+          >
+            Back
+          </A>
+        </div>
+      </Show>
 
       <Show when={gameId()}>
         <div class="relative z-10 text-center">
@@ -225,25 +230,31 @@ const CreateGame = (props: Props) => {
             <div class={cardClasses}>
               <div class="flex justify-between mb-2 sm:mb-4">
                 <p class="text-void text-sm uppercase font-bold">Step 1</p>
-                <p class="text-void text-sm uppercase font-bold">Admin Name</p>
+                <p class="text-void text-sm uppercase font-bold">Game Name</p>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
-                Enter Game Admin Name
+                Enter Game Name
               </h2>
               <input
                 type="text"
-                value={creatorName()}
-                onInput={(e) => setCreatorName(e.currentTarget.value)}
+                value={gameName()}
+                onInput={(e) => setGameName(e.currentTarget.value)}
                 placeholder="The Trivia Master"
                 class="w-full input-colors"
               />
+              <textarea
+                value={gameDescription()}
+                onInput={(e) => setGameDescription(e.currentTarget.value)}
+                placeholder="Optional: Describe the glorious battle of wits to come..."
+                class="w-full input-colors mt-4"
+              />
               <button
-                disabled={emptyCreatorName()}
+                disabled={emptyGameName()}
                 onClick={onFirstStepFinish}
                 class={`${buttonClasses} mt-6 w-full bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300`}
-                classList={{ 'opacity-50 hover:cursor-not-allowed!': emptyCreatorName() }}
+                classList={{ 'opacity-50 hover:cursor-not-allowed!': emptyGameName() }}
               >
-                {emptyCreatorName() ? 'We need to know name of Creator' : 'Next'}
+                {emptyGameName() ? 'We need to know name of Game' : 'Next'}
               </button>
               <p class="text-void text-xs uppercase text-center mt-4">Let’s get started!</p>
             </div>
@@ -272,13 +283,12 @@ const CreateGame = (props: Props) => {
                     onClick={addUser}
                     class="mt-2 w-full bg-void text-primary font-bold uppercase py-1 px-3 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                     classList={{
-                      ' opacity-50 hover:cursor-not-allowed!': emptyCurrentUserName() || sameUser() || userAsCreator(),
+                      ' opacity-50 hover:cursor-not-allowed!': emptyCurrentUserName() || sameUser(),
                     }}
-                    disabled={emptyCurrentUserName() || sameUser() || userAsCreator()}
+                    disabled={emptyCurrentUserName() || sameUser()}
                   >
-                    {sameUser() && 'Funny but we cant use same names'}
-                    {!sameUser() && userAsCreator() && 'Creator is already a user you dummy'}
-                    {!sameUser() && !userAsCreator() && 'Add Player'}
+                    {sameUser() && 'Funny, but we cant use same names'}
+                    {!sameUser() && 'Add Player'}
                   </button>
                 </div>
                 <div class="mt-4 max-h-32 overflow-y-auto flex flex-wrap gap-2">

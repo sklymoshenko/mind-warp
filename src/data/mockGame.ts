@@ -357,12 +357,15 @@ const mockRounds: Round[] = [
 // Complete mock game
 export const mockGame: Game = {
   id: 'game-123456',
+  name: 'Mock Game',
+  description: 'Mock Game Description',
   users: mockUsers,
   rounds: mockRounds,
   currentRound: 'round-1',
   currentQuestion: '',
   currentUser: 'user-1',
   isFinished: false,
+  finishDate: 1714003200000,
 }
 
 export default mockGame

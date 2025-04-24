@@ -37,14 +37,14 @@ func (db *DB) Initialize() {
 	}
 
 	db.conn = conn
-	// logger.Info("Connected to database %s", conn.Config().ConnString())
-	// tables, err := db.GetTables()
-	// if err != nil {
-	// 	logger.Errorf("Error getting tables: %v", err)
-	// 	return
-	// }
+	logger.Info("Connected to database %s", conn.Config().ConnString())
+	tables, err := db.GetTables()
+	if err != nil {
+		logger.Errorf("Error getting tables: %v", err)
+		return
+	}
 
-	// logger.Info("Tables in the database: %v", tables)
+	logger.Info("Tables in the database: %v", tables)
 }
 
 func (db *DB) Close() {
@@ -65,7 +65,6 @@ func (db *DB) GetTables() ([]string, error) {
 	}
 	defer rows.Close()
 
-	logger.Info("Tables in the database:")
 	for rows.Next() {
 		var tableName string
 		if err := rows.Scan(&tableName); err != nil {
