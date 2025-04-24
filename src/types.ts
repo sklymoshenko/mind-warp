@@ -52,4 +52,5 @@ export type Game = {
   isFinished: boolean
   winner?: User['id']
   finishDate?: number
+  isPublic?: boolean
 }

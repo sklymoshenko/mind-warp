@@ -5,11 +5,18 @@ import { DateTime } from 'luxon'
 import { A } from '@solidjs/router'
 import { widgetStyles } from '../utils'
 import CreateGame from './CreateGame'
+import { useApi } from '../hooks/useApi'
+import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 
 const GameCard = (props: Game) => {
   return (
     <div class="flex flex-col gap-2 bg-void/70 rounded-lg shadow-md">
-      <span class="text-xl font-bold">{props.name}</span>
+      <div class="flex gap-2 items-center justify-between">
+        <span class="text-xl font-bold">{props.name}</span>
+        <Show when={props.isPublic === false}>
+          <RiDevelopmentGitRepositoryPrivateFill class="text-primary w-6 h-6" title="Private Game" />
+        </Show>
+      </div>
       <span class="text-sm text-gray-400">{props.description}</span>
       <div class="flex flex-row gap-2 text-sm">
         <span class="text-gray-400">{props.users.length} players</span>
@@ -23,12 +30,19 @@ const GameCard = (props: Game) => {
 }
 
 const MyGames = () => {
+  const { post } = useApi('/games/create_template')
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
+  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
+
   const [games] = createResource(async () => {
     return [mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame]
   })
 
-  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
+  const createGameTemplate = async () => {
+    if (!newGameTemplate()) return
+
+    const response = await post(newGameTemplate()!)
+  }
 
   return (
     <>

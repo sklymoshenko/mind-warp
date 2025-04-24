@@ -57,6 +57,8 @@ const CreateGame = (props: Props) => {
   const [themes, setThemes] = createSignal<string[]>(props.game?.rounds[0].themes.map((theme) => theme.name) || [])
   const [questions, setQuestions] = createSignal<Record<Theme['id'], Question[]>>({})
   const [hiddenThemes, setHiddenThemes] = createSignal<Record<string, boolean>>({})
+  const [isPublic, setIsPublic] = createSignal(props.game?.isPublic || false)
+  const [themeCount, setThemeCount] = createSignal<number>(5)
 
   const emptyGameName = createMemo(() => gameName().trim() === '')
 
@@ -160,6 +162,7 @@ const CreateGame = (props: Props) => {
       currentQuestion: '',
       currentUser: gameUsers()[0].id,
       isFinished: false,
+      isPublic: isPublic(),
     }
 
     setGameId(game.id)
@@ -248,6 +251,20 @@ const CreateGame = (props: Props) => {
                 placeholder="Optional: Describe the glorious battle of wits to come..."
                 class="w-full input-colors mt-4"
               />
+              <Show when={props.isTemplate}>
+                <div class="flex items-center mt-4 gap-2">
+                  <input
+                    type="checkbox"
+                    id="is-public-checkbox" // Added id for label association
+                    class="w-5 h-5 rounded bg-void text-primary accent-primary focus:ring-primary focus:ring-2 cursor-pointer"
+                    checked={isPublic()}
+                    onChange={() => setIsPublic(!isPublic())}
+                  />
+                  <label for="is-public-checkbox" class="text-void text-lg cursor-pointer select-none">
+                    Make this game template public?
+                  </label>
+                </div>
+              </Show>
               <button
                 disabled={emptyGameName()}
                 onClick={onFirstStepFinish}
@@ -348,6 +365,29 @@ const CreateGame = (props: Props) => {
                   placeholder="Round Name (e.g., Pop Culture)"
                   class="w-full input-colors"
                 />
+                <div class="flex items-center gap-2 mt-2">
+                  <p class="text-void text-sm uppercase font-bold">Theme Count</p>
+                  <input
+                    type="number"
+                    value={themeCount()}
+                    onInput={(e) => {
+                      if (Number(e.currentTarget.value) < 20 && Number(e.currentTarget.value) > 1) {
+                        setThemeCount(Number(e.currentTarget.value))
+                      }
+                    }}
+                    onblur={(e) => {
+                      if (themeCount() > 20 || Number(e.currentTarget.value) > 20) {
+                        setThemeCount(20)
+                      }
+                      if (themeCount() < 1 || Number(e.currentTarget.value) < 1) {
+                        setThemeCount(1)
+                      }
+                    }}
+                    class="input-colors p-2! max-w-fit! h-8! "
+                    min={1}
+                    max={20}
+                  />
+                </div>
                 <p class="text-void text-sm uppercase font-bold mt-2">Round points</p>
                 <div class="flex gap-2 flex-wrap sm:flex-nowrap">
                   <For each={roundRanks()}>
@@ -379,7 +419,7 @@ const CreateGame = (props: Props) => {
                   </For>
                 </div>
                 <div class="mt-4 flex flex-col gap-2 ">
-                  <For each={roundRanks().filter((r) => r.isSelected)}>
+                  <For each={Array.from({ length: themeCount() })}>
                     {(_, i) => {
                       return (
                         <input
@@ -448,12 +488,8 @@ const CreateGame = (props: Props) => {
                         <For each={gameUsers()}>
                           {(user) => (
                             <div class="flex items-center gap-2 mt-1 p-1 bg-primary rounded-sm">
+                              <FaSolidUserAstronaut class="w-4 h-4 text-accent" />
                               <p class="text-void text-sm uppercase mt-0.5">{user.name}</p>
-                              {user.isAdmin ? (
-                                <BsStars class="w-4 h-4 text-yellow-600" />
-                              ) : (
-                                <FaSolidUserAstronaut class="w-4 h-4 text-accent" />
-                              )}
                             </div>
                           )}
                         </For>
