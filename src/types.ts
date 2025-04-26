@@ -53,4 +53,5 @@ export type Game = {
   winner?: User['id']
   finishDate?: number
   isPublic?: boolean
+  creatorId: User['id']
 }

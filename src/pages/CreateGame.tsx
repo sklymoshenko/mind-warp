@@ -1,7 +1,7 @@
 import { createMemo, createSignal, For, Show } from 'solid-js'
 import { A, useNavigate } from '@solidjs/router'
 import { IoCloseSharp, IoEyeSharp } from 'solid-icons/io'
-import { BsController, BsStars } from 'solid-icons/bs'
+import { BsController } from 'solid-icons/bs'
 import { FaSolidUserAstronaut } from 'solid-icons/fa'
 import { RoundRank, Round, User, Game, RoundTime, Question, Theme } from '../types'
 import { BiSolidHide } from 'solid-icons/bi'
@@ -33,9 +33,10 @@ type Props = {
   game?: Game
   onGameUpdate: (game: Game) => void
   isTemplate?: boolean
+  onFinish?: () => void
 }
 
-const createUUID = () => {
+export const createUUID = () => {
   return uuidv4()
 }
 
@@ -163,10 +164,12 @@ const CreateGame = (props: Props) => {
       currentUser: gameUsers()[0].id,
       isFinished: false,
       isPublic: isPublic(),
+      creatorId: props.game?.creatorId || gameUsers()[0].id,
     }
 
     setGameId(game.id)
     props.onGameUpdate(game)
+    props.onFinish?.()
   }
 
   const scrollToTop = () => {
@@ -313,17 +316,13 @@ const CreateGame = (props: Props) => {
                     {(user) => (
                       <div class="relative bg-void rounded-md px-2 py-1 mb-1 flex items-center gap-2 shadow-xs hover:shadow-sm transition-all duration-300 animate-slide-in w-fit">
                         <p class="text-primary text-sm font-medium uppercase tracking-wide flex-1">{user.name}</p>
-                        {!user.isAdmin ? (
-                          <button
-                            onClick={() => setGameUsers(gameUsers().filter((u) => u.id !== user.id))}
-                            class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
-                            aria-label={`Remove player ${user}`}
-                          >
-                            <IoCloseSharp class="w-4 h-4 text-primary" />
-                          </button>
-                        ) : (
-                          <BsStars class="w-4 h-4 text-yellow-600" title="Admin" />
-                        )}
+                        <button
+                          onClick={() => setGameUsers(gameUsers().filter((u) => u.id !== user.id))}
+                          class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
+                          aria-label={`Remove player ${user}`}
+                        >
+                          <IoCloseSharp class="w-4 h-4 text-primary" />
+                        </button>
                       </div>
                     )}
                   </For>

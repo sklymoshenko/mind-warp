@@ -7,6 +7,7 @@ import { widgetStyles } from '../utils'
 import CreateGame from './CreateGame'
 import { useApi } from '../hooks/useApi'
 import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
+import { useAuth } from '../context/AuthContext'
 
 const GameCard = (props: Game) => {
   return (
@@ -30,18 +31,39 @@ const GameCard = (props: Game) => {
 }
 
 const MyGames = () => {
-  const { post } = useApi('/games/create_template')
+  const { user } = useAuth()
+  const { post } = useApi('games/create_template')
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
-  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
+  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>(
+    localStorage.getItem('newGameTemplate') ? JSON.parse(localStorage.getItem('newGameTemplate')!) : undefined
+  )
 
-  const [games] = createResource(async () => {
+  const [games, { mutate: setGames }] = createResource(async () => {
     return [mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame]
   })
 
   const createGameTemplate = async () => {
     if (!newGameTemplate()) return
+    const template = { ...newGameTemplate()!, creatorId: user()?.id }
+    debugger
+    const response = await post<Game>(template)
+    console.log(response)
+    debugger
+    if (response.data) {
+      setGames((prev) => (prev ? [response.data!, ...prev] : [response.data!]))
+    }
+  }
 
-    const response = await post(newGameTemplate()!)
+  const onFinishCreateGameTemplate = async () => {
+    // setIsCreatingNewGameTemplate(false)
+    await createGameTemplate()
+    localStorage.setItem('newGameTemplate', JSON.stringify(newGameTemplate()))
+  }
+
+  const onToggleCreateNewGameTemplate = async () => {
+    // setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())
+
+    await createGameTemplate()
   }
 
   return (
@@ -68,7 +90,7 @@ const MyGames = () => {
               <span class="text-2xl font-bold ">Created</span>
               <button
                 class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md"
-                onClick={() => setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())}
+                onClick={onToggleCreateNewGameTemplate}
                 classList={{ 'bg-red-600/70 hover:bg-red-600/50': isCreatingNewGameTemplate() }}
               >
                 {isCreatingNewGameTemplate() ? 'Cancel Creating' : 'Create New Template'}
@@ -83,7 +105,12 @@ const MyGames = () => {
           class="w-full opacity-0 transition-all duration-300 flex items-center justify-center mt-12 mb-12"
           classList={{ 'animate-slide-down': isCreatingNewGameTemplate() }}
         >
-          <CreateGame game={newGameTemplate()} onGameUpdate={setNewGameTemplate} isTemplate={true} />
+          <CreateGame
+            game={newGameTemplate()}
+            onGameUpdate={setNewGameTemplate}
+            isTemplate={true}
+            onFinish={onFinishCreateGameTemplate}
+          />
         </div>
       </div>
     </>

@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"encoding/json"
 	"mindwarp/logger"
+	"mindwarp/types"
 
 	"github.com/alexedwards/argon2id"
 )
@@ -11,7 +12,7 @@ import (
 //go:embed users.json
 var usersBytes []byte
 
-var users []User
+var users []types.UserServer
 
 func init() {
 	err := json.Unmarshal(usersBytes, &users)
@@ -29,7 +30,7 @@ func (db *DB) fillUsers() {
 			continue
 		}
 
-		user := User{
+		user := types.UserServer{
 			Name:     user.Name,
 			Email:    user.Email,
 			Password: hashedPassword,

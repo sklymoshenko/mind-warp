@@ -1,8 +1,8 @@
 package api
 
 import (
-	"mindwarp/db"
 	"mindwarp/logger"
+	"mindwarp/types"
 	"net/http"
 	"os"
 	"time"
@@ -139,7 +139,7 @@ func (s *Server) Register(c *gin.Context) {
 		return
 	}
 
-	user := db.User{
+	user := types.UserServer{
 		Name:     req.Username,
 		Email:    req.Email,
 		Password: hashedPassword,

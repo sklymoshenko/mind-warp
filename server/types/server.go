@@ -1,8 +1,8 @@
-package db
+package types
 
 import "time"
 
-type User struct {
+type UserServer struct {
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
@@ -11,7 +11,7 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type GameTemplate struct {
+type GameTemplateServer struct {
 	ID          string    `json:"id"`
 	CreatorID   string    `json:"creator_id"`
 	Name        string    `json:"name"`
@@ -20,23 +20,35 @@ type GameTemplate struct {
 	CreatedAt   time.Time `json:"created_at"`
 }
 
-type TemplateRound struct {
+type TimeSettings struct {
+	ID         uint16 `json:"id"`
+	Label      string `json:"label"`
+	IsSelected bool   `json:"is_selected"`
+}
+
+type RankSettings struct {
+	ID         uint16 `json:"id"`
+	Label      string `json:"label"`
+	IsSelected bool   `json:"is_selected"`
+}
+
+type TemplateRoundServer struct {
 	ID             string         `json:"id"`
 	GameTemplateID string         `json:"game_template_id"`
 	Name           string         `json:"name"`
-	TimeSettings   map[string]any `json:"time_settings"`
-	RankSettings   map[string]any `json:"rank_settings"`
+	TimeSettings   TimeSettings   `json:"time_settings"`
+	RankSettings   []RankSettings `json:"rank_settings"`
 	Position       int            `json:"position"`
 }
 
-type TemplateTheme struct {
+type TemplateThemeServer struct {
 	ID       string `json:"id"`
 	RoundID  string `json:"round_id"`
 	Name     string `json:"name"`
 	Position int    `json:"position"`
 }
 
-type TemplateQuestion struct {
+type TemplateQuestionServer struct {
 	ID       string `json:"id"`
 	ThemeID  string `json:"theme_id"`
 	Text     string `json:"text"`
@@ -45,7 +57,7 @@ type TemplateQuestion struct {
 	Position int    `json:"position"`
 }
 
-type Game struct {
+type GameServer struct {
 	ID                string    `json:"id"`
 	Name              string    `json:"name"`
 	CreatorID         string    `json:"creator_id"`
@@ -59,7 +71,7 @@ type Game struct {
 	CreatedAt         time.Time `json:"created_at"`
 }
 
-type Round struct {
+type RoundServer struct {
 	ID           string         `json:"id"`
 	GameID       string         `json:"game_id"`
 	Name         string         `json:"name"`
@@ -68,14 +80,14 @@ type Round struct {
 	Position     int            `json:"position"`
 }
 
-type Theme struct {
+type ThemeServer struct {
 	ID       string `json:"id"`
 	RoundID  string `json:"round_id"`
 	Name     string `json:"name"`
 	Position int    `json:"position"`
 }
 
-type Question struct {
+type QuestionServer struct {
 	ID        string    `json:"id"`
 	ThemeID   string    `json:"theme_id"`
 	Text      string    `json:"text"`
@@ -84,13 +96,13 @@ type Question struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-type GameUser struct {
+type GameUserServer struct {
 	GameID      string         `json:"game_id"`
 	UserID      string         `json:"user_id"`
 	RoundScores map[string]any `json:"round_scores"`
 }
 
-type Answer struct {
+type AnswerServer struct {
 	ID           string    `json:"id"`
 	QuestionID   string    `json:"question_id"`
 	UserID       string    `json:"user_id"`
