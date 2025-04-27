@@ -36,7 +36,7 @@ func mapGameClientToDb(body types.GameTemplateClient) (types.GameTemplateServer,
 		}
 
 		for j, theme := range round.Themes {
-			themes[theme.Id] = append(themes[theme.Id], types.TemplateThemeServer{
+			themes[round.Id] = append(themes[round.Id], types.TemplateThemeServer{
 				ID:       theme.Id,
 				RoundID:  round.Id,
 				Name:     theme.Name,
@@ -44,7 +44,7 @@ func mapGameClientToDb(body types.GameTemplateClient) (types.GameTemplateServer,
 			})
 
 			for j, question := range theme.Questions {
-				questions[question.Id] = append(questions[question.Id], types.TemplateQuestionServer{
+				questions[theme.Id] = append(questions[theme.Id], types.TemplateQuestionServer{
 					ID:       question.Id,
 					ThemeID:  theme.Id,
 					Text:     question.Text,
@@ -84,9 +84,9 @@ func (s *Server) GetGameByID(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
-func (s *Server) GetGameByUserID(c *gin.Context) {
+func (s *Server) GetGameByCreatorID(c *gin.Context) {
 	userID := c.Param("id")
-	game, err := s.Db.GetGameByUserID(c.Request.Context(), userID)
+	game, err := s.Db.GetGameByCreatorID(c.Request.Context(), userID)
 	if err != nil {
 		logger.Errorf("Failed to get game: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game: " + err.Error()})
@@ -124,11 +124,13 @@ func (s *Server) CreateGameTemplate(c *gin.Context) {
 		logger.Errorf("Failed to create game template: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create game template: " + err.Error()})
 	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game template created successfully"})
 }
 
 func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.GET("/games", s.GetAllGames)
 	group.GET("/games/:id", s.GetGameByID)
-	group.GET("/games/user/:id", s.GetGameByUserID)
+	group.GET("/games/user/:id", s.GetGameByCreatorID)
 	group.POST("/games/create_template", s.CreateGameTemplate)
 }

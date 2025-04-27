@@ -20,8 +20,8 @@ const GameCard = (props: Game) => {
       </div>
       <span class="text-sm text-gray-400">{props.description}</span>
       <div class="flex flex-row gap-2 text-sm">
-        <span class="text-gray-400">{props.users.length} players</span>
-        <span class="text-gray-400">{props.rounds.length} rounds</span>
+        {props.users && <span class="text-gray-400">{props.users.length} players</span>}
+        {props.rounds && <span class="text-gray-400">{props.rounds.length} rounds</span>}
       </div>
       <Show when={props.finishDate}>
         <div class="flex flex-row gap-2 text-sm">{DateTime.fromMillis(props.finishDate!).toLocaleString()}</div>
@@ -33,37 +33,42 @@ const GameCard = (props: Game) => {
 const MyGames = () => {
   const { user } = useAuth()
   const { post } = useApi('games/create_template')
+  const { get } = useApi(`games/user/${user()?.id}`)
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
-  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>(
-    localStorage.getItem('newGameTemplate') ? JSON.parse(localStorage.getItem('newGameTemplate')!) : undefined
-  )
+  const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
 
   const [games, { mutate: setGames }] = createResource(async () => {
-    return [mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame, mockGame]
+    return [mockGame, mockGame]
+  })
+
+  const [gameTemplates, { mutate: setGameTemplates }] = createResource(async () => {
+    const response = await get<Game[]>()
+    if (response.data) {
+      return response.data
+    }
+
+    return [mockGame]
   })
 
   const createGameTemplate = async () => {
     if (!newGameTemplate()) return
-    const template = { ...newGameTemplate()!, creatorId: user()?.id }
-    debugger
+
+    const template = { ...newGameTemplate()!, creatorId: user()?.id! }
+
     const response = await post<Game>(template)
-    console.log(response)
-    debugger
+
     if (response.data) {
-      setGames((prev) => (prev ? [response.data!, ...prev] : [response.data!]))
+      setGames((prev) => (prev ? [template, ...prev] : [template]))
     }
   }
 
   const onFinishCreateGameTemplate = async () => {
-    // setIsCreatingNewGameTemplate(false)
+    setIsCreatingNewGameTemplate(false)
     await createGameTemplate()
-    localStorage.setItem('newGameTemplate', JSON.stringify(newGameTemplate()))
   }
 
   const onToggleCreateNewGameTemplate = async () => {
-    // setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())
-
-    await createGameTemplate()
+    setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())
   }
 
   return (
@@ -97,7 +102,7 @@ const MyGames = () => {
               </button>
             </div>
             <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-              <For each={games()}>{(game) => <GameCard {...game} />}</For>
+              <For each={gameTemplates()}>{(game) => <GameCard {...game} />}</For>
             </div>
           </div>
         </div>

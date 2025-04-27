@@ -74,7 +74,7 @@ func (db *DB) GetGameByID(ctx context.Context, id string) (*types.GameTemplateSe
 	return &game, nil
 }
 
-func (db *DB) GetGameByUserID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
+func (db *DB) GetGameByCreatorID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
 	rows, err := db.conn.Query(ctx, "SELECT id, name, description FROM game_templates WHERE creator_id = $1", userID)
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (db *DB) SearchGames(ctx context.Context, query string) ([]types.GameTempla
 	return games, nil
 }
 
-func (db *DB) GetFullGame(ctx context.Context, id string) (*types.GameTemplateClient, error) {
+func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTemplateClient, error) {
 	query := `
 		SELECT
 			gt.id, gt.name, gt.description, gt.is_public,
@@ -232,7 +232,6 @@ func (db *DB) GetFullGame(ctx context.Context, id string) (*types.GameTemplateCl
 	}
 
 	return gameTemplate, nil
-
 }
 
 func (db *DB) CreateGameTemplate(ctx context.Context, gameTemplate types.GameTemplateServer) error {
@@ -252,6 +251,22 @@ func (db *DB) CreateRound(ctx context.Context, round types.TemplateRoundServer) 
 	return nil
 }
 
+func insertTemplate(ctx context.Context, tx pgx.Tx, template types.GameTemplateServer) error {
+	_, err := tx.Exec(ctx, "INSERT INTO game_templates (id, name, description, creator_id, is_public) VALUES ($1, $2, $3, $4, $5)", template.ID, template.Name, template.Description, template.CreatorID, template.IsPublic)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func insertRound(ctx context.Context, tx pgx.Tx, round types.TemplateRoundServer) error {
+	_, err := tx.Exec(ctx, "INSERT INTO template_rounds (id, game_template_id, name, time_settings, rank_settings, position) VALUES ($1, $2, $3, $4, $5, $6)", round.ID, round.GameTemplateID, round.Name, round.TimeSettings, round.RankSettings, round.Position)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // CreateCompleteGameTemplate creates a complete game template with selective batch processing
 func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.GameTemplateServer, rounds []types.TemplateRoundServer, themes map[string][]types.TemplateThemeServer, questions map[string][]types.TemplateQuestionServer) error {
 	tx, err := db.conn.Begin(ctx)
@@ -261,13 +276,13 @@ func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.Gam
 	defer tx.Rollback(ctx)
 
 	// 1. Insert template (single insert)
-	if err := db.CreateGameTemplate(ctx, template); err != nil {
+	if err := insertTemplate(ctx, tx, template); err != nil {
 		return fmt.Errorf("failed to insert game template: %w", err)
 	}
 
 	// 2. Insert rounds (sequential inserts)
 	for i, round := range rounds {
-		if err := db.CreateRound(ctx, round); err != nil {
+		if err := insertRound(ctx, tx, round); err != nil {
 			return fmt.Errorf("failed to insert round %d: %w", i+1, err)
 		}
 	}
@@ -328,7 +343,6 @@ func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.Gam
 	// Execute the batch if we have any operations
 	if batch.Len() > 0 {
 		batchResults := tx.SendBatch(ctx, batch)
-		defer batchResults.Close()
 
 		// Process themes results
 		for i := 0; i < opCounts.themes; i++ {
@@ -342,6 +356,10 @@ func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.Gam
 			if _, err := batchResults.Exec(); err != nil {
 				return fmt.Errorf("failed to insert question %d: %w", i+1, err)
 			}
+		}
+
+		if err := batchResults.Close(); err != nil {
+			return fmt.Errorf("failed to close batch: %w", err)
 		}
 	}
 
