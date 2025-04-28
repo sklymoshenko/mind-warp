@@ -128,9 +128,20 @@ func (s *Server) CreateGameTemplate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Game template created successfully"})
 }
 
+func (s *Server) GetGameTemplateInfo(c *gin.Context) {
+	gameID := c.Param("id")
+	game, err := s.Db.GetFullGameById(c.Request.Context(), gameID)
+	if err != nil {
+		logger.Errorf("Failed to get game template info: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game template info: " + err.Error()})
+	}
+	c.JSON(http.StatusOK, game)
+}
+
 func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
-	group.GET("/games", s.GetAllGames)
-	group.GET("/games/:id", s.GetGameByID)
-	group.GET("/games/user/:id", s.GetGameByCreatorID)
-	group.POST("/games/create_template", s.CreateGameTemplate)
+	group.GET("/game_templates", s.GetAllGames)
+	group.GET("/game_templates/:id", s.GetGameByID)
+	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)
+	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)
+	group.POST("/game_templates/create_template", s.CreateGameTemplate)
 }

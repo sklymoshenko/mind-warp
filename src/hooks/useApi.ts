@@ -39,10 +39,10 @@ export const useApi = (url: string) => {
     return { data }
   }
 
-  const get = async <T>(): Promise<{ data?: T; error?: string }> => {
+  const get = async <T>(url: string = ''): Promise<{ data?: T; error?: string }> => {
     try {
       setIsLoading(true)
-      const response = await fetch(createBaseUrl(), { credentials: 'include' })
+      const response = await fetch(createBaseUrl() + url, { credentials: 'include' })
       return handleResponse<T>(response)
     } catch (error) {
       return { error: `Unexpected error while GET: ${error}` }

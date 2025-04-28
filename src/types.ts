@@ -55,3 +55,10 @@ export type Game = {
   isPublic?: boolean
   creatorId: User['id']
 }
+
+export type GameTemplate = Omit<
+  Game,
+  'users' | 'currentRound' | 'currentQuestion' | 'currentUser' | 'isFinished' | 'winner'
+>
+
+export type GameListItem = Pick<Game, 'id' | 'name' | 'description' | 'creatorId' | 'isPublic'>

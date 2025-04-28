@@ -8,7 +8,7 @@ import (
 
 func (db *DB) GetUserByEmail(email string) (types.UserServer, error) {
 	var user types.UserServer
-	err := db.conn.QueryRow(context.Background(), "SELECT id, email, password_hash FROM users WHERE email = $1", email).Scan(&user.ID, &user.Email, &user.Password)
+	err := db.pool.QueryRow(context.Background(), "SELECT id, email, password_hash FROM users WHERE email = $1", email).Scan(&user.ID, &user.Email, &user.Password)
 	if err != nil {
 		return types.UserServer{}, err
 	}
@@ -17,7 +17,7 @@ func (db *DB) GetUserByEmail(email string) (types.UserServer, error) {
 
 func (db *DB) GetUserByID(id string) (types.UserServer, error) {
 	var user types.UserServer
-	err := db.conn.QueryRow(context.Background(), "SELECT id, email, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email, &user.Name)
+	err := db.pool.QueryRow(context.Background(), "SELECT id, email, name FROM users WHERE id = $1", id).Scan(&user.ID, &user.Email, &user.Name)
 	if err != nil {
 		return types.UserServer{}, err
 	}
@@ -25,12 +25,12 @@ func (db *DB) GetUserByID(id string) (types.UserServer, error) {
 }
 
 func (db *DB) CreateUser(user types.UserServer) error {
-	_, err := db.conn.Exec(context.Background(), "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)", user.Name, user.Email, user.Password)
+	_, err := db.pool.Exec(context.Background(), "INSERT INTO users (name, email, password_hash) VALUES ($1, $2, $3)", user.Name, user.Email, user.Password)
 	return err
 }
 
 func (db *DB) GetAllUsers() ([]types.UserServer, error) {
-	rows, err := db.conn.Query(context.Background(), "SELECT id, name, email FROM users")
+	rows, err := db.pool.Query(context.Background(), "SELECT id, name, email FROM users")
 	if err != nil {
 		return nil, err
 	}

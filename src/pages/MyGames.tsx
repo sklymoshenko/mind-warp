@@ -1,6 +1,6 @@
 import { createResource, For, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
-import { Game } from '../types'
+import { Game, GameListItem } from '../types'
 import { DateTime } from 'luxon'
 import { A } from '@solidjs/router'
 import { widgetStyles } from '../utils'
@@ -8,23 +8,40 @@ import CreateGame from './CreateGame'
 import { useApi } from '../hooks/useApi'
 import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
+import OverlayComponent from '../components/OverlayComponent'
 
-const GameCard = (props: Game) => {
+// Type guard to check if the props object is a full Game object
+const isFullGame = (item: Game | GameListItem): item is Game => {
+  // Check for properties that exist on Game but not on GameListItem
+  return 'users' in item && 'rounds' in item
+}
+
+const GameCard = (props: Game | GameListItem) => {
   return (
     <div class="flex flex-col gap-2 bg-void/70 rounded-lg shadow-md">
+      {/* Common properties */}
       <div class="flex gap-2 items-center justify-between">
         <span class="text-xl font-bold">{props.name}</span>
+        {/* isPublic exists on both types (optional on Game, required on GameListItem) */}
         <Show when={props.isPublic === false}>
           <RiDevelopmentGitRepositoryPrivateFill class="text-primary w-6 h-6" title="Private Game" />
         </Show>
       </div>
       <span class="text-sm text-gray-400">{props.description}</span>
-      <div class="flex flex-row gap-2 text-sm">
-        {props.users && <span class="text-gray-400">{props.users.length} players</span>}
-        {props.rounds && <span class="text-gray-400">{props.rounds.length} rounds</span>}
-      </div>
-      <Show when={props.finishDate}>
-        <div class="flex flex-row gap-2 text-sm">{DateTime.fromMillis(props.finishDate!).toLocaleString()}</div>
+
+      <Show when={isFullGame(props)}>
+        <>
+          <div class="flex flex-row gap-2 text-sm">
+            <span class="text-gray-400">{(props as Game).users.length} players</span>
+            <span class="text-gray-400">{(props as Game).rounds.length} rounds</span>
+          </div>
+          {/* finishDate is optional on Game */}
+          <Show when={(props as Game).finishDate}>
+            <div class="flex flex-row gap-2 text-sm">
+              {DateTime.fromMillis((props as Game).finishDate!).toLocaleString()}
+            </div>
+          </Show>
+        </>
       </Show>
     </div>
   )
@@ -32,8 +49,9 @@ const GameCard = (props: Game) => {
 
 const MyGames = () => {
   const { user } = useAuth()
-  const { post } = useApi('games/create_template')
-  const { get } = useApi(`games/user/${user()?.id}`)
+  const { post } = useApi('game_templates/create_template')
+  const { get } = useApi(`game_templates/user/${user()?.id}`)
+
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
   const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
 
@@ -42,7 +60,7 @@ const MyGames = () => {
   })
 
   const [gameTemplates, { mutate: setGameTemplates }] = createResource(async () => {
-    const response = await get<Game[]>()
+    const response = await get<GameListItem[]>()
     if (response.data) {
       return response.data
     }
@@ -106,7 +124,17 @@ const MyGames = () => {
             </div>
           </div>
         </div>
-        <div
+        <OverlayComponent isOpen={isCreatingNewGameTemplate()} onClose={() => setIsCreatingNewGameTemplate(false)}>
+          <div class="w-full">
+            <CreateGame
+              game={newGameTemplate()}
+              onGameUpdate={setNewGameTemplate}
+              isTemplate={true}
+              onFinish={onFinishCreateGameTemplate}
+            />
+          </div>
+        </OverlayComponent>
+        {/* <div
           class="w-full opacity-0 transition-all duration-300 flex items-center justify-center mt-12 mb-12"
           classList={{ 'animate-slide-down': isCreatingNewGameTemplate() }}
         >
@@ -116,7 +144,7 @@ const MyGames = () => {
             isTemplate={true}
             onFinish={onFinishCreateGameTemplate}
           />
-        </div>
+        </div> */}
       </div>
     </>
   )

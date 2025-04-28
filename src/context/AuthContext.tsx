@@ -7,8 +7,9 @@ type AuthState = {
   user: Accessor<User | null>
   initialized: Accessor<boolean>
   refetch: () => void
-  logout: () => void
+  logout: () => Promise<string | undefined>
   setUser: (user: User | null) => void
+  login: (email: string, password: string) => Promise<string | undefined>
 }
 
 const AuthContext = createContext<AuthState>()
@@ -16,7 +17,8 @@ const AuthContext = createContext<AuthState>()
 export const AuthProvider: ParentComponent = (props) => {
   const [user, setUser] = createSignal<User | null>(null)
   const [initialized, setInitialized] = createSignal(false)
-  const { post } = useApi('api/logout')
+  const { get: apiLogout } = useApi('auth/logout')
+  const { post: apiLogin } = useApi('auth/login')
 
   const [_, { refetch }] = createResource(async () => {
     const res = await fetch('/api/me', { credentials: 'include' })
@@ -34,16 +36,28 @@ export const AuthProvider: ParentComponent = (props) => {
     setInitialized(true)
   })
 
-  const logout = () => {
+  const login = async (email: string, password: string) => {
+    const { error } = await apiLogin<User>({ email, password })
+    if (error) {
+      return error
+    }
+
+    await refetch()
+  }
+
+  const logout = async () => {
     setUser(null)
-    post({})
+    const { error } = await apiLogout()
+    if (error) {
+      return error
+    }
   }
 
   // on mount
   refetch()
 
   return (
-    <AuthContext.Provider value={{ user, setUser, initialized, refetch, logout }}>
+    <AuthContext.Provider value={{ user, setUser, initialized, refetch, logout, login }}>
       {props.children}
     </AuthContext.Provider>
   )

@@ -166,6 +166,6 @@ func (s *Server) Refresh(c *gin.Context) {}
 func (s *Server) AddAuthRoutes(group *gin.RouterGroup) {
 	group.POST("/auth/login", s.Login)
 	group.POST("/auth/register", s.Register)
-	group.POST("/auth/logout", s.Logout)
+	group.GET("/auth/logout", s.Logout)
 	group.POST("/auth/refresh", s.Refresh)
 }

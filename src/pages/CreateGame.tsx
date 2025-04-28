@@ -560,7 +560,7 @@ const CreateGame = (props: Props) => {
                             <div class="space-y-4">
                               <For each={round.ranks}>
                                 {(rank, j) => (
-                                  <div class="flex items-start gap-4">
+                                  <div class="flex flex-col items-start gap-4 border-b-2 border-void pb-4">
                                     <textarea
                                       value={questions()[theme.id]?.[j()]?.text || ''}
                                       onInput={(e) => {
@@ -577,7 +577,25 @@ const CreateGame = (props: Props) => {
                                           return prev
                                         })
                                       }}
-                                      placeholder={`${theme.name} question for ${rank.id} points`}
+                                      placeholder={`${theme.name}: ${rank.label} points`}
+                                      class="w-full input-colors"
+                                      classList={{
+                                        'opacity-20 blur-[4px] pointer-events-none': hiddenThemes()[theme.id],
+                                      }}
+                                    />
+                                    <input
+                                      type="text"
+                                      value={questions()[theme.id]?.[j()]?.answer || ''}
+                                      onInput={(e) => {
+                                        setQuestions((prev) => {
+                                          prev[theme.id][j()] = {
+                                            ...prev[theme.id][j()],
+                                            answer: e.currentTarget.value,
+                                          }
+                                          return prev
+                                        })
+                                      }}
+                                      placeholder={`Answer`}
                                       class="w-full input-colors"
                                       classList={{
                                         'opacity-20 blur-[4px] pointer-events-none': hiddenThemes()[theme.id],

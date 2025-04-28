@@ -1,40 +1,39 @@
 import { createSignal } from 'solid-js'
-import { useApi } from '../hooks/useApi'
 import { IoDiceSharp } from 'solid-icons/io'
 import { toast } from 'solid-toast'
 import ErrorToast from '../components/ErrorToast'
 import { useLocation, useNavigate } from '@solidjs/router'
 import { useAuth } from '../context/AuthContext'
-import { User } from '../types'
 const Login = () => {
   const [email, setEmail] = createSignal('admin@example.com')
   const [password, setPassword] = createSignal('adminpassword')
   const [error, setError] = createSignal('')
-  const { post, isLoading } = useApi('auth/login')
+  const { login } = useAuth()
   const navigate = useNavigate()
   const emptyFields = () => email() === '' || password() === ''
-  const { setUser } = useAuth()
+  const [isLoading, setIsLoading] = createSignal(false)
 
   const loc = useLocation()
   const params = new URLSearchParams(loc.search)
   const next = params.get('next') || '/dashboard'
 
   const handleLogin = async () => {
-    const { data, error } = await post<User>({ email: email(), password: password() })
+    setIsLoading(true)
+    const error = await login(email(), password())
     if (error) {
       setError(error)
       toast.custom((t) => <ErrorToast toast={t} error={error} title="Login failed" />, {
         duration: 5000,
       })
+      setIsLoading(false)
+      return
     }
 
-    if (data) {
-      setError('')
-      setEmail('')
-      setPassword('')
-      setUser(data)
-      navigate(next, { replace: true })
-    }
+    setError('')
+    setEmail('')
+    setPassword('')
+    setIsLoading(false)
+    navigate(next, { replace: true })
   }
 
   return (

@@ -6,11 +6,11 @@ import (
 	"mindwarp/logger"
 	"os"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type DB struct {
-	conn *pgx.Conn
+	pool *pgxpool.Pool
 }
 
 func CreateDB() *DB {
@@ -30,14 +30,14 @@ func (db *DB) Initialize() {
 		os.Getenv("POSTGRES_SSLMODE"),
 	)
 
-	conn, err := pgx.Connect(context.Background(), dbUrl)
+	pool, err := pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
 		logger.Errorf("unable to connect: %s", err)
 		os.Exit(1)
 	}
 
-	db.conn = conn
-	logger.Info("Connected to database %s", conn.Config().ConnString())
+	db.pool = pool
+	logger.Info("Connected to database %s", pool.Config().ConnString())
 	tables, err := db.GetTables()
 	if err != nil {
 		logger.Errorf("Error getting tables: %v", err)
@@ -48,12 +48,12 @@ func (db *DB) Initialize() {
 }
 
 func (db *DB) Close() {
-	db.conn.Close(context.Background())
+	db.pool.Close()
 }
 
 func (db *DB) GetTables() ([]string, error) {
 	tables := make([]string, 0)
-	rows, err := db.conn.Query(context.Background(), `
+	rows, err := db.pool.Query(context.Background(), `
 		SELECT table_name
 		FROM information_schema.tables
 		WHERE table_schema = 'public'

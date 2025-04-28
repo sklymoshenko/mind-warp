@@ -75,8 +75,8 @@ type RoundServer struct {
 	ID           string         `json:"id"`
 	GameID       string         `json:"game_id"`
 	Name         string         `json:"name"`
-	TimeSettings map[string]any `json:"time_settings"`
-	RankSettings map[string]any `json:"rank_settings"`
+	TimeSettings TimeSettings   `json:"time_settings"`
+	RankSettings []RankSettings `json:"rank_settings"`
 	Position     int            `json:"position"`
 }
 

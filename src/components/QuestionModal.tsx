@@ -160,7 +160,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-[51] flex items-center justify-center backdrop-blur-sm transition-all duration-300 ease-out slide-in"
+        class="fixed inset-0 z-[51] flex items-center justify-center backdrop-blur-sm transition-all duration-300"
         onClick={handleOverlayClick}
         aria-modal="true"
         role="dialog"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sort"
 
 	"mindwarp/logger"
 	"mindwarp/types"
@@ -49,7 +50,7 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 }
 
 func (db *DB) GetAllGames(ctx context.Context) ([]types.GameTemplateServer, error) {
-	rows, err := db.conn.Query(ctx, "SELECT id, name, description FROM game_templates")
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates")
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +65,7 @@ func (db *DB) GetAllGames(ctx context.Context) ([]types.GameTemplateServer, erro
 }
 
 func (db *DB) GetGameByID(ctx context.Context, id string) (*types.GameTemplateServer, error) {
-	row := db.conn.QueryRow(ctx, "SELECT id, name, description FROM game_templates WHERE id = $1", id)
+	row := db.pool.QueryRow(ctx, "SELECT id, name, description FROM game_templates WHERE id = $1", id)
 
 	var game types.GameTemplateServer
 	err := row.Scan(&game.ID, &game.Name, &game.Description)
@@ -75,7 +76,7 @@ func (db *DB) GetGameByID(ctx context.Context, id string) (*types.GameTemplateSe
 }
 
 func (db *DB) GetGameByCreatorID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
-	rows, err := db.conn.Query(ctx, "SELECT id, name, description FROM game_templates WHERE creator_id = $1", userID)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates WHERE creator_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +90,7 @@ func (db *DB) GetGameByCreatorID(ctx context.Context, userID string) ([]types.Ga
 }
 
 func (db *DB) SearchGames(ctx context.Context, query string) ([]types.GameTemplateServer, error) {
-	rows, err := db.conn.Query(ctx, "SELECT id, name, description FROM game_templates WHERE name ILIKE $1", "%"+query+"%")
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates WHERE name ILIKE $1", "%"+query+"%")
 	if err != nil {
 		return nil, err
 	}
@@ -108,7 +109,7 @@ func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTempla
 			gt.id, gt.name, gt.description, gt.is_public,
 			tr.id, tr.name, tr.time_settings, tr.rank_settings, tr.position,
 			tt.id, tt.name, tt.position,
-			tq.id, tq.text, tq.answer, tq.points, tq.position
+			tq.id, tq.text, tq.answer, tq.points
 		FROM
 			game_templates gt
 		LEFT JOIN
@@ -120,10 +121,10 @@ func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTempla
 		WHERE
 			gt.id = $1
 		ORDER BY
-			tr.position, tt.position, tq.position;
+			tr.position, tt.position, tq.points;
 	`
 
-	rows, err := db.conn.Query(ctx, query, id)
+	rows, err := db.pool.Query(ctx, query, id)
 	if err != nil {
 		// Consider checking for pgx.ErrNoRows if Query can return it for no matches
 		return nil, fmt.Errorf("failed to query full game template: %w", err)
@@ -131,15 +132,17 @@ func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTempla
 	defer rows.Close()
 
 	var gameTemplate *types.GameTemplateClient
-	roundsMap := make(map[string]*types.RoundClient)
-	themesMap := make(map[string]*types.ThemeClient)
-
+	roundsMap := make(map[string]*types.RoundServer)
+	themesMap := make(map[string]*types.ThemeServer)
+	questionsMap := make(map[string]*types.QuestionServer)
+	count := 0
 	for rows.Next() {
+		count++
 		err := rows.Scan(
 			&gameID, &gameName, &gameDescription, &gameIsPublic,
 			&roundID, &roundName, &roundTimeJSON, &roundRankJSON, &roundPosition,
 			&themeID, &themeName, &themePosition,
-			&questionID, &questionText, &questionAnswer, &questionPoints, &questionPosition,
+			&questionID, &questionText, &questionAnswer, &questionPoints,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan game template row: %w", err)
@@ -165,62 +168,124 @@ func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTempla
 		}
 
 		if roundID.Status == pgtype.Present {
-			_, exists := roundsMap[roundIDStr]
-			if exists {
-				continue
-			}
-
-			var timeSetting types.RoundTimeClient
+			var timeSetting types.TimeSettings
 			if len(roundTimeJSON) > 0 && string(roundTimeJSON) != "null" {
 				if err := json.Unmarshal(roundTimeJSON, &timeSetting); err != nil {
 					logger.Errorf("Failed to unmarshal time settings for round %s: %v. Using default.", roundIDStr, err)
-					timeSetting = types.RoundTimeClient{}
+					timeSetting = types.TimeSettings{}
 				}
 			}
 
-			var rankSetting []types.RoundRankClient
+			var rankSetting []types.RankSettings
 			if len(roundRankJSON) > 0 && string(roundRankJSON) != "null" {
 				if err := json.Unmarshal(roundRankJSON, &rankSetting); err != nil {
 					logger.Errorf("Failed to unmarshal rank settings for round %s: %v. Using default.", roundIDStr, err)
-					rankSetting = []types.RoundRankClient{}
+					rankSetting = []types.RankSettings{}
 				}
 			}
 
-			round := &types.RoundClient{
-				Id:     roundIDStr,
-				Name:   roundName.String,
-				Time:   timeSetting,
-				Ranks:  rankSetting,
-				Themes: []types.ThemeClient{},
+			round := &types.RoundServer{
+				ID:           roundIDStr,
+				Name:         roundName.String,
+				TimeSettings: timeSetting,
+				RankSettings: rankSetting,
 			}
 			roundsMap[roundIDStr] = round
-			gameTemplate.Rounds = append(gameTemplate.Rounds, *round)
 
 			if themeID.Status == pgtype.Present {
-				_, exists := themesMap[themeIDStr]
-				if exists {
-					continue
-				}
-				theme := &types.ThemeClient{
-					Id:        themeIDStr,
-					Name:      themeName.String,
-					Questions: []types.QuestionClient{},
+				theme := &types.ThemeServer{
+					ID:       themeIDStr,
+					Name:     themeName.String,
+					RoundID:  roundIDStr,
+					Position: int(themePosition.Int),
 				}
 				themesMap[themeIDStr] = theme
-				round.Themes = append(round.Themes, *theme)
 
 				if questionID.Status == pgtype.Present {
-					question := types.QuestionClient{
-						Id:     questionIDStr,
-						Text:   questionText.String,
-						Answer: questionAnswer.String,
-						Points: int(questionPoints.Int),
+					_, exists := questionsMap[questionIDStr]
+					if exists {
+						fmt.Println("question already exists", questionIDStr)
+						continue
+					}
+					question := &types.QuestionServer{
+						ID:      questionIDStr,
+						ThemeID: themeIDStr,
+						Text:    questionText.String,
+						Answer:  questionAnswer.String,
+						Points:  int(questionPoints.Int),
 					}
 
-					theme.Questions = append(theme.Questions, question)
+					questionsMap[questionIDStr] = question
 				}
 			}
 		}
+	}
+
+	// Convert maps to slices and organize the data
+	for _, round := range roundsMap {
+		// Get themes for this round
+		var roundThemes []types.ThemeClient
+
+		for _, theme := range themesMap {
+			if theme.RoundID == round.ID {
+				// Get questions for this theme
+				var themeQuestions []types.QuestionClient
+				for _, question := range questionsMap {
+					if question.ThemeID == theme.ID {
+						themeQuestions = append(themeQuestions, types.QuestionClient{
+							Id:     question.ID,
+							Text:   question.Text,
+							Answer: question.Answer,
+							Points: question.Points,
+						})
+					}
+				}
+
+				sort.Slice(themeQuestions, func(i, j int) bool {
+					return themeQuestions[i].Points < themeQuestions[j].Points
+				})
+
+				roundThemes = append(roundThemes, types.ThemeClient{
+					Id:        theme.ID,
+					Name:      theme.Name,
+					Questions: themeQuestions,
+				})
+
+				sort.Slice(roundThemes, func(i, j int) bool {
+					positionA := themesMap[roundThemes[i].Id].Position
+					positionB := themesMap[roundThemes[j].Id].Position
+					return positionA < positionB
+				})
+			}
+		}
+
+		// Convert rank settings to client format
+		var roundRanks []types.RoundRankClient
+		for i, rank := range round.RankSettings {
+			roundRanks = append(roundRanks, types.RoundRankClient{
+				Id:         uint16(i + 1),
+				Label:      rank.Label,
+				IsSelected: rank.IsSelected,
+			})
+		}
+
+		// Convert time settings to client format
+		timeClient := types.RoundTimeClient{
+			Id:         uint16(round.TimeSettings.ID),
+			Label:      round.TimeSettings.Label,
+			IsSelected: round.TimeSettings.IsSelected,
+		}
+
+		// Create round client
+		roundClient := types.RoundClient{
+			Id:     round.ID,
+			Name:   round.Name,
+			Ranks:  roundRanks,
+			Time:   timeClient,
+			Themes: roundThemes,
+		}
+
+		gameTemplate.Rounds = append(gameTemplate.Rounds, roundClient)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -236,7 +301,7 @@ func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTempla
 
 func (db *DB) CreateGameTemplate(ctx context.Context, gameTemplate types.GameTemplateServer) error {
 	logger.Infof("Creating game template: %v", gameTemplate)
-	_, err := db.conn.Exec(ctx, "INSERT INTO game_templates (id, name, description, creator_id, is_public) VALUES ($1, $2, $3, $4, $5)", gameTemplate.ID, gameTemplate.Name, gameTemplate.Description, gameTemplate.CreatorID, gameTemplate.IsPublic)
+	_, err := db.pool.Exec(ctx, "INSERT INTO game_templates (id, name, description, creator_id, is_public) VALUES ($1, $2, $3, $4, $5)", gameTemplate.ID, gameTemplate.Name, gameTemplate.Description, gameTemplate.CreatorID, gameTemplate.IsPublic)
 	if err != nil {
 		return err
 	}
@@ -244,7 +309,7 @@ func (db *DB) CreateGameTemplate(ctx context.Context, gameTemplate types.GameTem
 }
 
 func (db *DB) CreateRound(ctx context.Context, round types.TemplateRoundServer) error {
-	_, err := db.conn.Exec(ctx, "INSERT INTO template_rounds (id, game_template_id, name, time_settings, rank_settings, position) VALUES ($1, $2, $3, $4, $5, $6)", round.ID, round.GameTemplateID, round.Name, round.TimeSettings, round.RankSettings, round.Position)
+	_, err := db.pool.Exec(ctx, "INSERT INTO template_rounds (id, game_template_id, name, time_settings, rank_settings, position) VALUES ($1, $2, $3, $4, $5, $6)", round.ID, round.GameTemplateID, round.Name, round.TimeSettings, round.RankSettings, round.Position)
 	if err != nil {
 		return err
 	}
@@ -269,7 +334,7 @@ func insertRound(ctx context.Context, tx pgx.Tx, round types.TemplateRoundServer
 
 // CreateCompleteGameTemplate creates a complete game template with selective batch processing
 func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.GameTemplateServer, rounds []types.TemplateRoundServer, themes map[string][]types.TemplateThemeServer, questions map[string][]types.TemplateQuestionServer) error {
-	tx, err := db.conn.Begin(ctx)
+	tx, err := db.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
