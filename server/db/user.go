@@ -47,3 +47,22 @@ func (db *DB) GetAllUsers() ([]types.UserServer, error) {
 	}
 	return users, nil
 }
+
+func (db *DB) GetUserBySearch(search string) ([]types.UserServer, error) {
+	rows, err := db.pool.Query(context.Background(), "SELECT id, name, email FROM users WHERE name ILIKE $1", "%"+search+"%")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	users := []types.UserServer{}
+	for rows.Next() {
+		var user types.UserServer
+		err := rows.Scan(&user.ID, &user.Name, &user.Email)
+		if err != nil {
+			return nil, err
+		}
+		users = append(users, user)
+	}
+	return users, nil
+}

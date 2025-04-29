@@ -1,14 +1,16 @@
-import { createResource, For } from 'solid-js'
+import { createResource, createSignal, For } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { TbSettings, TbDeviceGamepad2 } from 'solid-icons/tb'
 import { RiDocumentFileList3Fill, RiUserFacesSpyLine } from 'solid-icons/ri'
-import { Game, User } from '../types'
+import { Game, GameTemplate, User } from '../types'
 import { BiRegularTrophy } from 'solid-icons/bi'
 import { RiUserFacesOpenArmLine } from 'solid-icons/ri'
 import { IoDice } from 'solid-icons/io'
 import { useNavigate } from '@solidjs/router'
 import { widgetStyles } from '../utils'
+import OverlayComponent from '../components/OverlayComponent'
+import GameTemplateInfo from '../components/GameTemplateInfo'
 type OverviewProps = {}
 
 const settingItemStyles = {
@@ -23,14 +25,14 @@ const Overview = (props: OverviewProps) => {
   const { get } = useApi('users')
   const navigate = useNavigate()
   const { get: getGameTemplates } = useApi('game_templates')
-  const { get: getGameTemplateInfo } = useApi('game_templates/info')
+  const [gameTemplateId, setGameTemplateId] = createSignal<GameTemplate['id'] | undefined>(undefined)
 
-  const [users, { refetch }] = createResource(async () => {
+  const [users] = createResource(async () => {
     const response = await get<User[]>()
     return response.data
   })
 
-  const [gameTemplates, { refetch: refetchGameTemplates }] = createResource(async () => {
+  const [gameTemplates] = createResource(async () => {
     const response = await getGameTemplates<Game[]>()
     return response.data
   })
@@ -45,9 +47,7 @@ const Overview = (props: OverviewProps) => {
   }
 
   const getGameInfo = async (id: string) => {
-    const response = await getGameTemplateInfo<Game>(`/${id}`)
-    console.log(response.data)
-    return response.data
+    setGameTemplateId(id)
   }
 
   return (
@@ -141,6 +141,9 @@ const Overview = (props: OverviewProps) => {
             </div>
           </div>
         </div>
+        <OverlayComponent isOpen={!!gameTemplateId()} onClose={() => setGameTemplateId(undefined)}>
+          <GameTemplateInfo id={gameTemplateId()} />
+        </OverlayComponent>
       </div>
     </>
   )

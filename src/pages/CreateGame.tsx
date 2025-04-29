@@ -83,6 +83,11 @@ const CreateGame = (props: Props) => {
   }
 
   const onFirstStepFinish = () => {
+    if (props.isTemplate) {
+      setStep(3)
+      scrollToTop()
+      return
+    }
     nextStep()
     setGameName(gameName())
   }
@@ -234,8 +239,7 @@ const CreateGame = (props: Props) => {
           {/* Step 1: Enter Your Name */}
           <Show when={step() === 1}>
             <div class={cardClasses}>
-              <div class="flex justify-between mb-2 sm:mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 1</p>
+              <div class="flex justify-end mb-2 sm:mb-4">
                 <p class="text-void text-sm uppercase font-bold">Game Name</p>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
@@ -283,8 +287,7 @@ const CreateGame = (props: Props) => {
           {/* Step 2: Add users */}
           <Show when={step() === 2}>
             <div class={cardClasses}>
-              <div class="flex justify-between mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 2</p>
+              <div class="flex justify-end mb-4">
                 <p class="text-void text-sm uppercase font-bold">Add Players</p>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">
@@ -330,7 +333,14 @@ const CreateGame = (props: Props) => {
               </div>
               <div class="flex justify-between mt-2 sm:mt-6">
                 <button
-                  onClick={prevStep}
+                  onClick={() => {
+                    if (props.isTemplate) {
+                      setStep(1)
+                      scrollToTop()
+                      return
+                    }
+                    prevStep()
+                  }}
                   class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                 >
                   Back
@@ -349,8 +359,7 @@ const CreateGame = (props: Props) => {
           </Show>
           <Show when={step() === 3}>
             <div class={cardClasses + 'overflow-auto'}>
-              <div class="flex justify-between mb-4">
-                <p class="text-void text-sm uppercase font-bold">Step 3</p>
+              <div class="flex justify-end mb-4">
                 <p class="text-void text-sm uppercase font-bold">Add Rounds</p>
               </div>
               <h2 class="text-2xl md:text-3xl font-bold text-void uppercase tracking-tight text-center mb-6">

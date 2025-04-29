@@ -124,27 +124,26 @@ const MyGames = () => {
             </div>
           </div>
         </div>
-        <OverlayComponent isOpen={isCreatingNewGameTemplate()} onClose={() => setIsCreatingNewGameTemplate(false)}>
+        <OverlayComponent
+          isOpen={isCreatingNewGameTemplate()}
+          onClose={() => {
+            setIsCreatingNewGameTemplate(false)
+            // Needs to reset CreateGame component state
+            setNewGameTemplate({} as any)
+            setNewGameTemplate(undefined)
+          }}
+        >
           <div class="w-full">
-            <CreateGame
-              game={newGameTemplate()}
-              onGameUpdate={setNewGameTemplate}
-              isTemplate={true}
-              onFinish={onFinishCreateGameTemplate}
-            />
+            <Show when={!newGameTemplate()} keyed>
+              <CreateGame
+                game={newGameTemplate()}
+                onGameUpdate={setNewGameTemplate}
+                isTemplate={true}
+                onFinish={onFinishCreateGameTemplate}
+              />
+            </Show>
           </div>
         </OverlayComponent>
-        {/* <div
-          class="w-full opacity-0 transition-all duration-300 flex items-center justify-center mt-12 mb-12"
-          classList={{ 'animate-slide-down': isCreatingNewGameTemplate() }}
-        >
-          <CreateGame
-            game={newGameTemplate()}
-            onGameUpdate={setNewGameTemplate}
-            isTemplate={true}
-            onFinish={onFinishCreateGameTemplate}
-          />
-        </div> */}
       </div>
     </>
   )
