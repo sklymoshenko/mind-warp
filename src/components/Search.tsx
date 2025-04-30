@@ -1,11 +1,13 @@
 import { IoCloseSharp } from 'solid-icons/io'
 import { createSignal, createEffect, For, Show, onCleanup } from 'solid-js'
+import { AiOutlineLoading } from 'solid-icons/ai'
 type WithIdAndLabel = { id: string | number; label?: string; name?: string; text?: string }
 
 type SearchProps<T extends WithIdAndLabel> = {
   searchFunction: (term: string) => Promise<T[]>
   placeholder?: string
   multiselect?: boolean
+  onSelect?: (items: T[]) => void
 }
 
 function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
@@ -15,96 +17,91 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
   const [isResultsOpen, setIsResultsOpen] = createSignal(false)
   const [selectedItems, setSelectedItems] = createSignal<T[]>([])
 
-  // Effect to perform search when searchTerm changes (with a debounce)
   createEffect(() => {
     const term = searchTerm()
     if (!term) {
       setSearchResults([])
-      setIsResultsOpen(false) // Close results when search term is empty
+      setIsResultsOpen(false)
       setIsLoading(false)
       return
     }
 
     setIsLoading(true)
-    setIsResultsOpen(true) // Open results when searching
+    setIsResultsOpen(true)
 
-    // Simple debounce (you might want a more robust debounce utility)
     const debounceTimer = setTimeout(async () => {
       try {
-        // Call the provided search function
-        console.time('search')
         const results = await props.searchFunction(term)
         setSearchResults(results)
-        console.timeEnd('search')
       } catch (error) {
         console.error('Search error:', error)
-        setSearchResults([]) // Clear results on error
+        setSearchResults([])
       } finally {
         setIsLoading(false)
       }
-    }, 300) // Debounce time
+    }, 200)
 
-    // Cleanup the timer on effect re-run or component disposal
     onCleanup(() => clearTimeout(debounceTimer))
   })
 
   const handleItemClick = (item: T) => {
     if (props.multiselect) {
-      setSelectedItems((prevSelected) => {
-        if (prevSelected.find((selected) => selected.id === item.id)) {
-          // Deselect if already selected (assuming items have a unique id)
-          return prevSelected.filter((selected) => selected.id !== item.id)
-        } else {
-          // Select if not selected
-          return [...prevSelected, item]
-        }
-      })
+      let newSelectedItems = [...selectedItems()]
+      const alreadySelected = !!newSelectedItems.find((selected) => selected.id === item.id)
+
+      if (alreadySelected) {
+        newSelectedItems = newSelectedItems.filter((selected) => selected.id !== item.id)
+      } else {
+        newSelectedItems.push(item)
+      }
+      setSelectedItems(newSelectedItems)
+      props.onSelect?.(newSelectedItems)
     } else {
-      // Single select: set the item, close results, and potentially update search term
       setSelectedItems([item])
       setIsResultsOpen(false)
-      setSearchResults([]) // Clear results after single selection
+      setSearchResults([])
+      props.onSelect?.([item])
     }
+
+    setSearchTerm('')
   }
 
-  // Helper to check if an item is selected
   const isSelected = (item: T) => {
     return selectedItems().some((selected) => selected.id === item.id)
   }
 
   return (
     <div class="text-primary bg-void relative my-2">
-      {/* Search Input */}
       <input
         type="text"
         placeholder={props.placeholder || 'Search...'}
         value={searchTerm()}
         onInput={(e) => setSearchTerm(e.target.value)}
         class="input-colors w-full outline-1 outline-primary mb-2"
-        onFocus={() => searchTerm() && setIsResultsOpen(true)} // Open results on focus if there's a term
-        onBlur={() => setTimeout(() => setIsResultsOpen(false), 100)} // Close results on blur with a slight delay
+        onFocus={() => searchTerm() && setIsResultsOpen(true)}
+        onBlur={() => setTimeout(() => setIsResultsOpen(false), 100)}
       />
 
-      {/* Loading Indicator */}
       <Show when={isLoading()}>
-        <div class="absolute top-0 right-0 mt-2 mr-2 text-primary">Loading...</div>
+        <div class="absolute top-2 right-0 mt-2 mr-2 text-primary">
+          <AiOutlineLoading class="w-5 h-5 animate-spin" title="Loading..." />
+        </div>
       </Show>
 
-      {/* Selected Items (for multiselect) */}
       <div
-        class="max-h-0 overflow-y-auto transition-max-height duration-300 ease-in-out"
+        class="max-h-0 overflow-y-auto transition-max-height duration-300 ease-in-out my-2"
         classList={{
           'max-h-10': selectedItems().length > 0,
         }}
       >
-        <div class="mt-2 flex flex-wrap gap-2">
+        <div class="flex flex-wrap gap-2">
           <For each={selectedItems()}>
             {(item) => (
               <span class="bg-primary text-void px-2 py-1 rounded text-base flex items-center gap-2 font-medium">
                 {item.name || item.text || item.label}
                 <button
                   class="ml-1 font-bold hover:cursor-pointer hover:bg-accent hover:text-white transition-all duration-200"
-                  onClick={() => handleItemClick(item)} // Click again to deselect
+                  onClick={() => handleItemClick(item)}
                 >
                   <IoCloseSharp class="w-4 h-4" />
                 </button>
@@ -121,18 +118,19 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
           left-0
           max-h-0
           bg-black
-          transition-max-height
+          transition-all
           duration-300
           ease-in-out
           z-[53]
           overflow-y-auto
-          rounded-lg
+          rounded-md
+          rounded-t-none
         `}
         classList={{
-          'max-h-[500px] border border-primary': isResultsOpen() && searchResults().length > 0,
+          'max-h-[500px] border-b border-primary border-l border-r': isResultsOpen() && searchResults().length > 0,
         }}
       >
-        <div class="p-2">
+        <div>
           <For each={searchResults()}>
             {(result) => (
               <div
@@ -153,10 +151,6 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
             )}
           </For>
         </div>
-
-        <Show when={!isLoading() && searchResults().length === 0 && searchTerm().length > 0}>
-          <div class="p-2 text-gray-500">No results found.</div>
-        </Show>
       </div>
     </div>
   )

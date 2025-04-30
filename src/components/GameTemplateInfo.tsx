@@ -56,6 +56,7 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
   const [showAnswers, setShowAnswers] = createSignal<Record<Round['id'], boolean>>({})
   const [showQuestions, setShowQuestions] = createSignal<Record<Round['id'], boolean>>({})
   const { get: getUsersSearch } = useApi('users?search=')
+  const [users, setUsers] = createSignal<User[]>([])
 
   const [template, {}] = createResource(
     () => props.id,
@@ -87,6 +88,10 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
     )
   }
 
+  const onUserSelect = (users: User[]) => {
+    setUsers(users)
+  }
+
   const searchUsers = async (term: string) => {
     const response = await getUsersSearch<User[]>(`${term}`)
     return response.data ?? []
@@ -102,17 +107,25 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
         <span class="text-white text-xl">Rounds: {template()?.rounds.length}</span>
         <span class="text-white text-xl">Themes: {themesCount()}</span>
         <span class="text-white text-xl">Questions: {questionsCount()}</span>
+        <span class="text-white text-xl">Participants: {users().length + 1}</span>
       </div>
       <div class="w-full">
-        <SearchComponent searchFunction={searchUsers} placeholder="Add Users" multiselect={true} />
+        <SearchComponent
+          searchFunction={searchUsers}
+          placeholder="Add Users"
+          multiselect={true}
+          onSelect={onUserSelect}
+        />
       </div>
       <button
         class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
+        disabled={!template() || !users().length}
+        classList={{ 'opacity-50 hover:cursor-not-allowed!': !template() || !users().length }}
         onclick={() => {
           console.log('Use Template')
         }}
       >
-        Use Template
+        {users().length > 0 ? 'Start Game' : 'First add some company'}
       </button>
       <p class="text-2xl font-bold my-4">Overview</p>
       <div class="flex flex-col gap-4">

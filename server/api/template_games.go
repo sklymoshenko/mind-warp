@@ -8,63 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func mapGameClientToDb(body types.GameTemplateClient) (types.GameTemplateServer, []types.TemplateRoundServer, map[string][]types.TemplateThemeServer, map[string][]types.TemplateQuestionServer, error) {
-	rounds := make([]types.TemplateRoundServer, len(body.Rounds))
-	themes := make(map[string][]types.TemplateThemeServer)
-	questions := make(map[string][]types.TemplateQuestionServer)
-
-	for i, round := range body.Rounds {
-		rankSettings := make([]types.RankSettings, len(round.Ranks))
-		for j, rank := range round.Ranks {
-			rankSettings[j] = types.RankSettings{
-				ID:         rank.Id,
-				Label:      rank.Label,
-				IsSelected: rank.IsSelected,
-			}
-		}
-
-		rounds[i] = types.TemplateRoundServer{
-			ID:             round.Id,
-			Name:           round.Name,
-			GameTemplateID: body.Id,
-			TimeSettings: types.TimeSettings{
-				ID:         round.Time.Id,
-				Label:      round.Time.Label,
-				IsSelected: round.Time.IsSelected,
-			},
-			RankSettings: rankSettings,
-		}
-
-		for j, theme := range round.Themes {
-			themes[round.Id] = append(themes[round.Id], types.TemplateThemeServer{
-				ID:       theme.Id,
-				RoundID:  round.Id,
-				Name:     theme.Name,
-				Position: j,
-			})
-
-			for j, question := range theme.Questions {
-				questions[theme.Id] = append(questions[theme.Id], types.TemplateQuestionServer{
-					ID:       question.Id,
-					ThemeID:  theme.Id,
-					Text:     question.Text,
-					Answer:   question.Answer,
-					Points:   question.Points,
-					Position: j,
-				})
-			}
-		}
-	}
-
-	return types.GameTemplateServer{
-		ID:          body.Id,
-		Name:        body.Name,
-		Description: body.Description,
-		IsPublic:    body.IsPublic,
-		CreatorID:   body.CreatorID,
-	}, rounds, themes, questions, nil
-}
-
 func (s *Server) GetAllGames(c *gin.Context) {
 	games, err := s.Db.GetAllGames(c.Request.Context())
 	if err != nil {
@@ -111,7 +54,7 @@ func (s *Server) CreateGameTemplate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
 		return
 	}
-	gameTemplate, rounds, themes, questions, err := mapGameClientToDb(gameBody)
+	gameTemplate, rounds, themes, questions, err := MapGameTemplateClientToDb(gameBody)
 
 	if err != nil {
 		logger.Errorf("Failed to map game client to db: %v", err)
@@ -130,7 +73,7 @@ func (s *Server) CreateGameTemplate(c *gin.Context) {
 
 func (s *Server) GetGameTemplateInfo(c *gin.Context) {
 	gameID := c.Param("id")
-	game, err := s.Db.GetFullGameById(c.Request.Context(), gameID)
+	game, err := s.Db.GetFullGameTemplateById(c.Request.Context(), gameID)
 	if err != nil {
 		logger.Errorf("Failed to get game template info: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game template info: " + err.Error()})

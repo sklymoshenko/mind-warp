@@ -13,29 +13,6 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-var (
-	gameID          pgtype.UUID
-	gameName        pgtype.Text
-	gameDescription pgtype.Text
-	gameIsPublic    pgtype.Bool
-
-	roundID       pgtype.UUID
-	roundName     pgtype.Text
-	roundTimeJSON []byte // Scan JSONB as []byte
-	roundRankJSON []byte // Scan JSONB as []byte
-	roundPosition pgtype.Int4
-
-	themeID       pgtype.UUID
-	themeName     pgtype.Text
-	themePosition pgtype.Int4
-
-	questionID       pgtype.UUID
-	questionText     pgtype.Text
-	questionAnswer   pgtype.Text
-	questionPoints   pgtype.Int4
-	questionPosition pgtype.Int4
-)
-
 func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	games := []types.GameTemplateServer{}
 	for rows.Next() {
@@ -103,7 +80,29 @@ func (db *DB) SearchGames(ctx context.Context, query string) ([]types.GameTempla
 	return games, nil
 }
 
-func (db *DB) GetFullGameById(ctx context.Context, id string) (*types.GameTemplateClient, error) {
+func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.GameTemplateClient, error) {
+	var (
+		gameID          pgtype.UUID
+		gameName        pgtype.Text
+		gameDescription pgtype.Text
+		gameIsPublic    pgtype.Bool
+
+		roundID       pgtype.UUID
+		roundName     pgtype.Text
+		roundTimeJSON []byte // Scan JSONB as []byte
+		roundRankJSON []byte // Scan JSONB as []byte
+		roundPosition pgtype.Int4
+
+		themeID       pgtype.UUID
+		themeName     pgtype.Text
+		themePosition pgtype.Int4
+
+		questionID     pgtype.UUID
+		questionText   pgtype.Text
+		questionAnswer pgtype.Text
+		questionPoints pgtype.Int4
+	)
+
 	query := `
 		SELECT
 			gt.id, gt.name, gt.description, gt.is_public,

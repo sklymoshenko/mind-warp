@@ -10,19 +10,15 @@ import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
 
-// Type guard to check if the props object is a full Game object
 const isFullGame = (item: Game | GameListItem): item is Game => {
-  // Check for properties that exist on Game but not on GameListItem
   return 'users' in item && 'rounds' in item
 }
 
 const GameCard = (props: Game | GameListItem) => {
   return (
-    <div class="flex flex-col gap-2 bg-void/70 rounded-lg shadow-md">
-      {/* Common properties */}
+    <div class="flex flex-col gap-2 bg-gray-600/90 rounded-lg shadow-md p-2">
       <div class="flex gap-2 items-center justify-between">
         <span class="text-xl font-bold">{props.name}</span>
-        {/* isPublic exists on both types (optional on Game, required on GameListItem) */}
         <Show when={props.isPublic === false}>
           <RiDevelopmentGitRepositoryPrivateFill class="text-primary w-6 h-6" title="Private Game" />
         </Show>
@@ -35,7 +31,6 @@ const GameCard = (props: Game | GameListItem) => {
             <span class="text-gray-400">{(props as Game).users.length} players</span>
             <span class="text-gray-400">{(props as Game).rounds.length} rounds</span>
           </div>
-          {/* finishDate is optional on Game */}
           <Show when={(props as Game).finishDate}>
             <div class="flex flex-row gap-2 text-sm">
               {DateTime.fromMillis((props as Game).finishDate!).toLocaleString()}
@@ -59,7 +54,7 @@ const MyGames = () => {
     return [mockGame, mockGame]
   })
 
-  const [gameTemplates, { mutate: setGameTemplates }] = createResource(async () => {
+  const [gameTemplates] = createResource(async () => {
     const response = await get<GameListItem[]>()
     if (response.data) {
       return response.data
@@ -101,47 +96,46 @@ const MyGames = () => {
       </div>
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
-        <div class="flex gap-4 justify-between w-full max-h-[50%]">
-          <div class={widgetStyles.base + ' mt-12  md:w-[45%]! '}>
-            <span class="text-2xl font-bold mb-4">History</span>
-            <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-              <For each={games()}>{(game) => <GameCard {...game} />}</For>
-            </div>
+        <div class={`${widgetStyles.base} mt-12 md:w-[30%] mx-auto p-4`}>
+          <span class="text-3xl font-bold text-center mb-4">Current Game</span>
+          <div class="w-full flex justify-center items-center [&>*:first-child]:p-4">
+            <GameCard {...mockGame} />
           </div>
-          <div class={widgetStyles.base + ' mt-12  md:w-[45%]!'}>
-            <div class="flex justify-between items-center mb-4">
-              <span class="text-2xl font-bold ">Created</span>
-              <button
-                class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md"
-                onClick={onToggleCreateNewGameTemplate}
-                classList={{ 'bg-red-600/70 hover:bg-red-600/50': isCreatingNewGameTemplate() }}
-              >
-                {isCreatingNewGameTemplate() ? 'Cancel Creating' : 'Create New Template'}
-              </button>
-            </div>
-            <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-              <For each={gameTemplates()}>{(game) => <GameCard {...game} />}</For>
-            </div>
+        </div>
+        <div class={`${widgetStyles.base} mt-12 w-full`}>
+          <div class="flex justify-between items-center mb-4">
+            <span class="text-2xl font-bold ">Created</span>
+            <button
+              class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md"
+              onClick={onToggleCreateNewGameTemplate}
+              classList={{ 'bg-red-600/70 hover:bg-red-600/50': isCreatingNewGameTemplate() }}
+            >
+              {isCreatingNewGameTemplate() ? 'Cancel Creating' : 'Create New Template'}
+            </button>
+          </div>
+          <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
+            <For each={gameTemplates()}>{(game) => <GameCard {...game} />}</For>
+          </div>
+        </div>
+        <div class={`${widgetStyles.base} mt-12 w-full`}>
+          <span class="text-2xl font-bold mb-4">History</span>
+          <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
+            <For each={games()}>{(game) => <GameCard {...game} />}</For>
           </div>
         </div>
         <OverlayComponent
           isOpen={isCreatingNewGameTemplate()}
           onClose={() => {
             setIsCreatingNewGameTemplate(false)
-            // Needs to reset CreateGame component state
-            setNewGameTemplate({} as any)
-            setNewGameTemplate(undefined)
           }}
         >
           <div class="w-full">
-            <Show when={!newGameTemplate()} keyed>
-              <CreateGame
-                game={newGameTemplate()}
-                onGameUpdate={setNewGameTemplate}
-                isTemplate={true}
-                onFinish={onFinishCreateGameTemplate}
-              />
-            </Show>
+            <CreateGame
+              game={newGameTemplate()}
+              onGameUpdate={setNewGameTemplate}
+              isTemplate={true}
+              onFinish={onFinishCreateGameTemplate}
+            />
           </div>
         </OverlayComponent>
       </div>

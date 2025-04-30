@@ -1,4 +1,4 @@
-import { JSX } from 'solid-js'
+import { JSX, Show } from 'solid-js'
 
 type OverlayComponentProps = {
   isOpen: boolean
@@ -29,7 +29,7 @@ const OverlayComponent = (props: OverlayComponentProps) => {
     >
       <div class="flex flex-col min-w-[90%] sm:min-w-[500px] items-center z-[52]">
         <div class="flex flex-col items-center justify-center w-full" onClick={stopPropagation}>
-          {props.children}
+          <Show when={props.isOpen}>{props.children}</Show>
         </div>
       </div>
     </div>
