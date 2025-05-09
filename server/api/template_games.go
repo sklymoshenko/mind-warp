@@ -81,6 +81,30 @@ func (s *Server) GetGameTemplateInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
+func (s *Server) UpdateGameTemplate(c *gin.Context) {
+	var gameBody types.GameTemplateClient
+	if err := c.ShouldBindJSON(&gameBody); err != nil {
+		logger.Errorf("Failed to bind JSON: %v", err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	gameTemplate, rounds, themes, questions, err := MapGameTemplateClientToDb(gameBody)
+
+	if err != nil {
+		logger.Errorf("Failed to map game client to db: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process game template: " + err.Error()})
+		return
+	}
+
+	err = s.Db.UpdateGameTemplate(c.Request.Context(), gameTemplate, rounds, themes, questions)
+	if err != nil {
+		logger.Errorf("Failed to update game template: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update game template: " + err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Game template updated successfully"})
+}
+
 func (s *Server) DeleteGameTemplate(c *gin.Context) {
 	gameID := c.Param("id")
 	err := s.Db.DeleteGameTemplate(c.Request.Context(), gameID)
@@ -97,5 +121,6 @@ func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)
 	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)
 	group.POST("/game_templates/create_template", s.CreateGameTemplate)
+	group.POST("/game_templates/update/:id", s.UpdateGameTemplate)
 	group.DELETE("/game_templates/:id", s.DeleteGameTemplate)
 }

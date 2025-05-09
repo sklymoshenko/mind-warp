@@ -5,6 +5,7 @@ import { BsController } from 'solid-icons/bs'
 import { FaSolidUserAstronaut } from 'solid-icons/fa'
 import { RoundRank, Round, User, Game, RoundTime, Question, Theme } from '../types'
 import { BiSolidHide } from 'solid-icons/bi'
+import { FiEdit } from 'solid-icons/fi'
 import { v4 as uuidv4 } from 'uuid'
 
 const defaultRanks: RoundRank[] = [
@@ -50,17 +51,17 @@ const CreateGame = (props: Props) => {
   const [gameName, setGameName] = createSignal(props.game?.name || '')
   const [gameDescription, setGameDescription] = createSignal(props.game?.description || '')
   const [rounds, setRounds] = createSignal<Round[]>(props.game?.rounds || [])
-  const [currentRoundName, setCurrentRoundName] = createSignal(props.game?.rounds[0].name || '')
-  const [currentUserName, setCurrentUserName] = createSignal(props.game?.users[1].name || '')
+  const [currentRoundName, setCurrentRoundName] = createSignal('')
+  const [currentUserName, setCurrentUserName] = createSignal('')
   const [gameUsers, setGameUsers] = createSignal<User[]>(props.game?.users || [])
   const [roundRanks, setRoundRanks] = createSignal<RoundRank[]>(defaultRanks)
   const [roundTimes, setRoundTimes] = createSignal<RoundTime[]>(defaultTimes)
-  const [themes, setThemes] = createSignal<string[]>(props.game?.rounds[0].themes.map((theme) => theme.name) || [])
+  const [themes, setThemes] = createSignal<string[]>([])
   const [questions, setQuestions] = createSignal<Record<Theme['id'], Question[]>>({})
   const [hiddenThemes, setHiddenThemes] = createSignal<Record<string, boolean>>({})
   const [isPublic, setIsPublic] = createSignal(props.game?.isPublic || false)
   const [themeCount, setThemeCount] = createSignal<number>(5)
-
+  const [editingRoundId, setEditingRoundId] = createSignal<string>('')
   const emptyGameName = createMemo(() => gameName().trim() === '')
 
   const emptyRoundName = createMemo(() => currentRoundName().trim() === '')
@@ -158,7 +159,6 @@ const CreateGame = (props: Props) => {
   }
 
   const onFinish = () => {
-    debugger
     if (rounds().length === 0) return
 
     setStep(0)
@@ -204,6 +204,48 @@ const CreateGame = (props: Props) => {
 
     setRounds(newRounds)
     prevStep()
+  }
+
+  const onEditRound = (round: Round) => {
+    setCurrentRoundName(round.name)
+    setThemes(round.themes.map((theme) => theme.name))
+    setRoundRanks(round.ranks)
+    setRoundTimes(roundTimes().map((t) => ({ ...t, isSelected: t.id === round.time.id })))
+    setQuestions(
+      round.themes.reduce(
+        (acc, theme) => {
+          acc[theme.id] = theme.questions
+          return acc
+        },
+        {} as Record<string, Question[]>
+      )
+    )
+
+    setEditingRoundId(round.id)
+    setThemeCount(round.themes.length)
+    scrollToTop()
+  }
+
+  const cancelRoundEdit = () => {
+    setEditingRoundId('')
+    setCurrentRoundName('')
+    setThemes([])
+    setRoundRanks(defaultRanks)
+    setRoundTimes(defaultTimes)
+    setThemeCount(5)
+  }
+
+  const onRoundEditSave = () => {
+    const game: Game = {
+      ...props.game!,
+      rounds: rounds(),
+      name: gameName(),
+      description: gameDescription(),
+      isPublic: isPublic(),
+    }
+
+    props.onGameUpdate?.(game)
+    cancelRoundEdit()
   }
 
   return (
@@ -445,16 +487,40 @@ const CreateGame = (props: Props) => {
                     }}
                   </For>
                 </div>
-                <button
-                  onClick={addRound}
-                  class="my-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
-                  classList={{
-                    'opacity-50 hover:cursor-not-allowed!':
-                      emptyRoundName() || notEnoughUsers() || emptyThemes() || emptyRanks(),
-                  }}
+                <Show
+                  when={!editingRoundId()}
+                  fallback={
+                    <div class="flex justify-between">
+                      <button
+                        onClick={onRoundEditSave}
+                        class="my-4 md:w-[45%] bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
+                        classList={{
+                          'opacity-50 hover:cursor-not-allowed!':
+                            emptyRoundName() || notEnoughUsers() || emptyThemes() || emptyRanks(),
+                        }}
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelRoundEdit}
+                        class="my-4  md:w-[45%] bg-red-500 text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  }
                 >
-                  Add Round
-                </button>
+                  <button
+                    onClick={addRound}
+                    class="my-4 w-full bg-accent text-white font-bold uppercase py-1 px-3 rounded-lg hover:bg-void hover:text-primary hover:cursor-pointer transition-all duration-300"
+                    classList={{
+                      'opacity-50 hover:cursor-not-allowed!':
+                        emptyRoundName() || notEnoughUsers() || emptyThemes() || emptyRanks(),
+                    }}
+                  >
+                    Add Round
+                  </button>
+                </Show>
               </div>
               <div class="max-h-80 overflow-y-auto">
                 <For each={rounds()}>
@@ -477,14 +543,24 @@ const CreateGame = (props: Props) => {
                             </For>
                           </div>
                         </div>
-                        <button
-                          onClick={() => setRounds(rounds().filter((u) => u.id !== round.id))}
-                          class="w-5 h-5 flex items-center justify-center text-accent hover:bg-primary transition-all duration-200 hover:cursor-pointer"
-                          aria-label={`Remove ${round.name} round`}
-                          title="Remove Round"
-                        >
-                          <IoCloseSharp class="w-4 h-4" />
-                        </button>
+                        <div class="flex items-center gap-2">
+                          <button
+                            onClick={() => onEditRound(round)}
+                            class="w-5 h-5 flex items-center justify-center text-accent hover:bg-primary transition-all duration-200 hover:cursor-pointer"
+                            aria-label={`Edit ${round.name} round`}
+                            title="Edit Round"
+                          >
+                            <FiEdit class="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setRounds(rounds().filter((u) => u.id !== round.id))}
+                            class="w-5 h-5 flex items-center justify-center text-red-500 hover:bg-primary hover:text-red-500/50 transition-all duration-200 hover:cursor-pointer"
+                            aria-label={`Remove ${round.name} round`}
+                            title="Remove Round"
+                          >
+                            <IoCloseSharp class="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                       <div class="flex flex-wrap gap-2">
                         <For each={round.themes}>

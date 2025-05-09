@@ -331,6 +331,22 @@ func insertRound(ctx context.Context, tx pgx.Tx, round types.TemplateRoundServer
 	return nil
 }
 
+func updateTemplate(ctx context.Context, tx pgx.Tx, template types.GameTemplateServer) error {
+	_, err := tx.Exec(ctx, "UPDATE game_templates SET name = $1, description = $2, creator_id = $3, is_public = $4 WHERE id = $5", template.Name, template.Description, template.CreatorID, template.IsPublic, template.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func updateRound(ctx context.Context, tx pgx.Tx, round types.TemplateRoundServer) error {
+	_, err := tx.Exec(ctx, "UPDATE template_rounds SET name = $1, time_settings = $2, rank_settings = $3, position = $4 WHERE id = $5", round.Name, round.TimeSettings, round.RankSettings, round.Position, round.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // CreateCompleteGameTemplate creates a complete game template with selective batch processing
 func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.GameTemplateServer, rounds []types.TemplateRoundServer, themes map[string][]types.TemplateThemeServer, questions map[string][]types.TemplateQuestionServer) error {
 	tx, err := db.pool.Begin(ctx)
@@ -395,6 +411,106 @@ func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.Gam
 				VALUES ($1, $2, $3, $4, $5, $6)`,
 				question.ID,
 				question.ThemeID,
+				question.Text,
+				question.Answer,
+				question.Points,
+				question.Position,
+			)
+			opCounts.questions++
+		}
+	}
+
+	// Execute the batch if we have any operations
+	if batch.Len() > 0 {
+		batchResults := tx.SendBatch(ctx, batch)
+
+		// Process themes results
+		for i := 0; i < opCounts.themes; i++ {
+			if _, err := batchResults.Exec(); err != nil {
+				return fmt.Errorf("failed to insert theme %d: %w", i+1, err)
+			}
+		}
+
+		// Process questions results
+		for i := 0; i < opCounts.questions; i++ {
+			if _, err := batchResults.Exec(); err != nil {
+				return fmt.Errorf("failed to insert question %d: %w", i+1, err)
+			}
+		}
+
+		if err := batchResults.Close(); err != nil {
+			return fmt.Errorf("failed to close batch: %w", err)
+		}
+	}
+
+	// Commit the transaction
+	if err = tx.Commit(ctx); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
+	return nil
+}
+
+// CreateCompleteGameTemplate creates a complete game template with selective batch processing
+func (db *DB) UpdateGameTemplate(ctx context.Context, template types.GameTemplateServer, rounds []types.TemplateRoundServer, themes map[string][]types.TemplateThemeServer, questions map[string][]types.TemplateQuestionServer) error {
+	tx, err := db.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if err := updateTemplate(ctx, tx, template); err != nil {
+		return fmt.Errorf("failed to update game template: %w", err)
+	}
+
+	// 2. update rounds (sequential updates)
+	for i, round := range rounds {
+		if err := updateRound(ctx, tx, round); err != nil {
+			return fmt.Errorf("failed to update round %d: %w", i+1, err)
+		}
+	}
+
+	// 3. Batch update themes and questions
+	batch := &pgx.Batch{}
+
+	// Track operation counts for error handling
+	opCounts := struct {
+		themes    int
+		questions int
+	}{}
+
+	// Queue themes
+	for roundID, roundThemes := range themes {
+		for _, theme := range roundThemes {
+			// Validate theme belongs to the correct round
+			if theme.RoundID != roundID {
+				return fmt.Errorf("theme %s has incorrect round ID: expected %s, got %s", theme.ID, roundID, theme.RoundID)
+			}
+
+			batch.Queue(
+				`UPDATE template_themes 
+				SET name = $1, position = $2 
+				WHERE id = $3`,
+				theme.Name,
+				theme.Position,
+				theme.ID,
+			)
+			opCounts.themes++
+		}
+	}
+
+	// Queue questions
+	for themeID, themeQuestions := range questions {
+		for _, question := range themeQuestions {
+			// Validate question belongs to the correct theme
+			if question.ThemeID != themeID {
+				return fmt.Errorf("question %s has incorrect theme ID: expected %s, got %s", question.ID, themeID, question.ThemeID)
+			}
+
+			batch.Queue(
+				`UPDATE template_questions 
+				SET text = $1, answer = $2, points = $3, position = $4 
+				WHERE id = $5`,
 				question.Text,
 				question.Answer,
 				question.Points,

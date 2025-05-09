@@ -10,6 +10,7 @@ import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
 import { IoDice, IoGameControllerOutline, IoTrashOutline } from 'solid-icons/io'
+import GameTemplateInfo from '../components/GameTemplateInfo'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -46,23 +47,32 @@ const GameCard = (props: Game | GameListItem) => {
   )
 }
 
-const GameTemplateCard = (props: GameListItem) => {
-  const { del: deleteGameTemplate } = useApi(`game_templates/${props.id}`)
+type GameTemplateCardProps = {
+  game: GameListItem
+  onDelete?: () => void
+  onClick?: () => void
+}
+
+const GameTemplateCard = (props: GameTemplateCardProps) => {
+  const { del: deleteGameTemplate } = useApi(`game_templates/${props.game.id}`)
 
   const onDeleteGameTemplate = async () => {
     const response = await deleteGameTemplate()
 
-    if (response.error) {
-      console.error(response.error)
+    if (!response.error) {
+      props.onDelete?.()
     }
   }
 
   return (
-    <div class="relative flex items-center group gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[150px] min-h-20 hover:min-[200px]">
+    <div
+      class="relative flex items-center group gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[150px] min-h-20 hover:min-[200px]"
+      onClick={props.onClick}
+    >
       <IoDice class="w-15 h-15 text-primary/50 group-hover:animate-spin" />
       <div class="flex flex-col gap-1">
-        <span class="text-2xl font-bold">{props.name}</span>
-        <span class="text-xl text-primary/50">{props.description}</span>
+        <span class="text-2xl font-bold">{props.game.name}</span>
+        <span class="text-xl text-primary/50">{props.game.description}</span>
       </div>
       <button
         class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
@@ -78,13 +88,15 @@ const MyGames = () => {
   const { user } = useAuth()
   const { post } = useApi('game_templates/create_template')
   const { get } = useApi(`game_templates/user/${user()?.id}`)
+  const { get: getGameTemplateInfo } = useApi('game_templates/info')
   const { get: getActiveGames } = useApi(`games/active/user/${user()?.id}`)
   const { get: getGamesHistory } = useApi(`games/finished/user/${user()?.id}`)
 
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
   const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
+  const [editingGameTemplateId, setEditingGameTemplateId] = createSignal<string>()
 
-  const [games, { refetch: refetchGames }] = createResource(async () => {
+  const [games] = createResource(async () => {
     const response = await getActiveGames<Game[]>()
 
     if (response.data) {
@@ -104,7 +116,7 @@ const MyGames = () => {
     return []
   })
 
-  const [gameTemplates] = createResource(async () => {
+  const [gameTemplates, { mutate: setGameTemplates }] = createResource(async () => {
     const response = await get<GameListItem[]>()
     if (response.data) {
       return response.data
@@ -120,8 +132,8 @@ const MyGames = () => {
 
     const response = await post<Game>(template)
 
-    if (response.data) {
-      await refetchGames()
+    if (!response.error) {
+      setGameTemplates([...gameTemplates()!, template])
     }
   }
 
@@ -132,6 +144,19 @@ const MyGames = () => {
 
   const onToggleCreateNewGameTemplate = async () => {
     setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())
+  }
+
+  const onTemplateDelete = async (gameId: string) => {
+    setGameTemplates(gameTemplates()!.filter((game) => game.id !== gameId))
+  }
+
+  const onTemplateClick = async (gameId: string) => {
+    const response = await getGameTemplateInfo<Game>(`/${gameId}`)
+
+    if (response.data) {
+      setNewGameTemplate(response.data)
+      setEditingGameTemplateId(gameId)
+    }
   }
 
   return (
@@ -169,7 +194,15 @@ const MyGames = () => {
               fallback={<span class="text-gray-400 text-2xl text-center p-4">No Templates Created</span>}
             >
               <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-                <For each={gameTemplates()}>{(game) => <GameTemplateCard {...game} />}</For>
+                <For each={gameTemplates()}>
+                  {(game) => (
+                    <GameTemplateCard
+                      game={game}
+                      onDelete={() => onTemplateDelete(game.id)}
+                      onClick={() => onTemplateClick(game.id)}
+                    />
+                  )}
+                </For>
               </div>
             </Show>
           </div>
@@ -181,7 +214,7 @@ const MyGames = () => {
             fallback={<span class="text-gray-400 text-2xl text-center p-4">No Games History</span>}
           >
             <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-              <For each={gamesHistory()}>{(game) => <GameTemplateCard {...game} />}</For>
+              <For each={gamesHistory()}>{(game) => <GameTemplateCard game={game} />}</For>
             </div>
           </Show>
         </div>
@@ -199,6 +232,14 @@ const MyGames = () => {
               onFinish={onFinishCreateGameTemplate}
             />
           </div>
+        </OverlayComponent>
+        <OverlayComponent isOpen={!!editingGameTemplateId()} onClose={() => setEditingGameTemplateId(undefined)}>
+          <CreateGame
+            game={newGameTemplate()}
+            onGameUpdate={setNewGameTemplate}
+            isTemplate={true}
+            onFinish={onFinishCreateGameTemplate}
+          />
         </OverlayComponent>
       </div>
     </>

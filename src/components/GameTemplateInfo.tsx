@@ -1,4 +1,4 @@
-import { createResource, createSignal, For } from 'solid-js'
+import { createResource, createSignal, For, Show } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { Game, GameTemplate, Round, User } from '../types'
 import Accordion from './Accordion'
