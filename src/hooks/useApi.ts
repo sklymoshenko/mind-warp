@@ -68,9 +68,26 @@ export const useApi = (url: string) => {
     }
   }
 
+  const del = async <T>(url: string = ''): Promise<{ data?: T; error?: string }> => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(createBaseUrl() + url, {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+
+      return handleResponse<T>(response)
+    } catch (error) {
+      return { error: `Unexpected error while DELETE: ${error}` }
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return {
     isLoading,
     get,
     post,
+    del,
   }
 }

@@ -81,10 +81,21 @@ func (s *Server) GetGameTemplateInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
+func (s *Server) DeleteGameTemplate(c *gin.Context) {
+	gameID := c.Param("id")
+	err := s.Db.DeleteGameTemplate(c.Request.Context(), gameID)
+	if err != nil {
+		logger.Errorf("Failed to delete game template: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete game template: " + err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Game template deleted successfully"})
+}
+
 func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/game_templates", s.GetAllGames)
 	group.GET("/game_templates/:id", s.GetGameByID)
 	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)
 	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)
 	group.POST("/game_templates/create_template", s.CreateGameTemplate)
+	group.DELETE("/game_templates/:id", s.DeleteGameTemplate)
 }

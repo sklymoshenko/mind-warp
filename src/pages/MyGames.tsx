@@ -9,7 +9,7 @@ import { useApi } from '../hooks/useApi'
 import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
-import { IoDice, IoGameControllerOutline } from 'solid-icons/io'
+import { IoDice, IoGameControllerOutline, IoTrashOutline } from 'solid-icons/io'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -47,13 +47,29 @@ const GameCard = (props: Game | GameListItem) => {
 }
 
 const GameTemplateCard = (props: GameListItem) => {
+  const { del: deleteGameTemplate } = useApi(`game_templates/${props.id}`)
+
+  const onDeleteGameTemplate = async () => {
+    const response = await deleteGameTemplate()
+
+    if (response.error) {
+      console.error(response.error)
+    }
+  }
+
   return (
-    <div class="flex items-center gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[150px] min-h-20">
+    <div class="relative flex items-center group gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[150px] min-h-20 hover:min-[200px]">
       <IoDice class="w-15 h-15 text-primary/50 group-hover:animate-spin" />
       <div class="flex flex-col gap-1">
         <span class="text-2xl font-bold">{props.name}</span>
         <span class="text-xl text-primary/50">{props.description}</span>
       </div>
+      <button
+        class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+        onclick={onDeleteGameTemplate}
+      >
+        <IoTrashOutline class="min-w-0 min-h-0 group-hover:min-w-10 group-hover:min-h-10 transition-all duration-300" />
+      </button>
     </div>
   )
 }

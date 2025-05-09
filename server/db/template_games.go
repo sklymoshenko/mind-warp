@@ -434,3 +434,16 @@ func (db *DB) CreateCompleteGameTemplate(ctx context.Context, template types.Gam
 
 	return nil
 }
+
+func (db *DB) DeleteGameTemplate(ctx context.Context, id string) error {
+	_, err := db.pool.Exec(ctx, "UPDATE games SET template_id = NULL WHERE template_id = $1", id)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.pool.Exec(ctx, "DELETE FROM game_templates WHERE id = $1", id)
+	if err != nil {
+		return err
+	}
+	return nil
+}
