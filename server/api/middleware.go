@@ -1,8 +1,6 @@
 package api
 
 import (
-	"mindwarp/logger"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -20,7 +18,6 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 			return
 		}
 
-		logger.Debugf("User ID: %s", userID)
 		c.Set("currentUserID", userID)
 		c.Next()
 	}

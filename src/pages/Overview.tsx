@@ -142,7 +142,7 @@ const Overview = (props: OverviewProps) => {
           </div>
         </div>
         <OverlayComponent isOpen={!!gameTemplateId()} onClose={() => setGameTemplateId(undefined)}>
-          <GameTemplateInfo id={gameTemplateId()} />
+          <GameTemplateInfo id={gameTemplateId()} user={user()!} />
         </OverlayComponent>
       </div>
     </>

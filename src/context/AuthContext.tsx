@@ -22,7 +22,7 @@ export const AuthProvider: ParentComponent = (props) => {
 
   const [_, { refetch }] = createResource(async () => {
     const res = await fetch('/api/me', { credentials: 'include' })
-    if (res.status === 401) {
+    if (res.status === 401 || !res.ok) {
       setUser(null)
       setInitialized(true)
       return

@@ -1,7 +1,6 @@
 package api
 
 import (
-	"mindwarp/logger"
 	"mindwarp/types"
 	"net/http"
 
@@ -14,7 +13,6 @@ func (s *Server) GetCurrentUser(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized: No user ID"})
 		return
 	}
-	logger.Debugf("User ID type: %T, value: %v", userID, userID)
 
 	user, err := s.Db.GetUserByID(userID.(string))
 	if err != nil {

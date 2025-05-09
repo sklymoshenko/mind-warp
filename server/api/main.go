@@ -31,6 +31,7 @@ func (s *Server) Start() {
 	protected := s.router.Group("/")
 	protected.Use(s.AuthMiddleware())
 	s.AddUserRoutes(protected)
+	s.AddGameTemplateRoutes(protected)
 	s.AddGameRoutes(protected)
 
 	s.router.Run(s.port)

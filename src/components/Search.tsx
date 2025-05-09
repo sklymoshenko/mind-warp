@@ -8,6 +8,7 @@ type SearchProps<T extends WithIdAndLabel> = {
   placeholder?: string
   multiselect?: boolean
   onSelect?: (items: T[]) => void
+  defaultSelected?: T[]
 }
 
 function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
@@ -15,7 +16,8 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
   const [searchResults, setSearchResults] = createSignal<T[]>([])
   const [isLoading, setIsLoading] = createSignal(false)
   const [isResultsOpen, setIsResultsOpen] = createSignal(false)
-  const [selectedItems, setSelectedItems] = createSignal<T[]>([])
+  const [selectedItems, setSelectedItems] = createSignal<T[]>(props.defaultSelected || [])
+  console.log(props.defaultSelected)
 
   createEffect(() => {
     const term = searchTerm()

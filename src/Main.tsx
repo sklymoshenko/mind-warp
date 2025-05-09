@@ -63,8 +63,8 @@ const Main = () => {
 
   const updateUser = (question: Question, isCorrect: boolean, userIndex: number): User => {
     const newUser = { ...game().users[userIndex] }
-    const score = newUser.roundScore[game().currentRound] || 0
-    newUser.roundScore[game().currentRound] = isCorrect ? score + question.points : score - question.points
+    const score = newUser.roundScore[game().currentRound!] || 0
+    newUser.roundScore[game().currentRound!] = isCorrect ? score + question.points : score - question.points
 
     return newUser
   }
@@ -120,11 +120,11 @@ const Main = () => {
                 <GameRound
                   round={currentRound()!}
                   users={game().users}
-                  currentQuestion={game().currentQuestion}
+                  currentQuestion={game().currentQuestion!}
                   onQuestionSelect={onQuestionSelect}
                   onQuestionAnswered={onQuestionAnswered}
                   updateForExtraAnswerer={onUpdateForExtraAnswerer}
-                  currentUser={game().currentUser}
+                  currentUser={game().currentUser!}
                   {...props}
                 />
               )}

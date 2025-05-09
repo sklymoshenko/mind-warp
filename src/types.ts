@@ -46,14 +46,15 @@ export type Game = {
   description: string
   users: User[]
   rounds: Round[]
-  currentRound: Round['id']
-  currentQuestion: Question['id']
-  currentUser: User['id']
-  isFinished: boolean
+  currentRound?: Round['id']
+  currentQuestion?: Question['id']
+  currentUser?: User['id']
+  isFinished?: boolean
   winner?: User['id']
   finishDate?: number
   isPublic?: boolean
   creatorId: User['id']
+  templateId?: GameTemplate['id']
 }
 
 export type GameTemplate = Omit<

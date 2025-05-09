@@ -1,14 +1,16 @@
 import { createResource, createSignal, For } from 'solid-js'
 import { useApi } from '../hooks/useApi'
-import { GameTemplate, Round, User } from '../types'
+import { Game, GameTemplate, Round, User } from '../types'
 import Accordion from './Accordion'
 
 import { TbZoomQuestion } from 'solid-icons/tb'
 import { BiRegularShowAlt } from 'solid-icons/bi'
 import SearchComponent from './Search'
+import { useNavigate } from '@solidjs/router'
 
 type GameTemplateInfoProps = {
   id?: GameTemplate['id']
+  user: User
 }
 
 type AccordionTitleProps = {
@@ -56,7 +58,9 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
   const [showAnswers, setShowAnswers] = createSignal<Record<Round['id'], boolean>>({})
   const [showQuestions, setShowQuestions] = createSignal<Record<Round['id'], boolean>>({})
   const { get: getUsersSearch } = useApi('users?search=')
-  const [users, setUsers] = createSignal<User[]>([])
+  const { post: createGame } = useApi('games/create')
+  const [users, setUsers] = createSignal<User[]>([props.user])
+  const navigate = useNavigate()
 
   const [template, {}] = createResource(
     () => props.id,
@@ -97,6 +101,24 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
     return response.data ?? []
   }
 
+  const onGameStart = async () => {
+    if (!template()) {
+      return
+    }
+
+    const fullTemplate: Game = {
+      ...template()!,
+      creatorId: props.user.id,
+      users: users(),
+      templateId: template()!.id,
+    }
+
+    const response = await createGame<Game>(fullTemplate)
+    if (response.data) {
+      navigate(`/games/me`)
+    }
+  }
+
   return (
     <div class="flex flex-col w-full">
       <div class="flex flex-col gap-4">
@@ -115,17 +137,16 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
           placeholder="Add Users"
           multiselect={true}
           onSelect={onUserSelect}
+          defaultSelected={users()}
         />
       </div>
       <button
         class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
-        disabled={!template() || !users().length}
-        classList={{ 'opacity-50 hover:cursor-not-allowed!': !template() || !users().length }}
-        onclick={() => {
-          console.log('Use Template')
-        }}
+        disabled={!template() || users().length < 2}
+        classList={{ 'opacity-50 hover:cursor-not-allowed!': !template() || users().length < 2 }}
+        onclick={onGameStart}
       >
-        {users().length > 0 ? 'Start Game' : 'First add some company'}
+        {users().length > 1 ? 'Start Game' : 'First add some company'}
       </button>
       <p class="text-2xl font-bold my-4">Overview</p>
       <div class="flex flex-col gap-4">

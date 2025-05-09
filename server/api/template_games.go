@@ -81,7 +81,7 @@ func (s *Server) GetGameTemplateInfo(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
-func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
+func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/game_templates", s.GetAllGames)
 	group.GET("/game_templates/:id", s.GetGameByID)
 	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)

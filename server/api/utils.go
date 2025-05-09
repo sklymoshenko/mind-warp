@@ -67,9 +67,7 @@ func MapGameClientToDb(body types.GameClient) (types.GameServer, []types.RoundSe
 
 	for i, user := range body.Users {
 		users[i] = types.UserServer{
-			ID:      user.ID,
-			Name:    user.Name,
-			IsAdmin: user.IsAdmin,
+			ID: user.ID,
 		}
 	}
 
@@ -116,8 +114,9 @@ func MapGameClientToDb(body types.GameClient) (types.GameServer, []types.RoundSe
 	}
 
 	return types.GameServer{
-		ID:        body.ID,
-		Name:      body.Name,
-		CreatorID: body.CreatorID,
+		ID:         body.ID,
+		Name:       body.Name,
+		CreatorID:  body.CreatorID,
+		TemplateID: body.TemplateID,
 	}, rounds, themes, questions, users, nil
 }

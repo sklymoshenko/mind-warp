@@ -44,6 +44,8 @@ func (db *DB) Initialize() {
 		return
 	}
 
+	// db.fillUsers()
+
 	logger.Info("Tables in the database: %v", tables)
 }
 

@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, Show } from 'solid-js'
 import { A, useNavigate } from '@solidjs/router'
 import { IoCloseSharp, IoEyeSharp } from 'solid-icons/io'
 import { BsController } from 'solid-icons/bs'
@@ -65,11 +65,14 @@ const CreateGame = (props: Props) => {
 
   const emptyRoundName = createMemo(() => currentRoundName().trim() === '')
   const emptyCurrentUserName = createMemo(() => currentUserName().trim() === '')
-  const emptyThemes = createMemo(() => themes().filter(Boolean).length != themes().length)
+  const emptyThemes = createMemo(
+    () => themes().length === 0 || themes().some((theme) => theme.trim() === '') || themes().length < themeCount()
+  )
+
   const emptyRanks = createMemo(() => roundRanks().filter((r) => r.isSelected).length === 0)
   const emptyTime = createMemo(() => roundTimes().filter((t) => t.isSelected).length === 0)
 
-  const notEnoughUsers = createMemo(() => gameUsers().length < 2)
+  const notEnoughUsers = createMemo(() => !props.isTemplate && gameUsers().length < 2)
   const sameUser = createMemo(() =>
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
   )
@@ -155,6 +158,7 @@ const CreateGame = (props: Props) => {
   }
 
   const onFinish = () => {
+    debugger
     if (rounds().length === 0) return
 
     setStep(0)
@@ -166,10 +170,10 @@ const CreateGame = (props: Props) => {
       description: gameDescription() ?? 'Pretty cool game: ' + gameName(),
       currentRound: '',
       currentQuestion: '',
-      currentUser: gameUsers()[0].id,
+      currentUser: gameUsers()[0]?.id,
       isFinished: false,
       isPublic: isPublic(),
-      creatorId: props.game?.creatorId || gameUsers()[0].id,
+      creatorId: props.game?.creatorId || gameUsers()[0]?.id,
     }
 
     setGameId(game.id)
@@ -334,11 +338,6 @@ const CreateGame = (props: Props) => {
               <div class="flex justify-between mt-2 sm:mt-6">
                 <button
                   onClick={() => {
-                    if (props.isTemplate) {
-                      setStep(1)
-                      scrollToTop()
-                      return
-                    }
                     prevStep()
                   }}
                   class="bg-void text-primary font-bold uppercase py-2 px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
@@ -392,7 +391,7 @@ const CreateGame = (props: Props) => {
                       }
                     }}
                     class="input-colors p-2! max-w-fit! h-8! "
-                    min={1}
+                    min={2}
                     max={20}
                   />
                 </div>
@@ -508,7 +507,14 @@ const CreateGame = (props: Props) => {
               </div>
               <div class="flex justify-between mt-6">
                 <button
-                  onClick={prevStep}
+                  onClick={() => {
+                    if (props.isTemplate) {
+                      setStep(1)
+                      scrollToTop()
+                      return
+                    }
+                    prevStep()
+                  }}
                   class="text-sm sm:text-lg bg-void text-primary font-bold uppercase py-2 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-accent hover:text-white hover:cursor-pointer transition-all duration-300"
                 >
                   Back

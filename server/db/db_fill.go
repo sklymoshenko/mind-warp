@@ -22,8 +22,8 @@ func init() {
 }
 
 func (db *DB) fillUsers() {
+	logger.Info("Filling users")
 	for _, user := range users {
-
 		hashedPassword, err := argon2id.CreateHash(user.Password, argon2id.DefaultParams)
 		if err != nil {
 			logger.Error("Failed to hash password: " + err.Error())

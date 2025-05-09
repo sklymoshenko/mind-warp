@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -88,4 +89,12 @@ func Error(msg string) {
 // Errorf logs a formatted error message
 func Errorf(format string, v ...interface{}) {
 	log.Error().Msgf(format, v...)
+}
+
+func PrettyPrint(v interface{}) {
+	json, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		log.Error().Msgf("Failed to marshal json: %v", err)
+	}
+	fmt.Println(string(json))
 }
