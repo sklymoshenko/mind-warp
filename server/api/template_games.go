@@ -121,6 +121,6 @@ func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)
 	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)
 	group.POST("/game_templates/create_template", s.CreateGameTemplate)
-	group.POST("/game_templates/update/:id", s.UpdateGameTemplate)
+	group.POST("/game_templates/update", s.UpdateGameTemplate)
 	group.DELETE("/game_templates/:id", s.DeleteGameTemplate)
 }

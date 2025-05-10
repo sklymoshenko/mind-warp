@@ -86,12 +86,12 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 		gameName        pgtype.Text
 		gameDescription pgtype.Text
 		gameIsPublic    pgtype.Bool
-
-		roundID       pgtype.UUID
-		roundName     pgtype.Text
-		roundTimeJSON []byte // Scan JSONB as []byte
-		roundRankJSON []byte // Scan JSONB as []byte
-		roundPosition pgtype.Int4
+		gameCreatorID   pgtype.UUID
+		roundID         pgtype.UUID
+		roundName       pgtype.Text
+		roundTimeJSON   []byte // Scan JSONB as []byte
+		roundRankJSON   []byte // Scan JSONB as []byte
+		roundPosition   pgtype.Int4
 
 		themeID       pgtype.UUID
 		themeName     pgtype.Text
@@ -105,7 +105,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 
 	query := `
 		SELECT
-			gt.id, gt.name, gt.description, gt.is_public,
+			gt.id, gt.name, gt.description, gt.is_public, gt.creator_id,
 			tr.id, tr.name, tr.time_settings, tr.rank_settings, tr.position,
 			tt.id, tt.name, tt.position,
 			tq.id, tq.text, tq.answer, tq.points
@@ -138,7 +138,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 	for rows.Next() {
 		count++
 		err := rows.Scan(
-			&gameID, &gameName, &gameDescription, &gameIsPublic,
+			&gameID, &gameName, &gameDescription, &gameIsPublic, &gameCreatorID,
 			&roundID, &roundName, &roundTimeJSON, &roundRankJSON, &roundPosition,
 			&themeID, &themeName, &themePosition,
 			&questionID, &questionText, &questionAnswer, &questionPoints,
@@ -151,7 +151,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 		roundIDStr := uuidToString(roundID)
 		themeIDStr := uuidToString(themeID)
 		questionIDStr := uuidToString(questionID)
-
+		gameCreatorIDStr := uuidToString(gameCreatorID)
 		// Initialize game template on the first valid row
 		if gameTemplate == nil {
 			if gameID.Status != pgtype.Present {
@@ -162,6 +162,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 				Name:        gameName.String,
 				Description: gameDescription.String,
 				IsPublic:    gameIsPublic.Bool,
+				CreatorID:   gameCreatorIDStr,
 				Rounds:      []types.RoundClient{}, // Initialize slice
 			}
 		}
@@ -340,7 +341,13 @@ func updateTemplate(ctx context.Context, tx pgx.Tx, template types.GameTemplateS
 }
 
 func updateRound(ctx context.Context, tx pgx.Tx, round types.TemplateRoundServer) error {
-	_, err := tx.Exec(ctx, "UPDATE template_rounds SET name = $1, time_settings = $2, rank_settings = $3, position = $4 WHERE id = $5", round.Name, round.TimeSettings, round.RankSettings, round.Position, round.ID)
+	_, err := tx.Exec(ctx, `
+		INSERT INTO template_rounds (id, game_template_id, name, time_settings, rank_settings, position)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		ON CONFLICT (id) DO UPDATE 
+		SET name = $3, time_settings = $4, rank_settings = $5, position = $6
+		WHERE template_rounds.id = $1`,
+		round.ID, round.GameTemplateID, round.Name, round.TimeSettings, round.RankSettings, round.Position)
 	if err != nil {
 		return err
 	}
@@ -488,12 +495,14 @@ func (db *DB) UpdateGameTemplate(ctx context.Context, template types.GameTemplat
 			}
 
 			batch.Queue(
-				`UPDATE template_themes 
-				SET name = $1, position = $2 
-				WHERE id = $3`,
+				`INSERT INTO template_themes (id, round_id, name, position)
+				VALUES ($1, $2, $3, $4)
+				ON CONFLICT (id) DO UPDATE 
+				SET name = $3, position = $4`,
+				theme.ID,
+				theme.RoundID,
 				theme.Name,
 				theme.Position,
-				theme.ID,
 			)
 			opCounts.themes++
 		}
@@ -508,9 +517,12 @@ func (db *DB) UpdateGameTemplate(ctx context.Context, template types.GameTemplat
 			}
 
 			batch.Queue(
-				`UPDATE template_questions 
-				SET text = $1, answer = $2, points = $3, position = $4 
-				WHERE id = $5`,
+				`INSERT INTO template_questions (id, theme_id, text, answer, points, position)
+				VALUES ($1, $2, $3, $4, $5, $6)
+				ON CONFLICT (id) DO UPDATE 
+				SET text = $3, answer = $4, points = $5, position = $6`,
+				question.ID,
+				question.ThemeID,
 				question.Text,
 				question.Answer,
 				question.Points,

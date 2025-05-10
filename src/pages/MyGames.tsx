@@ -86,7 +86,8 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
 
 const MyGames = () => {
   const { user } = useAuth()
-  const { post } = useApi('game_templates/create_template')
+  const { post: createTemplate } = useApi('game_templates/create_template')
+  const { post: updateTemplate } = useApi('game_templates/update')
   const { get } = useApi(`game_templates/user/${user()?.id}`)
   const { get: getGameTemplateInfo } = useApi('game_templates/info')
   const { get: getActiveGames } = useApi(`games/active/user/${user()?.id}`)
@@ -130,7 +131,7 @@ const MyGames = () => {
 
     const template = { ...newGameTemplate()!, creatorId: user()?.id! }
 
-    const response = await post<Game>(template)
+    const response = await createTemplate<Game>(template)
 
     if (!response.error) {
       setGameTemplates([...gameTemplates()!, template])
@@ -157,6 +158,24 @@ const MyGames = () => {
       setNewGameTemplate(response.data)
       setEditingGameTemplateId(gameId)
     }
+  }
+
+  const saveNewGameTemplate = async () => {
+    if (!newGameTemplate()) return
+
+    const response = await updateTemplate<Game>(newGameTemplate()!)
+
+    if (!response.error) {
+      const updatedIndex = gameTemplates()!.findIndex((game) => game.id === newGameTemplate()!.id)
+      setGameTemplates((prev) => {
+        if (updatedIndex === -1) return prev
+        const newGameTemplates = [...prev!]
+        newGameTemplates[updatedIndex] = newGameTemplate()!
+        return newGameTemplates
+      })
+    }
+
+    setEditingGameTemplateId(undefined)
   }
 
   return (
@@ -238,7 +257,7 @@ const MyGames = () => {
             game={newGameTemplate()}
             onGameUpdate={setNewGameTemplate}
             isTemplate={true}
-            onFinish={onFinishCreateGameTemplate}
+            onFinish={saveNewGameTemplate}
           />
         </OverlayComponent>
       </div>

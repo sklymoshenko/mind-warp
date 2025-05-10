@@ -78,6 +78,22 @@ const CreateGame = (props: Props) => {
     gameUsers().some((user) => user.name.toLowerCase() === currentUserName().toLowerCase())
   )
 
+  createEffect(() => {
+    if (props.isTemplate) {
+      for (const round of props.game?.rounds || []) {
+        setQuestions(
+          round.themes.reduce(
+            (acc, theme) => {
+              acc[theme.id] = theme.questions
+              return acc
+            },
+            {} as Record<string, Question[]>
+          )
+        )
+      }
+    }
+  })
+
   const nextStep = () => {
     if (step() === 1 && emptyGameName()) return
     if (step() === 2 && gameUsers().length < 2) return
@@ -163,20 +179,23 @@ const CreateGame = (props: Props) => {
 
     setStep(0)
     const game: Game = {
-      id: createUUID(),
-      users: gameUsers(),
+      id: props.game?.id || createUUID(),
+      users: gameUsers() || [],
       rounds: rounds(),
       name: gameName(),
       description: gameDescription() ?? 'Pretty cool game: ' + gameName(),
       currentRound: '',
       currentQuestion: '',
-      currentUser: gameUsers()[0]?.id,
+      currentUser: gameUsers()[0]?.id || '',
       isFinished: false,
       isPublic: isPublic(),
-      creatorId: props.game?.creatorId || gameUsers()[0]?.id,
+      creatorId: props.game?.creatorId || gameUsers()[0]?.id || '',
     }
 
-    setGameId(game.id)
+    if (!props.isTemplate) {
+      setGameId(game.id)
+    }
+
     props.onGameUpdate(game)
     props.onFinish?.()
   }
@@ -236,15 +255,54 @@ const CreateGame = (props: Props) => {
   }
 
   const onRoundEditSave = () => {
-    const game: Game = {
-      ...props.game!,
-      rounds: rounds(),
-      name: gameName(),
-      description: gameDescription(),
-      isPublic: isPublic(),
+    if (emptyRoundName() || emptyThemes() || emptyRanks() || emptyTime()) return
+    const editingRoundIndex = rounds().findIndex((r) => r.id === editingRoundId())
+
+    if (editingRoundIndex === -1) return
+
+    const ranks = roundRanks().filter((r) => r.isSelected)
+    const time = roundTimes().find((t) => t.isSelected)!
+    const updatedRound = { ...rounds()[editingRoundIndex] }
+
+    updatedRound.ranks = ranks
+    updatedRound.name = currentRoundName()
+    updatedRound.time = time
+
+    updatedRound.themes = updatedRound.themes.map((theme, i) => ({
+      ...theme,
+      name: themes()[i] || theme.name,
+      questions: questions()[theme.id] || theme.questions,
+    }))
+
+    if (updatedRound.themes.length < themes().length) {
+      updatedRound.themes = themes().map((theme, i) => {
+        const roundTheme = updatedRound.themes[i]
+
+        if (roundTheme) {
+          return roundTheme
+        }
+
+        return {
+          id: createUUID(),
+          name: theme,
+          questions: ranks.map((r) => ({
+            id: createUUID(),
+            text: '',
+            answer: '',
+            points: r.id,
+            isCorrect: null,
+            timeAnswered: undefined,
+          })),
+        }
+      })
     }
 
-    props.onGameUpdate?.(game)
+    setRounds((prev) => {
+      const newRounds = [...prev]
+      newRounds[editingRoundIndex] = updatedRound
+      return newRounds
+    })
+
     cancelRoundEdit()
   }
 
@@ -598,8 +656,10 @@ const CreateGame = (props: Props) => {
                 <button
                   onClick={nextStep}
                   class="text-sm sm:text-lg bg-accent text-primary font-bold uppercase py-2 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-accent/50 hover:text-white hover:cursor-pointer transition-all duration-300"
-                  classList={{ 'opacity-50 cursor-not-allowed!': rounds().length === 0 }}
-                  disabled={rounds().length === 0}
+                  classList={{
+                    'opacity-50 cursor-not-allowed!': rounds().length === 0 || !!editingRoundId(),
+                  }}
+                  disabled={rounds().length === 0 || !!editingRoundId()}
                 >
                   Fill Questions
                 </button>
