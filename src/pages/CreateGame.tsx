@@ -79,6 +79,10 @@ const CreateGame = (props: Props) => {
   )
 
   createEffect(() => {
+    console.log(props.game?.users)
+  })
+
+  createEffect(() => {
     if (props.isTemplate) {
       for (const round of props.game?.rounds || []) {
         setQuestions(
@@ -306,6 +310,14 @@ const CreateGame = (props: Props) => {
     cancelRoundEdit()
   }
 
+  const onUserRemove = (user: User) => {
+    if (props.game?.creatorId === user.id) {
+      return
+    }
+
+    setGameUsers(gameUsers().filter((u) => u.id !== user.id))
+  }
+
   return (
     <>
       <Show when={!props.isTemplate}>
@@ -402,7 +414,7 @@ const CreateGame = (props: Props) => {
                   <input
                     type="text"
                     value={currentUserName()}
-                    onInput={(e) => setCurrentUserName(e.currentTarget.value)} // Fixed typo
+                    onInput={(e) => setCurrentUserName(e.currentTarget.value)}
                     placeholder="Add Player"
                     class="w-full input-colors"
                   />
@@ -424,7 +436,7 @@ const CreateGame = (props: Props) => {
                       <div class="relative bg-void rounded-md px-2 py-1 mb-1 flex items-center gap-2 shadow-xs hover:shadow-sm transition-all duration-300 animate-slide-in w-fit">
                         <p class="text-primary text-sm font-medium uppercase tracking-wide flex-1">{user.name}</p>
                         <button
-                          onClick={() => setGameUsers(gameUsers().filter((u) => u.id !== user.id))}
+                          onClick={() => onUserRemove(user)}
                           class="w-5 h-5 flex items-center justify-center text-void/60 hover:bg-accent hover:text-white transition-all duration-200 hover:cursor-pointer"
                           aria-label={`Remove player ${user}`}
                         >

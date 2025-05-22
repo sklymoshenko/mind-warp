@@ -1,5 +1,5 @@
 // AuthContext.tsx
-import { createContext, useContext, ParentComponent, createSignal, createResource, Accessor } from 'solid-js'
+import { createContext, useContext, ParentComponent, createSignal, createResource, Accessor, onMount } from 'solid-js'
 import { User } from '../types'
 import { useApi } from '../hooks/useApi'
 
@@ -53,7 +53,6 @@ export const AuthProvider: ParentComponent = (props) => {
     }
   }
 
-  // on mount
   refetch()
 
   return (

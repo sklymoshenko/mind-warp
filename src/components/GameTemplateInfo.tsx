@@ -7,10 +7,13 @@ import { TbZoomQuestion } from 'solid-icons/tb'
 import { BiRegularShowAlt } from 'solid-icons/bi'
 import SearchComponent from './Search'
 import { useNavigate } from '@solidjs/router'
+import { FiEdit } from 'solid-icons/fi'
 
 type GameTemplateInfoProps = {
   id?: GameTemplate['id']
+  gameTemplate?: GameTemplate
   user: User
+  onEdit: (gameTemplate: GameTemplate) => void
 }
 
 type AccordionTitleProps = {
@@ -63,8 +66,12 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
   const navigate = useNavigate()
 
   const [template, {}] = createResource(
-    () => props.id,
-    async (id) => {
+    () => ({ id: props.id, template: props.gameTemplate }),
+    async ({ id, template }) => {
+      if (template) {
+        return template
+      }
+
       if (!id) {
         return undefined
       }
@@ -92,8 +99,15 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
     )
   }
 
-  const onUserSelect = (users: User[]) => {
-    setUsers(users)
+  const onUserSelect = (newUsers: User[]) => {
+    if (users().length > newUsers.length) {
+      const isRemovedCreator = newUsers.length === 0 || newUsers.some((user) => user.id !== props.user.id)
+      if (isRemovedCreator) {
+        return
+      }
+    }
+
+    setUsers(newUsers)
   }
 
   const searchUsers = async (term: string) => {
@@ -119,10 +133,33 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
     }
   }
 
+  const handleEdit = () => {
+    if (!template()) {
+      return
+    }
+
+    const fullTemplate: Game = {
+      ...template()!,
+      creatorId: props.user.id,
+      users: users(),
+      templateId: template()!.id,
+    }
+
+    props.onEdit(fullTemplate)
+  }
+
   return (
     <div class="flex flex-col w-full">
       <div class="flex flex-col gap-4">
-        <span class="text-bold text-5xl">{template()?.name}</span>
+        <div class="flex items-center w-full justify-between">
+          <span class="text-bold text-5xl">{template()?.name}</span>
+          <button
+            class="text-primary text-xl font-bold hover:cursor-pointer hover:text-accent transition-all duration-300"
+            onClick={handleEdit}
+          >
+            <FiEdit class="w-7 h-7" />
+          </button>
+        </div>
         <span class="text-2xl text-gray-500">{template()?.description}</span>
       </div>
       <div class="flex items-center justify-between w-full my-4">
@@ -136,6 +173,7 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
           searchFunction={searchUsers}
           placeholder="Add Users"
           multiselect={true}
+          selectedItems={users()}
           onSelect={onUserSelect}
           defaultSelected={users()}
         />

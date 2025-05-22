@@ -9,6 +9,7 @@ type SearchProps<T extends WithIdAndLabel> = {
   multiselect?: boolean
   onSelect?: (items: T[]) => void
   defaultSelected?: T[]
+  selectedItems: T[]
 }
 
 function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
@@ -16,8 +17,6 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
   const [searchResults, setSearchResults] = createSignal<T[]>([])
   const [isLoading, setIsLoading] = createSignal(false)
   const [isResultsOpen, setIsResultsOpen] = createSignal(false)
-  const [selectedItems, setSelectedItems] = createSignal<T[]>(props.defaultSelected || [])
-  console.log(props.defaultSelected)
 
   createEffect(() => {
     const term = searchTerm()
@@ -48,7 +47,7 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
 
   const handleItemClick = (item: T) => {
     if (props.multiselect) {
-      let newSelectedItems = [...selectedItems()]
+      let newSelectedItems = [...props.selectedItems]
       const alreadySelected = !!newSelectedItems.find((selected) => selected.id === item.id)
 
       if (alreadySelected) {
@@ -56,10 +55,8 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
       } else {
         newSelectedItems.push(item)
       }
-      setSelectedItems(newSelectedItems)
       props.onSelect?.(newSelectedItems)
     } else {
-      setSelectedItems([item])
       setIsResultsOpen(false)
       setSearchResults([])
       props.onSelect?.([item])
@@ -69,7 +66,7 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
   }
 
   const isSelected = (item: T) => {
-    return selectedItems().some((selected) => selected.id === item.id)
+    return props.selectedItems.some((selected) => selected.id === item.id)
   }
 
   return (
@@ -93,11 +90,11 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
       <div
         class="max-h-0 overflow-y-auto transition-max-height duration-300 ease-in-out my-2"
         classList={{
-          'max-h-10': selectedItems().length > 0,
+          'max-h-10': props.selectedItems.length > 0,
         }}
       >
         <div class="flex flex-wrap gap-2">
-          <For each={selectedItems()}>
+          <For each={props.selectedItems}>
             {(item) => (
               <span class="bg-primary text-void px-2 py-1 rounded text-base flex items-center gap-2 font-medium">
                 {item.name || item.text || item.label}

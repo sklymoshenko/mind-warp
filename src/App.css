@@ -206,10 +206,6 @@
     animation: slide-down 0.3s ease-out forwards;
   }
 
-  .animate-fade-in {
-    animation: fade-in 0.3s ease-out forwards;
-  }
-
   /* Floating icon animation */
   .floating-icon {
     position: absolute;

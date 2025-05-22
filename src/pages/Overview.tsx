@@ -11,6 +11,7 @@ import { useNavigate } from '@solidjs/router'
 import { widgetStyles } from '../utils'
 import OverlayComponent from '../components/OverlayComponent'
 import GameTemplateInfo from '../components/GameTemplateInfo'
+import CreateGame from './CreateGame'
 type OverviewProps = {}
 
 const settingItemStyles = {
@@ -24,8 +25,17 @@ const Overview = (props: OverviewProps) => {
   const { user, logout } = useAuth()
   const { get } = useApi('users')
   const navigate = useNavigate()
-  const { get: getGameTemplates } = useApi('game_templates')
+  const { get: getGameTemplatesList } = useApi('game_templates')
+  const { get: getGameTemplate } = useApi('game_templates/info')
   const [gameTemplateId, setGameTemplateId] = createSignal<GameTemplate['id'] | undefined>(undefined)
+  const [isEditing, setIsEditing] = createSignal(false)
+
+  const [gameTemplate, { mutate: setGameTemplate }] = createResource(gameTemplateId, async () => {
+    if (!gameTemplateId()) return undefined
+
+    const response = await getGameTemplate<GameTemplate>(`/${gameTemplateId()}`)
+    return response.data
+  })
 
   const [users] = createResource(async () => {
     const response = await get<User[]>()
@@ -33,7 +43,7 @@ const Overview = (props: OverviewProps) => {
   })
 
   const [gameTemplates] = createResource(async () => {
-    const response = await getGameTemplates<Game[]>()
+    const response = await getGameTemplatesList<Game[]>()
     return response.data
   })
 
@@ -141,8 +151,18 @@ const Overview = (props: OverviewProps) => {
             </div>
           </div>
         </div>
-        <OverlayComponent isOpen={!!gameTemplateId()} onClose={() => setGameTemplateId(undefined)}>
-          <GameTemplateInfo id={gameTemplateId()} user={user()!} />
+        <OverlayComponent isOpen={!!gameTemplateId() && !!gameTemplate()} onClose={() => setGameTemplateId(undefined)}>
+          <GameTemplateInfo
+            gameTemplate={gameTemplate()}
+            user={user()!}
+            onEdit={(gameTemplate) => {
+              setGameTemplate(gameTemplate)
+              setIsEditing(true)
+            }}
+          />
+        </OverlayComponent>
+        <OverlayComponent isOpen={isEditing()} onClose={() => setIsEditing(false)}>
+          <CreateGame game={gameTemplate() as Game} onGameUpdate={setGameTemplate} isTemplate={true} />
         </OverlayComponent>
       </div>
     </>

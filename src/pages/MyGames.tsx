@@ -1,4 +1,4 @@
-import { createResource, For, Show, createSignal } from 'solid-js'
+import { createResource, For, Show, createSignal, createEffect } from 'solid-js'
 import mockGame from '../data/mockGame'
 import { Game, GameListItem } from '../types'
 import { DateTime } from 'luxon'
@@ -10,7 +10,7 @@ import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
 import { IoDice, IoGameControllerOutline, IoTrashOutline } from 'solid-icons/io'
-import GameTemplateInfo from '../components/GameTemplateInfo'
+import Carousel from '../components/Carousel'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -18,7 +18,7 @@ const isFullGame = (item: Game | GameListItem): item is Game => {
 
 const GameCard = (props: Game | GameListItem) => {
   return (
-    <div class="flex bg-primary/15 rounded-lg shadow-md p-2 gap-4 items-start">
+    <div class="flex bg-primary/15 rounded-lg shadow-md p-2 gap-4 items-start hover:cursor-pointer hover:bg-primary/20 transition-all duration-300">
       <IoGameControllerOutline class="text-primary w-20 h-20" />
       <div class="flex flex-col gap-2 ">
         <div class="flex gap-2 items-center justify-between">
@@ -191,14 +191,16 @@ const MyGames = () => {
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
         <div class="flex flex-row gap-6 w-full">
-          <div class={`${widgetStyles.base} mt-12 md:w-[20%] p-4`}>
-            <span class="text-3xl font-bold text-center mb-4">Current Game</span>
-            <div class="w-full flex justify-center items-center [&>*:first-child]:p-4">
-              <For each={games()}>{(game) => <GameCard {...game} />}</For>
+          <div class={`${widgetStyles.base} mt-12 md:min-w-[25%] p-4`}>
+            <span class="text-3xl font-bold text-center">Current Games</span>
+            <div class="flex justify-center items-center [&>*:first-child]:p-4">
+              <Carousel
+                items={games()?.map((game) => <div class="w-[80%] mx-auto">{<GameCard {...game} />}</div>) ?? []}
+              />
             </div>
           </div>
           <div class={`${widgetStyles.base} mt-12 w-full`}>
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex justify-between items-center">
               <span class="text-2xl font-bold ">Created Templates</span>
               <button
                 class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md"
@@ -212,7 +214,7 @@ const MyGames = () => {
               when={gameTemplates() && gameTemplates()!.length > 0}
               fallback={<span class="text-gray-400 text-2xl text-center p-4">No Templates Created</span>}
             >
-              <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
+              <div class="flex flex-wrap gap-6 items-center overflow-y-auto  flex-1">
                 <For each={gameTemplates()}>
                   {(game) => (
                     <GameTemplateCard
@@ -227,7 +229,7 @@ const MyGames = () => {
           </div>
         </div>
         <div class={`${widgetStyles.base} mt-12 w-full`}>
-          <span class="text-2xl font-bold mb-4">History</span>
+          <span class="text-2xl font-bold">History</span>
           <Show
             when={gamesHistory() && gamesHistory()!.length > 0}
             fallback={<span class="text-gray-400 text-2xl text-center p-4">No Games History</span>}
@@ -241,6 +243,7 @@ const MyGames = () => {
           isOpen={isCreatingNewGameTemplate()}
           onClose={() => {
             setIsCreatingNewGameTemplate(false)
+            setNewGameTemplate(undefined)
           }}
         >
           <div class="w-full">
@@ -252,7 +255,13 @@ const MyGames = () => {
             />
           </div>
         </OverlayComponent>
-        <OverlayComponent isOpen={!!editingGameTemplateId()} onClose={() => setEditingGameTemplateId(undefined)}>
+        <OverlayComponent
+          isOpen={!!editingGameTemplateId()}
+          onClose={() => {
+            setEditingGameTemplateId(undefined)
+            setNewGameTemplate(undefined)
+          }}
+        >
           <CreateGame
             game={newGameTemplate()}
             onGameUpdate={setNewGameTemplate}

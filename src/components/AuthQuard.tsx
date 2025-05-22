@@ -4,12 +4,14 @@ import { Navigate, useLocation } from '@solidjs/router'
 import { useAuth } from '../context/AuthContext'
 
 const AuthGuard = (props: { children: JSX.Element }) => {
-  const { user, initialized } = useAuth()
+  const { user, initialized, refetch } = useAuth()
   const loc = useLocation()
+
   createEffect(() => {
-    console.log('initialized', initialized())
-    console.log('user', user())
+    const currentPath = loc.pathname
+    refetch()
   })
+
   return (
     <Show when={initialized()} fallback={<div>Loading…</div>}>
       <Show when={!!user()} fallback={<Navigate href={`/login?next=${loc.pathname}`} />}>
