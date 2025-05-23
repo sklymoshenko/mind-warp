@@ -51,10 +51,10 @@ export const useApi = (url: string) => {
     }
   }
 
-  const post = async <T>(body: Record<string, unknown>): Promise<{ data?: T; error?: string }> => {
+  const post = async <T>(body: Record<string, unknown>, url: string = ''): Promise<{ data?: T; error?: string }> => {
     try {
       setIsLoading(true)
-      const response = await fetch(createBaseUrl(), {
+      const response = await fetch(createBaseUrl() + url, {
         method: 'POST',
         body: JSON.stringify(body),
         credentials: 'include',

@@ -30,7 +30,9 @@ const Carousel = (props: CarouselProps) => {
 
       <button
         class="absolute right-0 top-1/2 -translate-y-1/2 text-primary hover:text-primary/80 transition-colors hover:cursor-pointer z-10 opacity-0"
-        classList={{ 'opacity-100 animate-slide-down': currentIndex() !== props.items.length - 1 }}
+        classList={{
+          'opacity-100 animate-slide-down': currentIndex() !== props.items.length - 1 && props.items.length > 1,
+        }}
         onClick={() => setCurrentIndex((prev) => prev + 1)}
         disabled={currentIndex() === props.items.length - 1}
       >

@@ -13,7 +13,6 @@ import (
 )
 
 func insertGame(ctx context.Context, tx pgx.Tx, game types.GameServer) error {
-	logger.PrettyPrint(game)
 	_, err := tx.Exec(ctx, "INSERT INTO games (id, name, creator_id, template_id) VALUES ($1, $2, $3, $4)", game.ID, game.Name, game.CreatorID, game.TemplateID)
 	if err != nil {
 		return err
@@ -29,7 +28,7 @@ func insertGameRound(ctx context.Context, tx pgx.Tx, round types.RoundServer) er
 	return nil
 }
 
-func getGameTemplateQuery(filterType string) string {
+func getGameByFilter(filterType string) string {
 	baseQuery := `
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
@@ -237,10 +236,22 @@ func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []ty
 	// Queue users
 	for _, user := range users {
 		batch.Queue(
-			`INSERT INTO game_users (game_id, user_id) VALUES ($1, $2)`,
+			`INSERT INTO game_invites (game_id, user_id, status) VALUES ($1, $2, CASE WHEN $3 = $4 THEN 'accepted'::invite_status ELSE 'pending'::invite_status END)`,
 			game.ID,
 			user.ID,
+			user.ID,
+			game.CreatorID,
 		)
+
+		if user.ID == game.CreatorID {
+			batch.Queue(
+				`INSERT INTO game_users (game_id, user_id) VALUES ($1, $2)`,
+				game.ID,
+				user.ID,
+			)
+			opCounts.users++
+		}
+
 		opCounts.users++
 	}
 
@@ -292,8 +303,8 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 
 		roundID       pgtype.UUID
 		roundName     pgtype.Text
-		roundTimeJSON []byte // Scan JSONB as []byte
-		roundRankJSON []byte // Scan JSONB as []byte
+		roundTimeJSON []byte
+		roundRankJSON []byte
 		roundPosition pgtype.Int4
 
 		themeID       pgtype.UUID
@@ -305,7 +316,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		questionAnswer pgtype.Text
 		questionPoints pgtype.Int4
 	)
-	query := getGameTemplateQuery(filter)
+	query := getGameByFilter(filter)
 
 	rows, err := db.pool.Query(ctx, query, filterValue)
 	if err != nil {
@@ -488,4 +499,121 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 	}
 
 	return games, nil
+}
+
+func (db *DB) GetGameInvitesByUserId(ctx context.Context, userID string) ([]types.GameInviteClient, error) {
+	query := `
+		SELECT
+			gi.id, gi.game_id, gi.user_id, gi.status, gi.created_at, gi.updated_at,
+			g.name as game_name, u.name as game_creator_name
+		FROM
+			game_invites gi
+		JOIN games g ON g.id = gi.game_id
+		JOIN users u ON u.id = g.creator_id
+		WHERE
+			gi.user_id = $1 AND gi.status = 'pending'
+		ORDER BY gi.created_at DESC
+	`
+
+	rows, err := db.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query game invites by user id: %w", err)
+	}
+	defer rows.Close()
+
+	var gameInvites []types.GameInviteClient
+	for rows.Next() {
+		var gameInvite types.GameInviteClient
+		err := rows.Scan(&gameInvite.ID, &gameInvite.GameID, &gameInvite.UserID, &gameInvite.Status, &gameInvite.CreatedAt, &gameInvite.UpdatedAt, &gameInvite.GameName, &gameInvite.GameCreatorName)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan game invite: %w", err)
+		}
+		gameInvites = append(gameInvites, gameInvite)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating game invites rows: %w", err)
+	}
+
+	return gameInvites, nil
+}
+
+func (db *DB) GetPendingGameUsersByGameId(ctx context.Context, gameID string) ([]types.PendingGameUserClient, error) {
+	query := `
+		SELECT
+			u.id, u.name
+		FROM
+			game_invites gi
+		JOIN users u ON u.id = gi.user_id
+		WHERE
+			gi.game_id = $1 AND gi.status = 'pending'
+	`
+
+	rows, err := db.pool.Query(ctx, query, gameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query pending game users by game id: %w", err)
+	}
+	defer rows.Close()
+
+	var pendingGameUsers []types.PendingGameUserClient
+	for rows.Next() {
+		var pendingGameUser types.PendingGameUserClient
+		err := rows.Scan(&pendingGameUser.ID, &pendingGameUser.Name)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan pending game user: %w", err)
+		}
+		pendingGameUsers = append(pendingGameUsers, pendingGameUser)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating pending game users rows: %w", err)
+	}
+
+	return pendingGameUsers, nil
+}
+
+func (db *DB) RemoveUserFromGame(ctx context.Context, gameID string, userID string) error {
+	_, err := db.pool.Exec(ctx, "DELETE FROM game_users WHERE game_id = $1 AND user_id = $2", gameID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to remove user from game: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) AddUserToGame(ctx context.Context, gameID string, userID string) error {
+	_, err := db.pool.Exec(ctx, "INSERT INTO game_users (game_id, user_id) VALUES ($1, $2)", gameID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to remove user from game: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) SendGameInvite(ctx context.Context, gameID string, userID string) error {
+	_, err := db.pool.Exec(ctx, "INSERT INTO game_invites (game_id, user_id) VALUES ($1, $2)", gameID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to send game invite: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) AcceptGameInvite(ctx context.Context, inviteID string, gameID string, userID string) error {
+	_, err := db.pool.Exec(ctx, "UPDATE game_invites SET status = 'accepted' WHERE id = $1", inviteID)
+	if err != nil {
+		return fmt.Errorf("failed to accept game invite: %w", err)
+	}
+
+	err = db.AddUserToGame(ctx, gameID, userID)
+	if err != nil {
+		return fmt.Errorf("failed to add user to game: %w", err)
+	}
+
+	return nil
+}
+
+func (db *DB) DeclineGameInvite(ctx context.Context, inviteID string) error {
+	_, err := db.pool.Exec(ctx, "UPDATE game_invites SET status = 'declined' WHERE id = $1", inviteID)
+	if err != nil {
+		return fmt.Errorf("failed to decline game invite: %w", err)
+	}
+	return nil
 }

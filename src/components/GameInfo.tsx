@@ -8,12 +8,14 @@ import { BiRegularShowAlt } from 'solid-icons/bi'
 import SearchComponent from './Search'
 import { useNavigate } from '@solidjs/router'
 import { FiEdit } from 'solid-icons/fi'
+import { createUUID } from '../pages/CreateGame'
 
-type GameTemplateInfoProps = {
-  id?: GameTemplate['id']
-  gameTemplate?: GameTemplate
+type GameInfoProps<T extends GameTemplate | Game> = {
+  id?: T['id']
+  entity?: T
   user: User
-  onEdit: (gameTemplate: GameTemplate) => void
+  onEdit: (item: T) => void
+  type: 'template' | 'game'
 }
 
 type AccordionTitleProps = {
@@ -56,27 +58,30 @@ const AccordionTitle = (props: AccordionTitleProps) => {
   )
 }
 
-const GameTemplateInfo = (props: GameTemplateInfoProps) => {
+const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
+  const navigate = useNavigate()
   const { get: getGameTemplateInfo } = useApi('game_templates/info')
+  const { get: getGameInfo } = useApi('games')
   const [showAnswers, setShowAnswers] = createSignal<Record<Round['id'], boolean>>({})
   const [showQuestions, setShowQuestions] = createSignal<Record<Round['id'], boolean>>({})
   const { get: getUsersSearch } = useApi('users?search=')
   const { post: createGame } = useApi('games/create')
-  const [users, setUsers] = createSignal<User[]>([props.user])
-  const navigate = useNavigate()
+  const [users, setUsers] = createSignal<User[]>(
+    props.entity && 'users' in props.entity ? props.entity.users : [props.user]
+  )
 
-  const [template, {}] = createResource(
-    () => ({ id: props.id, template: props.gameTemplate }),
-    async ({ id, template }) => {
-      if (template) {
-        return template
+  const [entity] = createResource(
+    () => ({ id: props.id, item: props.entity }),
+    async ({ id, item }) => {
+      if (item) {
+        return item
       }
 
       if (!id) {
         return undefined
       }
 
-      const response = await getGameTemplateInfo<GameTemplate>(`/${id}`)
+      const response = await (props.type === 'template' ? getGameTemplateInfo<T>(`/${id}`) : getGameInfo<T>(`/${id}`))
 
       if (!response.data) {
         return undefined
@@ -87,12 +92,12 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
   )
 
   const themesCount = () => {
-    return template()?.rounds.reduce((acc, round) => acc + round.themes.length, 0) ?? 0
+    return entity()?.rounds.reduce((acc, round) => acc + round.themes.length, 0) ?? 0
   }
 
   const questionsCount = () => {
     return (
-      template()?.rounds.reduce(
+      entity()?.rounds.reduce(
         (acc, round) => acc + round.themes.reduce((acc, theme) => acc + theme.questions.length, 0),
         0
       ) ?? 0
@@ -115,58 +120,106 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
     return response.data ?? []
   }
 
-  const onGameStart = async () => {
-    if (!template()) {
-      return
-    }
-
-    const fullTemplate: Game = {
-      ...template()!,
-      creatorId: props.user.id,
-      users: users(),
-      templateId: template()!.id,
-    }
-
-    const response = await createGame<Game>(fullTemplate)
+  const onGameCreate = async (fullEntity: T) => {
+    const response = await createGame<T>(fullEntity)
     if (response.data) {
       navigate(`/games/me`)
     }
   }
 
-  const handleEdit = () => {
-    if (!template()) {
+  const onGameStart = async () => {
+    navigate(`/games/me`)
+  }
+
+  const updateEntityId = (entity: T) => {
+    const fullEntity = {
+      ...entity!,
+      creatorId: props.user.id,
+      users: users(),
+      templateId: entity.id,
+    }
+
+    const updatedEntity = {
+      ...fullEntity,
+      id: createUUID(),
+      rounds: entity.rounds.map((round) => ({
+        ...round,
+        id: createUUID(),
+        themes: round.themes.map((theme) => ({
+          ...theme,
+          id: createUUID(),
+          questions: theme.questions.map((question) => ({
+            ...question,
+            id: createUUID(),
+          })),
+        })),
+      })),
+    }
+    return updatedEntity
+  }
+
+  const onMainButtonClick = async () => {
+    if (!entity()) {
       return
     }
 
-    const fullTemplate: Game = {
-      ...template()!,
-      creatorId: props.user.id,
-      users: users(),
-      templateId: template()!.id,
+    const updatedEntity = updateEntityId(entity()!)
+
+    if (props.type === 'template') {
+      onGameCreate(updatedEntity)
+    } else {
+      onGameStart()
+    }
+  }
+
+  const handleEdit = () => {
+    if (!entity()) {
+      return
     }
 
-    props.onEdit(fullTemplate)
+    const fullEntity: T = {
+      ...entity()!,
+      creatorId: props.user.id,
+      users: users(),
+      templateId: entity()!.id,
+    }
+
+    props.onEdit(fullEntity)
+  }
+
+  const mainButtonText = () => {
+    if (users().length <= 1) {
+      return 'First add some company'
+    }
+
+    if (props.type === 'template') {
+      return 'Send Invites and Create Game'
+    }
+
+    return 'Start Game'
   }
 
   return (
     <div class="flex flex-col w-full">
       <div class="flex flex-col gap-4">
         <div class="flex items-center w-full justify-between">
-          <span class="text-bold text-5xl">{template()?.name}</span>
-          <button
-            class="text-primary text-xl font-bold hover:cursor-pointer hover:text-accent transition-all duration-300"
-            onClick={handleEdit}
-          >
-            <FiEdit class="w-7 h-7" />
-          </button>
+          <span class="text-bold text-5xl">{entity()?.name}</span>
+          <Show when={props.type === 'template'}>
+            <button
+              class="text-primary text-xl font-bold hover:cursor-pointer hover:text-accent transition-all duration-300"
+              onClick={handleEdit}
+            >
+              <FiEdit class="w-7 h-7" />
+            </button>
+          </Show>
         </div>
-        <span class="text-2xl text-gray-500">{template()?.description}</span>
+        <span class="text-2xl text-gray-500">{entity()?.description}</span>
       </div>
       <div class="flex items-center justify-between w-full my-4">
-        <span class="text-white text-xl">Rounds: {template()?.rounds.length}</span>
+        <span class="text-white text-xl">Rounds: {entity()?.rounds.length}</span>
         <span class="text-white text-xl">Themes: {themesCount()}</span>
         <span class="text-white text-xl">Questions: {questionsCount()}</span>
-        <span class="text-white text-xl">Participants: {users().length + 1}</span>
+        <span class="text-white text-xl">Participants: {users().length}</span>
       </div>
       <div class="w-full">
         <SearchComponent
@@ -180,15 +233,15 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
       </div>
       <button
         class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
-        disabled={!template() || users().length < 2}
-        classList={{ 'opacity-50 hover:cursor-not-allowed!': !template() || users().length < 2 }}
-        onclick={onGameStart}
+        disabled={!entity() || users().length < 2}
+        classList={{ 'opacity-50 hover:cursor-not-allowed!': !entity() || users().length < 2 }}
+        onclick={onMainButtonClick}
       >
-        {users().length > 1 ? 'Start Game' : 'First add some company'}
+        {mainButtonText()}
       </button>
       <p class="text-2xl font-bold my-4">Overview</p>
       <div class="flex flex-col gap-4">
-        <For each={template()?.rounds}>
+        <For each={entity()?.rounds}>
           {(round) => (
             <Accordion
               title={
@@ -236,4 +289,4 @@ const GameTemplateInfo = (props: GameTemplateInfoProps) => {
   )
 }
 
-export default GameTemplateInfo
+export default GameInfo

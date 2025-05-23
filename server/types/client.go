@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 type RoundRankClient struct {
 	Id         uint16 `json:"id"`
 	Label      string `json:"label"`
@@ -49,6 +51,11 @@ type UserClient struct {
 	RoundScore map[string]int `json:"roundScore,omitempty"`
 }
 
+type PendingGameUserClient struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type GameClient struct {
 	ID              string        `json:"id"`
 	TemplateID      string        `json:"templateId"`
@@ -62,4 +69,15 @@ type GameClient struct {
 	Winner          *string       `json:"winner,omitempty"`
 	FinishDate      *int64        `json:"finishDate,omitempty"`
 	CreatorID       string        `json:"creatorId"`
+}
+
+type GameInviteClient struct {
+	ID              string    `json:"id"`
+	GameID          string    `json:"gameId"`
+	UserID          string    `json:"userId"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"createdAt,omitempty"`
+	UpdatedAt       time.Time `json:"updatedAt,omitempty"`
+	GameName        string    `json:"gameName"`
+	GameCreatorName string    `json:"gameCreatorName"`
 }

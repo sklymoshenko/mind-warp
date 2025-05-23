@@ -8,6 +8,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type InviteRequest struct {
+	InviteID string `json:"inviteId"`
+	GameID   string `json:"gameId,omitempty"`
+	UserID   string `json:"userId,omitempty"`
+}
+
 func (s *Server) CreateGame(c *gin.Context) {
 	var gameBody types.GameClient
 	if err := c.ShouldBindJSON(&gameBody); err != nil {
@@ -70,9 +76,73 @@ func (s *Server) GetFinishedGamesByUserId(c *gin.Context) {
 	c.JSON(http.StatusOK, games)
 }
 
+func (s *Server) RemoveUserFromGame(c *gin.Context) {
+	var reqBody AddUserToGameRequest
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err := s.Db.RemoveUserFromGame(c.Request.Context(), reqBody.GameID, reqBody.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove user from game: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "User removed from game"})
+}
+
+func (s *Server) GetGameInvitesByUserId(c *gin.Context) {
+	userId := c.Param("userId")
+	gameInvites, err := s.Db.GetGameInvitesByUserId(c.Request.Context(), userId)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game invites: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gameInvites)
+}
+
+func (s *Server) AcceptGameInvite(c *gin.Context) {
+	var reqBody InviteRequest
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err := s.Db.AcceptGameInvite(c.Request.Context(), reqBody.InviteID, reqBody.GameID, reqBody.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to accept game invite: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game invite accepted"})
+}
+
+func (s *Server) DeclineGameInvite(c *gin.Context) {
+	var reqBody InviteRequest
+	if err := c.ShouldBindJSON(&reqBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	err := s.Db.DeclineGameInvite(c.Request.Context(), reqBody.InviteID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to accept game invite: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game invite declined"})
+}
+
 func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.POST("/games/create", s.CreateGame)
 	group.GET("/games/:id", s.GetGameById)
 	group.GET("/games/active/user/:userId", s.GetActiveGamesByUserId)
 	group.GET("/games/finished/user/:userId", s.GetFinishedGamesByUserId)
+	group.POST("/games/remove-user", s.RemoveUserFromGame)
+	group.POST("/games/add-user", s.AddUserToGame)
+	group.GET("/games/invites/user/:userId", s.GetGameInvitesByUserId)
+	group.POST("/games/invites/accept", s.AcceptGameInvite)
+	group.POST("/games/invites/decline", s.DeclineGameInvite)
 }

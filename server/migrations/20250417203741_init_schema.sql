@@ -105,6 +105,19 @@ CREATE TABLE game_users (
   PRIMARY KEY (game_id, user_id)
 );
 
+-- Game Invites
+CREATE TYPE invite_status AS ENUM ('pending', 'accepted', 'declined');
+
+CREATE TABLE game_invites (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  game_id UUID NOT NULL REFERENCES games(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  status invite_status NOT NULL DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(game_id, user_id)
+);
+
 -- Answers
 CREATE TABLE answers (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -122,6 +135,7 @@ CREATE INDEX idx_template_rounds_template ON template_rounds(game_template_id);
 CREATE INDEX idx_rounds_game ON rounds(game_id);
 CREATE INDEX idx_questions_theme ON questions(theme_id);
 CREATE INDEX idx_answers_question ON answers(question_id);
+CREATE INDEX idx_game_invites_status ON game_invites(status);
 
 -- Full-text search indexes on names (use 'simple' config for multi-language or no-stemming)
 CREATE INDEX idx_games_name_fts ON games USING GIN (to_tsvector('simple', name));
@@ -143,9 +157,11 @@ DROP INDEX IF EXISTS idx_rounds_game;
 DROP INDEX IF EXISTS idx_template_rounds_template;
 DROP INDEX IF EXISTS idx_templates_public;
 DROP INDEX IF EXISTS idx_games_finished;
+DROP INDEX IF EXISTS idx_game_invites_status;
 
 -- Drop tables in reverse dependency order
 DROP TABLE IF EXISTS answers;
+DROP TABLE IF EXISTS game_invites;
 DROP TABLE IF EXISTS game_users;
 DROP TABLE IF EXISTS questions;
 DROP TABLE IF EXISTS themes;

@@ -1,6 +1,6 @@
-import { createResource, For, Show, createSignal, createEffect } from 'solid-js'
+import { createResource, For, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
-import { Game, GameListItem } from '../types'
+import { Game, GameInvite, GameListItem } from '../types'
 import { DateTime } from 'luxon'
 import { A } from '@solidjs/router'
 import { widgetStyles } from '../utils'
@@ -11,6 +11,9 @@ import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
 import { IoDice, IoGameControllerOutline, IoTrashOutline } from 'solid-icons/io'
 import Carousel from '../components/Carousel'
+import GameInfo from '../components/GameInfo'
+import { BsEnvelopePaperHeart } from 'solid-icons/bs'
+import { FaSolidThumbsDown, FaSolidThumbsUp } from 'solid-icons/fa'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -18,7 +21,7 @@ const isFullGame = (item: Game | GameListItem): item is Game => {
 
 const GameCard = (props: Game | GameListItem) => {
   return (
-    <div class="flex bg-primary/15 rounded-lg shadow-md p-2 gap-4 items-start hover:cursor-pointer hover:bg-primary/20 transition-all duration-300">
+    <div class="flex bg-primary/15 rounded-md p-4 shadow-md gap-4 items-start hover:cursor-pointer hover:bg-primary/20 transition-all duration-300">
       <IoGameControllerOutline class="text-primary w-20 h-20" />
       <div class="flex flex-col gap-2 ">
         <div class="flex gap-2 items-center justify-between">
@@ -88,16 +91,30 @@ const MyGames = () => {
   const { user } = useAuth()
   const { post: createTemplate } = useApi('game_templates/create_template')
   const { post: updateTemplate } = useApi('game_templates/update')
+  const { post: acceptInvite } = useApi('games/invites/accept')
+  const { post: declineInvite } = useApi('games/invites/decline')
+
   const { get } = useApi(`game_templates/user/${user()?.id}`)
   const { get: getGameTemplateInfo } = useApi('game_templates/info')
+
   const { get: getActiveGames } = useApi(`games/active/user/${user()?.id}`)
   const { get: getGamesHistory } = useApi(`games/finished/user/${user()?.id}`)
+  const { get: getGameInvites } = useApi(`games/invites/user/${user()?.id}`)
 
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
   const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
   const [editingGameTemplateId, setEditingGameTemplateId] = createSignal<string>()
+  const [editingGame, setEditingGame] = createSignal<Game>()
 
-  const [games] = createResource(async () => {
+  const [gameInvites, { mutate: setGameInvites }] = createResource(async () => {
+    const response = await getGameInvites<GameInvite[]>()
+    if (response.data) {
+      return response.data
+    }
+    return []
+  })
+
+  const [games, { refetch: refetchActiveGames }] = createResource(async () => {
     const response = await getActiveGames<Game[]>()
 
     if (response.data) {
@@ -178,6 +195,27 @@ const MyGames = () => {
     setEditingGameTemplateId(undefined)
   }
 
+  const onInviteAccept = async (invite: GameInvite) => {
+    const response = await acceptInvite<GameInvite>({
+      inviteId: invite.id,
+      gameId: invite.gameId,
+      userId: invite.userId,
+    })
+
+    if (!response.error) {
+      setGameInvites((prev) => prev?.filter((inv) => inv.id !== invite.id))
+      await refetchActiveGames()
+    }
+  }
+
+  const onInviteDecline = async (inviteId: string) => {
+    const response = await declineInvite<GameInvite>({ inviteId })
+
+    if (!response.error) {
+      setGameInvites((prev) => prev?.filter((invite) => invite.id !== inviteId))
+    }
+  }
+
   return (
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
@@ -192,11 +230,70 @@ const MyGames = () => {
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
         <div class="flex flex-row gap-6 w-full">
           <div class={`${widgetStyles.base} mt-12 md:min-w-[25%] p-4`}>
-            <span class="text-3xl font-bold text-center">Current Games</span>
+            <span class="text-3xl font-bold text-center">
+              Active Games {games() && games()!.length > 0 ? `(${games()!.length})` : ''}
+            </span>
+            <div class="flex justify-center items-center">
+              <Show
+                when={games() && games()!.length > 0}
+                fallback={<span class="text-gray-400 text-2xl text-center p-4">No Games</span>}
+              >
+                <Carousel
+                  items={
+                    games()?.map((game) => (
+                      <div class="w-[80%] mx-auto" onClick={() => setEditingGame(game)}>
+                        {<GameCard {...game} />}
+                      </div>
+                    )) ?? []
+                  }
+                />
+              </Show>
+            </div>
+          </div>
+          <div class={`${widgetStyles.base} mt-12 md:min-w-[25%] p-4`}>
+            <span class="text-3xl font-bold text-center">
+              Game Invites {gameInvites() && gameInvites()!.length > 0 ? `(${gameInvites()!.length})` : ''}
+            </span>
             <div class="flex justify-center items-center [&>*:first-child]:p-4">
-              <Carousel
-                items={games()?.map((game) => <div class="w-[80%] mx-auto">{<GameCard {...game} />}</div>) ?? []}
-              />
+              <Show
+                when={gameInvites() && gameInvites()!.length > 0}
+                fallback={<span class="text-gray-400 text-2xl text-center p-4">No Invites</span>}
+              >
+                <Carousel
+                  items={
+                    gameInvites()?.map((gameInvite) => (
+                      <div class="w-[80%] mx-auto relative group flex justify-between items-center bg-primary/10">
+                        <div class="flex flex-row gap-4 items-center  rounded-md p-4">
+                          <BsEnvelopePaperHeart class="text-primary w-10 h-10" />
+                          <div class="flex flex-col gap-2">
+                            <span class="text-2xl font-bold">Game: {gameInvite.gameName}</span>
+                            <span class="text-gray-400 text-sm">
+                              Sent at {DateTime.fromISO(gameInvite.createdAt).toLocaleString()} by{' '}
+                              {gameInvite.gameCreatorName}
+                            </span>
+                          </div>
+                        </div>
+                        <div>
+                          <button
+                            class="text-green-500 hover:text-green-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+                            onclick={() => onInviteAccept(gameInvite)}
+                            title="Accept Invite"
+                          >
+                            <FaSolidThumbsUp class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
+                          </button>
+                          <button
+                            class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+                            onclick={() => onInviteDecline(gameInvite.id)}
+                            title="Decline Invite"
+                          >
+                            <FaSolidThumbsDown class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
+                          </button>
+                        </div>
+                      </div>
+                    )) ?? []
+                  }
+                />
+              </Show>
             </div>
           </div>
           <div class={`${widgetStyles.base} mt-12 w-full`}>
@@ -267,6 +364,16 @@ const MyGames = () => {
             onGameUpdate={setNewGameTemplate}
             isTemplate={true}
             onFinish={saveNewGameTemplate}
+          />
+        </OverlayComponent>
+        <OverlayComponent isOpen={!!editingGame()} onClose={() => setEditingGame(undefined)}>
+          <GameInfo
+            entity={editingGame()}
+            type="game"
+            user={user()!}
+            onEdit={(game) => {
+              setEditingGame(game)
+            }}
           />
         </OverlayComponent>
       </div>

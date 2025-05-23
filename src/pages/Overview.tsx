@@ -10,8 +10,9 @@ import { IoDice } from 'solid-icons/io'
 import { useNavigate } from '@solidjs/router'
 import { widgetStyles } from '../utils'
 import OverlayComponent from '../components/OverlayComponent'
-import GameTemplateInfo from '../components/GameTemplateInfo'
+import GameTemplateInfo from '../components/GameInfo'
 import CreateGame from './CreateGame'
+import GameInfo from '../components/GameInfo'
 type OverviewProps = {}
 
 const settingItemStyles = {
@@ -152,11 +153,12 @@ const Overview = (props: OverviewProps) => {
           </div>
         </div>
         <OverlayComponent isOpen={!!gameTemplateId() && !!gameTemplate()} onClose={() => setGameTemplateId(undefined)}>
-          <GameTemplateInfo
-            gameTemplate={gameTemplate()}
+          <GameInfo
+            entity={gameTemplate()}
+            type="template"
             user={user()!}
-            onEdit={(gameTemplate) => {
-              setGameTemplate(gameTemplate)
+            onEdit={(template) => {
+              setGameTemplate(template)
               setIsEditing(true)
             }}
           />

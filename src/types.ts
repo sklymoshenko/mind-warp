@@ -1,9 +1,13 @@
+export type GameInviteStatus = 'pending' | 'accepted' | 'declined'
+
 export type User = {
   id: string
   name: string
   isAdmin: boolean
   roundScore: Record<Round['id'], number>
 }
+
+export type PendingGameUser = Pick<User, 'id' | 'name'>
 
 export type Theme = {
   id: string
@@ -45,6 +49,7 @@ export type Game = {
   name: string
   description: string
   users: User[]
+  pendingUsers?: PendingGameUser[]
   rounds: Round[]
   currentRound?: Round['id']
   currentQuestion?: Question['id']
@@ -63,3 +68,14 @@ export type GameTemplate = Omit<
 >
 
 export type GameListItem = Pick<Game, 'id' | 'name' | 'description' | 'creatorId' | 'isPublic'>
+
+export type GameInvite = {
+  id: string
+  gameId: string
+  gameName: string
+  userId: string
+  status: string
+  createdAt: string
+  updatedAt: string
+  gameCreatorName: string
+}
