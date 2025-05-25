@@ -79,10 +79,6 @@ const CreateGame = (props: Props) => {
   )
 
   createEffect(() => {
-    console.log(props.game?.users)
-  })
-
-  createEffect(() => {
     if (props.isTemplate) {
       for (const round of props.game?.rounds || []) {
         setQuestions(

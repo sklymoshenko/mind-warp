@@ -14,6 +14,7 @@ import Carousel from '../components/Carousel'
 import GameInfo from '../components/GameInfo'
 import { BsEnvelopePaperHeart } from 'solid-icons/bs'
 import { FaSolidThumbsDown, FaSolidThumbsUp } from 'solid-icons/fa'
+import { Confirm } from '../components/Confirm'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -77,12 +78,17 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
         <span class="text-2xl font-bold">{props.game.name}</span>
         <span class="text-xl text-primary/50">{props.game.description}</span>
       </div>
-      <button
-        class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
-        onclick={onDeleteGameTemplate}
-      >
-        <IoTrashOutline class="min-w-0 min-h-0 group-hover:min-w-10 group-hover:min-h-10 transition-all duration-300" />
-      </button>
+      <Show when={props.onDelete}>
+        <Confirm
+          title="Delete Game Template"
+          message="Are you sure you want to delete this game template?"
+          onConfirm={onDeleteGameTemplate}
+        >
+          <button class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer">
+            <IoTrashOutline class="min-w-0 min-h-0 group-hover:min-w-10 group-hover:min-h-10 transition-all duration-300" />
+          </button>
+        </Confirm>
+      </Show>
     </div>
   )
 }
@@ -101,10 +107,14 @@ const MyGames = () => {
   const { get: getGamesHistory } = useApi(`games/finished/user/${user()?.id}`)
   const { get: getGameInvites } = useApi(`games/invites/user/${user()?.id}`)
 
+  const { del: deleteGame } = useApi(`games/delete`)
+  const { post: finishGame } = useApi(`games/finish`)
+
   const [isCreatingNewGameTemplate, setIsCreatingNewGameTemplate] = createSignal(false)
   const [newGameTemplate, setNewGameTemplate] = createSignal<Game>()
   const [editingGameTemplateId, setEditingGameTemplateId] = createSignal<string>()
   const [editingGame, setEditingGame] = createSignal<Game>()
+  const [historyGame, setHistoryGame] = createSignal<Game>()
 
   const [gameInvites, { mutate: setGameInvites }] = createResource(async () => {
     const response = await getGameInvites<GameInvite[]>()
@@ -114,7 +124,7 @@ const MyGames = () => {
     return []
   })
 
-  const [games, { refetch: refetchActiveGames }] = createResource(async () => {
+  const [games, { refetch: refetchActiveGames, mutate: setActiveGames }] = createResource(async () => {
     const response = await getActiveGames<Game[]>()
 
     if (response.data) {
@@ -124,7 +134,7 @@ const MyGames = () => {
     return []
   })
 
-  const [gamesHistory] = createResource(async () => {
+  const [gamesHistory, { mutate: setGamesHistory }] = createResource(async () => {
     const response = await getGamesHistory<Game[]>()
 
     if (response.data) {
@@ -213,6 +223,24 @@ const MyGames = () => {
 
     if (!response.error) {
       setGameInvites((prev) => prev?.filter((invite) => invite.id !== inviteId))
+    }
+  }
+
+  const onGameRemove = async (game: Game) => {
+    const response = await deleteGame<Game>(`/${game.id}`)
+
+    if (!response.error) {
+      setEditingGame(undefined)
+      setActiveGames((prev) => prev?.filter((g) => g.id !== game.id))
+    }
+  }
+
+  const onGameFinish = async (game: Game) => {
+    const response = await finishGame<Game>({}, `/${game.id}`)
+
+    if (!response.error) {
+      setEditingGame(undefined)
+      setGamesHistory((prev) => [...prev!, game])
     }
   }
 
@@ -311,7 +339,7 @@ const MyGames = () => {
               when={gameTemplates() && gameTemplates()!.length > 0}
               fallback={<span class="text-gray-400 text-2xl text-center p-4">No Templates Created</span>}
             >
-              <div class="flex flex-wrap gap-6 items-center overflow-y-auto  flex-1">
+              <div class="flex flex-wrap gap-6 items-center flex-1">
                 <For each={gameTemplates()}>
                   {(game) => (
                     <GameTemplateCard
@@ -332,7 +360,9 @@ const MyGames = () => {
             fallback={<span class="text-gray-400 text-2xl text-center p-4">No Games History</span>}
           >
             <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
-              <For each={gamesHistory()}>{(game) => <GameTemplateCard game={game} />}</For>
+              <For each={gamesHistory()}>
+                {(game) => <GameTemplateCard game={game} onClick={() => setHistoryGame(game)} />}
+              </For>
             </div>
           </Show>
         </div>
@@ -374,7 +404,12 @@ const MyGames = () => {
             onEdit={(game) => {
               setEditingGame(game)
             }}
+            onRemove={onGameRemove}
+            onFinish={onGameFinish}
           />
+        </OverlayComponent>
+        <OverlayComponent isOpen={!!historyGame()} onClose={() => setHistoryGame(undefined)}>
+          <GameInfo entity={historyGame()} user={user()!} type="game" nonEditable={true} />
         </OverlayComponent>
       </div>
     </>

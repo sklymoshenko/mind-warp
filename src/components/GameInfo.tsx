@@ -9,13 +9,17 @@ import SearchComponent from './Search'
 import { useNavigate } from '@solidjs/router'
 import { FiEdit } from 'solid-icons/fi'
 import { createUUID } from '../pages/CreateGame'
+import { Confirm } from './Confirm'
 
 type GameInfoProps<T extends GameTemplate | Game> = {
   id?: T['id']
   entity?: T
   user: User
-  onEdit: (item: T) => void
+  nonEditable?: boolean
+  onEdit?: (item: T) => void
   type: 'template' | 'game'
+  onFinish?: (entity: T) => void
+  onRemove?: (entity: T) => void
 }
 
 type AccordionTitleProps = {
@@ -184,7 +188,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
       templateId: entity()!.id,
     }
 
-    props.onEdit(fullEntity)
+    props.onEdit?.(fullEntity)
   }
 
   const mainButtonText = () => {
@@ -199,12 +203,20 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     return 'Start Game'
   }
 
+  const onGameFinish = () => {
+    props.onFinish?.(entity()!)
+  }
+
+  const onGameRemove = () => {
+    props.onRemove?.(entity()!)
+  }
+
   return (
     <div class="flex flex-col w-full">
       <div class="flex flex-col gap-4">
         <div class="flex items-center w-full justify-between">
           <span class="text-bold text-5xl">{entity()?.name}</span>
-          <Show when={props.type === 'template'}>
+          <Show when={props.type === 'template' && !props.nonEditable}>
             <button
               class="text-primary text-xl font-bold hover:cursor-pointer hover:text-accent transition-all duration-300"
               onClick={handleEdit}
@@ -229,16 +241,19 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
           selectedItems={users()}
           onSelect={onUserSelect}
           defaultSelected={users()}
+          disabled={props.nonEditable}
         />
       </div>
-      <button
-        class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
-        disabled={!entity() || users().length < 2}
-        classList={{ 'opacity-50 hover:cursor-not-allowed!': !entity() || users().length < 2 }}
-        onclick={onMainButtonClick}
-      >
-        {mainButtonText()}
-      </button>
+      <Show when={!props.nonEditable}>
+        <button
+          class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
+          disabled={!entity() || users().length < 2}
+          classList={{ 'opacity-50 hover:cursor-not-allowed!': !entity() || users().length < 2 }}
+          onclick={onMainButtonClick}
+        >
+          {mainButtonText()}
+        </button>
+      </Show>
       <p class="text-2xl font-bold my-4">Overview</p>
       <div class="flex flex-col gap-4">
         <For each={entity()?.rounds}>
@@ -284,6 +299,30 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
             </Accordion>
           )}
         </For>
+        <Show when={props.type === 'game'}>
+          <div class="flex gap-2">
+            <Show when={!props.nonEditable}>
+              <Confirm
+                title="Finish Game"
+                message="Are you sure you want to finish this game?"
+                onConfirm={() => onGameFinish()}
+              >
+                <button class="p-2 w-full text-primary rounded-md text-xl font-bold hover:cursor-pointer hover:text-primary/70 hover:bg-primary/10 transition-colors duration-300">
+                  Finish Game
+                </button>
+              </Confirm>
+            </Show>
+            <Confirm
+              title="Remove Game"
+              message="Are you sure you want to remove this game?"
+              onConfirm={() => onGameRemove()}
+            >
+              <button class="p-2 w-full text-red-500 rounded-md text-xl font-bold hover:cursor-pointer hover:text-red-500/70 hover:bg-red-500/10 transition-colors duration-300">
+                Remove Game
+              </button>
+            </Confirm>
+          </div>
+        </Show>
       </div>
     </div>
   )

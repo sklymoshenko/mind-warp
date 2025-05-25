@@ -10,6 +10,7 @@ type SearchProps<T extends WithIdAndLabel> = {
   onSelect?: (items: T[]) => void
   defaultSelected?: T[]
   selectedItems: T[]
+  disabled?: boolean
 }
 
 function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
@@ -73,6 +74,7 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
     <div class="text-primary bg-void relative my-2">
       <input
         type="text"
+        disabled={props.disabled}
         placeholder={props.placeholder || 'Search...'}
         value={searchTerm()}
         onInput={(e) => setSearchTerm(e.target.value)}
@@ -98,12 +100,14 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
             {(item) => (
               <span class="bg-primary text-void px-2 py-1 rounded text-base flex items-center gap-2 font-medium">
                 {item.name || item.text || item.label}
-                <button
-                  class="ml-1 font-bold hover:cursor-pointer hover:bg-accent hover:text-white transition-all duration-200"
-                  onClick={() => handleItemClick(item)}
-                >
-                  <IoCloseSharp class="w-4 h-4" />
-                </button>
+                <Show when={!props.disabled}>
+                  <button
+                    class="ml-1 font-bold hover:cursor-pointer hover:bg-accent hover:text-white transition-all duration-200"
+                    onClick={() => handleItemClick(item)}
+                  >
+                    <IoCloseSharp class="w-4 h-4" />
+                  </button>
+                </Show>
               </span>
             )}
           </For>

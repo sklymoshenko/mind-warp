@@ -135,9 +135,33 @@ func (s *Server) DeclineGameInvite(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Game invite declined"})
 }
 
+func (s *Server) DeleteGame(c *gin.Context) {
+	gameID := c.Param("id")
+	err := s.Db.DeleteGame(c.Request.Context(), gameID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete game: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game deleted"})
+}
+
+func (s *Server) FinishGame(c *gin.Context) {
+	gameID := c.Param("id")
+	err := s.Db.FinishGame(c.Request.Context(), gameID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finish game: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game finished"})
+}
+
 func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.POST("/games/create", s.CreateGame)
 	group.GET("/games/:id", s.GetGameById)
+	group.DELETE("/games/delete/:id", s.DeleteGame)
+	group.POST("/games/finish/:id", s.FinishGame)
 	group.GET("/games/active/user/:userId", s.GetActiveGamesByUserId)
 	group.GET("/games/finished/user/:userId", s.GetFinishedGamesByUserId)
 	group.POST("/games/remove-user", s.RemoveUserFromGame)
@@ -145,4 +169,5 @@ func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.GET("/games/invites/user/:userId", s.GetGameInvitesByUserId)
 	group.POST("/games/invites/accept", s.AcceptGameInvite)
 	group.POST("/games/invites/decline", s.DeclineGameInvite)
+
 }

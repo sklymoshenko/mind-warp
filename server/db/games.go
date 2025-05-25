@@ -617,3 +617,19 @@ func (db *DB) DeclineGameInvite(ctx context.Context, inviteID string) error {
 	}
 	return nil
 }
+
+func (db *DB) DeleteGame(ctx context.Context, gameID string) error {
+	_, err := db.pool.Exec(ctx, "DELETE FROM games WHERE id = $1", gameID)
+	if err != nil {
+		return fmt.Errorf("failed to delete game: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) FinishGame(ctx context.Context, gameID string) error {
+	_, err := db.pool.Exec(ctx, "UPDATE games SET is_finished = true WHERE id = $1", gameID)
+	if err != nil {
+		return fmt.Errorf("failed to finish game: %w", err)
+	}
+	return nil
+}
