@@ -55,6 +55,18 @@ func (s *Server) GetGameById(c *gin.Context) {
 func (s *Server) GetActiveGamesByUserId(c *gin.Context) {
 	userId := c.Param("userId")
 	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user", userId)
+
+	// Optimize later by creating endpoints for list preview
+	for _, game := range games {
+		unconfirmedUsers, err := s.Db.GetUnconfirmedUsersByGameId(c.Request.Context(), game.ID)
+		if err != nil {
+			logger.Errorf("Failed to get pending users by game id: %v", err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get pending users by game id: " + err.Error()})
+			return
+		}
+		game.UnconfirmedUsers = unconfirmedUsers
+	}
+
 	if err != nil {
 		logger.Errorf("Failed to get active games: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get active games: " + err.Error()})

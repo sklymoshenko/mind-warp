@@ -1,9 +1,16 @@
 import { IoCloseSharp } from 'solid-icons/io'
 import { createSignal, createEffect, For, Show, onCleanup } from 'solid-js'
 import { AiOutlineLoading } from 'solid-icons/ai'
-type WithIdAndLabel = { id: string | number; label?: string; name?: string; text?: string }
+export type SearchItem = {
+  id: string | number
+  label?: string
+  name?: string
+  text?: string
+  class?: string
+  isRemovable?: boolean
+}
 
-type SearchProps<T extends WithIdAndLabel> = {
+type SearchProps<T extends SearchItem> = {
   searchFunction: (term: string) => Promise<T[]>
   placeholder?: string
   multiselect?: boolean
@@ -13,7 +20,7 @@ type SearchProps<T extends WithIdAndLabel> = {
   disabled?: boolean
 }
 
-function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
+function SearchComponent<T extends SearchItem>(props: SearchProps<T>) {
   const [searchTerm, setSearchTerm] = createSignal('')
   const [searchResults, setSearchResults] = createSignal<T[]>([])
   const [isLoading, setIsLoading] = createSignal(false)
@@ -98,9 +105,11 @@ function SearchComponent<T extends WithIdAndLabel>(props: SearchProps<T>) {
         <div class="flex flex-wrap gap-2">
           <For each={props.selectedItems}>
             {(item) => (
-              <span class="bg-primary text-void px-2 py-1 rounded text-base flex items-center gap-2 font-medium">
+              <span
+                class={`bg-primary text-void px-2 py-1 rounded text-base flex items-center gap-2 font-medium ${item.class}`}
+              >
                 {item.name || item.text || item.label}
-                <Show when={!props.disabled}>
+                <Show when={!props.disabled && item.isRemovable}>
                   <button
                     class="ml-1 font-bold hover:cursor-pointer hover:bg-accent hover:text-white transition-all duration-200"
                     onClick={() => handleItemClick(item)}

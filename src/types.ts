@@ -7,7 +7,7 @@ export type User = {
   roundScore: Record<Round['id'], number>
 }
 
-export type PendingGameUser = Pick<User, 'id' | 'name'>
+export type UnconfirmedUser = Pick<User, 'id' | 'name'> & { status: GameInviteStatus }
 
 export type Theme = {
   id: string
@@ -49,7 +49,7 @@ export type Game = {
   name: string
   description: string
   users: User[]
-  pendingUsers?: PendingGameUser[]
+  unconfirmedUsers?: UnconfirmedUser[]
   rounds: Round[]
   currentRound?: Round['id']
   currentQuestion?: Question['id']

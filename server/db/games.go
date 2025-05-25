@@ -538,7 +538,7 @@ func (db *DB) GetGameInvitesByUserId(ctx context.Context, userID string) ([]type
 	return gameInvites, nil
 }
 
-func (db *DB) GetPendingGameUsersByGameId(ctx context.Context, gameID string) ([]types.PendingGameUserClient, error) {
+func (db *DB) GetPendingGameUsersByGameId(ctx context.Context, gameID string) ([]types.UnconfirmedUserClient, error) {
 	query := `
 		SELECT
 			u.id, u.name
@@ -555,9 +555,9 @@ func (db *DB) GetPendingGameUsersByGameId(ctx context.Context, gameID string) ([
 	}
 	defer rows.Close()
 
-	var pendingGameUsers []types.PendingGameUserClient
+	var pendingGameUsers []types.UnconfirmedUserClient
 	for rows.Next() {
-		var pendingGameUser types.PendingGameUserClient
+		var pendingGameUser types.UnconfirmedUserClient
 		err := rows.Scan(&pendingGameUser.ID, &pendingGameUser.Name)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan pending game user: %w", err)
@@ -608,6 +608,40 @@ func (db *DB) AcceptGameInvite(ctx context.Context, inviteID string, gameID stri
 	}
 
 	return nil
+}
+
+func (db *DB) GetUnconfirmedUsersByGameId(ctx context.Context, gameID string) ([]types.UnconfirmedUserClient, error) {
+	query := `
+		SELECT
+			u.id, u.name, gi.status
+		FROM
+			game_invites gi
+		JOIN users u ON u.id = gi.user_id
+		WHERE
+			gi.game_id = $1 AND gi.status != 'accepted'
+	`
+
+	rows, err := db.pool.Query(ctx, query, gameID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query pending users by game id: %w", err)
+	}
+	defer rows.Close()
+
+	var unconfirmedUsers []types.UnconfirmedUserClient
+	for rows.Next() {
+		var pendingUser types.UnconfirmedUserClient
+		err := rows.Scan(&pendingUser.ID, &pendingUser.Name, &pendingUser.Status)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan pending user: %w", err)
+		}
+		unconfirmedUsers = append(unconfirmedUsers, pendingUser)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating pending users rows: %w", err)
+	}
+
+	return unconfirmedUsers, nil
 }
 
 func (db *DB) DeclineGameInvite(ctx context.Context, inviteID string) error {

@@ -51,24 +51,26 @@ type UserClient struct {
 	RoundScore map[string]int `json:"roundScore,omitempty"`
 }
 
-type PendingGameUserClient struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+type UnconfirmedUserClient struct {
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Status string `json:"status"`
 }
 
 type GameClient struct {
-	ID              string        `json:"id"`
-	TemplateID      string        `json:"templateId"`
-	Name            string        `json:"name"`
-	Users           []UserClient  `json:"users"`
-	Rounds          []RoundClient `json:"rounds"`
-	CurrentRound    string        `json:"currentRound"`
-	CurrentQuestion string        `json:"currentQuestion"`
-	CurrentUser     string        `json:"currentUser"`
-	IsFinished      bool          `json:"isFinished"`
-	Winner          *string       `json:"winner,omitempty"`
-	FinishDate      *int64        `json:"finishDate,omitempty"`
-	CreatorID       string        `json:"creatorId"`
+	ID               string                  `json:"id"`
+	TemplateID       string                  `json:"templateId"`
+	Name             string                  `json:"name"`
+	Users            []UserClient            `json:"users"`
+	Rounds           []RoundClient           `json:"rounds"`
+	CurrentRound     string                  `json:"currentRound"`
+	CurrentQuestion  string                  `json:"currentQuestion"`
+	CurrentUser      string                  `json:"currentUser"`
+	IsFinished       bool                    `json:"isFinished"`
+	Winner           *string                 `json:"winner,omitempty"`
+	FinishDate       *int64                  `json:"finishDate,omitempty"`
+	CreatorID        string                  `json:"creatorId"`
+	UnconfirmedUsers []UnconfirmedUserClient `json:"unconfirmedUsers,omitempty"`
 }
 
 type GameInviteClient struct {

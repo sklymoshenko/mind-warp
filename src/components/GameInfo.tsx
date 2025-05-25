@@ -1,11 +1,11 @@
-import { createResource, createSignal, For, Show } from 'solid-js'
+import { createEffect, createResource, createSignal, For, Show } from 'solid-js'
 import { useApi } from '../hooks/useApi'
-import { Game, GameTemplate, Round, User } from '../types'
+import { Game, GameTemplate, UnconfirmedUser, Round, User } from '../types'
 import Accordion from './Accordion'
 
 import { TbZoomQuestion } from 'solid-icons/tb'
 import { BiRegularShowAlt } from 'solid-icons/bi'
-import SearchComponent from './Search'
+import SearchComponent, { SearchItem } from './Search'
 import { useNavigate } from '@solidjs/router'
 import { FiEdit } from 'solid-icons/fi'
 import { createUUID } from '../pages/CreateGame'
@@ -20,6 +20,7 @@ type GameInfoProps<T extends GameTemplate | Game> = {
   type: 'template' | 'game'
   onFinish?: (entity: T) => void
   onRemove?: (entity: T) => void
+  disableSearch?: boolean
 }
 
 type AccordionTitleProps = {
@@ -73,6 +74,9 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   const [users, setUsers] = createSignal<User[]>(
     props.entity && 'users' in props.entity ? props.entity.users : [props.user]
   )
+  const [unconfirmedUsers] = createSignal<UnconfirmedUser[]>(
+    props.entity && 'unconfirmedUsers' in props.entity ? (props.entity.unconfirmedUsers ?? []) : []
+  )
 
   const [entity] = createResource(
     () => ({ id: props.id, item: props.entity }),
@@ -108,7 +112,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     )
   }
 
-  const onUserSelect = (newUsers: User[]) => {
+  const onUserSelect = (newUsers: SearchItem[]) => {
     if (users().length > newUsers.length) {
       const isRemovedCreator = newUsers.length === 0 || newUsers.some((user) => user.id !== props.user.id)
       if (isRemovedCreator) {
@@ -116,7 +120,14 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
       }
     }
 
-    setUsers(newUsers)
+    setUsers(
+      newUsers.map((user) => ({
+        id: user.id as string,
+        name: user.name as string,
+        isAdmin: false,
+        roundScore: {} as User['roundScore'],
+      }))
+    )
   }
 
   const searchUsers = async (term: string) => {
@@ -211,6 +222,25 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     props.onRemove?.(entity()!)
   }
 
+  const userSelectedItems = (): SearchItem[] => {
+    let items = users().map((user) => ({
+      id: user.id,
+      name: user.name,
+      isRemovable: props.user.id !== user.id,
+    }))
+
+    items.push(
+      ...unconfirmedUsers().map((user) => ({
+        id: user.id,
+        name: user.name,
+        class: user.status === 'pending' ? 'bg-accent/50! text-primary!' : 'bg-red-500/50! text-red-500!',
+        isRemovable: true,
+      }))
+    )
+
+    return items
+  }
+
   return (
     <div class="flex flex-col w-full">
       <div class="flex flex-col gap-4">
@@ -234,14 +264,14 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
         <span class="text-white text-xl">Participants: {users().length}</span>
       </div>
       <div class="w-full">
-        <SearchComponent
+        <SearchComponent<SearchItem>
           searchFunction={searchUsers}
           placeholder="Add Users"
           multiselect={true}
-          selectedItems={users()}
+          selectedItems={userSelectedItems()}
           onSelect={onUserSelect}
-          defaultSelected={users()}
-          disabled={props.nonEditable}
+          defaultSelected={userSelectedItems()}
+          disabled={props.nonEditable || props.disableSearch}
         />
       </div>
       <Show when={!props.nonEditable}>
@@ -311,16 +341,16 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
                   Finish Game
                 </button>
               </Confirm>
+              <Confirm
+                title="Remove Game"
+                message="Are you sure you want to remove this game?"
+                onConfirm={() => onGameRemove()}
+              >
+                <button class="p-2 w-full text-red-500 rounded-md text-xl font-bold hover:cursor-pointer hover:text-red-500/70 hover:bg-red-500/10 transition-colors duration-300">
+                  Remove Game
+                </button>
+              </Confirm>
             </Show>
-            <Confirm
-              title="Remove Game"
-              message="Are you sure you want to remove this game?"
-              onConfirm={() => onGameRemove()}
-            >
-              <button class="p-2 w-full text-red-500 rounded-md text-xl font-bold hover:cursor-pointer hover:text-red-500/70 hover:bg-red-500/10 transition-colors duration-300">
-                Remove Game
-              </button>
-            </Confirm>
           </div>
         </Show>
       </div>

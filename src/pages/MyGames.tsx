@@ -93,6 +93,55 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
   )
 }
 
+type GameInviteCardProps = {
+  gameInvite: GameInvite
+  onInviteAccept: (gameInvite: GameInvite) => void
+  onInviteDecline: (gameInviteId: string) => void
+  onInviteClick?: (gameInvite: GameInvite) => void
+}
+
+const GameInviteCard = (props: GameInviteCardProps) => {
+  return (
+    <div
+      class="w-[80%] mx-auto relative group flex justify-between items-center bg-primary/10 hover:cursor-pointer hover:bg-primary/20 transition-all duration-300"
+      onClick={() => props.onInviteClick?.(props.gameInvite)}
+    >
+      <div class="flex flex-row gap-4 items-center  rounded-md p-4">
+        <BsEnvelopePaperHeart class="text-primary w-10 h-10" />
+        <div class="flex flex-col gap-2">
+          <span class="text-2xl font-bold">Game: {props.gameInvite.gameName}</span>
+          <span class="text-gray-400 text-sm">
+            Sent at {DateTime.fromISO(props.gameInvite.createdAt).toLocaleString()} by{' '}
+            {props.gameInvite.gameCreatorName}
+          </span>
+        </div>
+      </div>
+      <div>
+        <button
+          class="text-green-500 hover:text-green-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+          onclick={(e) => {
+            e.stopPropagation()
+            props.onInviteAccept(props.gameInvite)
+          }}
+          title="Accept Invite"
+        >
+          <FaSolidThumbsUp class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
+        </button>
+        <button
+          class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+          onclick={(e) => {
+            e.stopPropagation()
+            props.onInviteDecline(props.gameInvite.id)
+          }}
+          title="Decline Invite"
+        >
+          <FaSolidThumbsDown class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const MyGames = () => {
   const { user } = useAuth()
   const { post: createTemplate } = useApi('game_templates/create_template')
@@ -106,6 +155,7 @@ const MyGames = () => {
   const { get: getActiveGames } = useApi(`games/active/user/${user()?.id}`)
   const { get: getGamesHistory } = useApi(`games/finished/user/${user()?.id}`)
   const { get: getGameInvites } = useApi(`games/invites/user/${user()?.id}`)
+  const { get: getGame } = useApi('games')
 
   const { del: deleteGame } = useApi(`games/delete`)
   const { post: finishGame } = useApi(`games/finish`)
@@ -115,6 +165,15 @@ const MyGames = () => {
   const [editingGameTemplateId, setEditingGameTemplateId] = createSignal<string>()
   const [editingGame, setEditingGame] = createSignal<Game>()
   const [historyGame, setHistoryGame] = createSignal<Game>()
+  const [gameInvite, setGameInvite] = createSignal<GameInvite>()
+
+  const [inviteGameInfo] = createResource(gameInvite, async (invite) => {
+    if (!invite) return
+    const response = await getGame<Game[]>(`/${invite.gameId}`)
+    if (response.data) {
+      return response.data[0]!
+    }
+  })
 
   const [gameInvites, { mutate: setGameInvites }] = createResource(async () => {
     const response = await getGameInvites<GameInvite[]>()
@@ -290,34 +349,12 @@ const MyGames = () => {
                 <Carousel
                   items={
                     gameInvites()?.map((gameInvite) => (
-                      <div class="w-[80%] mx-auto relative group flex justify-between items-center bg-primary/10">
-                        <div class="flex flex-row gap-4 items-center  rounded-md p-4">
-                          <BsEnvelopePaperHeart class="text-primary w-10 h-10" />
-                          <div class="flex flex-col gap-2">
-                            <span class="text-2xl font-bold">Game: {gameInvite.gameName}</span>
-                            <span class="text-gray-400 text-sm">
-                              Sent at {DateTime.fromISO(gameInvite.createdAt).toLocaleString()} by{' '}
-                              {gameInvite.gameCreatorName}
-                            </span>
-                          </div>
-                        </div>
-                        <div>
-                          <button
-                            class="text-green-500 hover:text-green-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
-                            onclick={() => onInviteAccept(gameInvite)}
-                            title="Accept Invite"
-                          >
-                            <FaSolidThumbsUp class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
-                          </button>
-                          <button
-                            class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
-                            onclick={() => onInviteDecline(gameInvite.id)}
-                            title="Decline Invite"
-                          >
-                            <FaSolidThumbsDown class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
-                          </button>
-                        </div>
-                      </div>
+                      <GameInviteCard
+                        gameInvite={gameInvite}
+                        onInviteAccept={onInviteAccept}
+                        onInviteDecline={onInviteDecline}
+                        onInviteClick={setGameInvite}
+                      />
                     )) ?? []
                   }
                 />
@@ -406,10 +443,14 @@ const MyGames = () => {
             }}
             onRemove={onGameRemove}
             onFinish={onGameFinish}
+            disableSearch={true}
           />
         </OverlayComponent>
         <OverlayComponent isOpen={!!historyGame()} onClose={() => setHistoryGame(undefined)}>
           <GameInfo entity={historyGame()} user={user()!} type="game" nonEditable={true} />
+        </OverlayComponent>
+        <OverlayComponent isOpen={!!gameInvite() && !!inviteGameInfo()} onClose={() => setGameInvite(undefined)}>
+          <GameInfo entity={inviteGameInfo()} user={user()!} type="game" nonEditable={true} />
         </OverlayComponent>
       </div>
     </>
