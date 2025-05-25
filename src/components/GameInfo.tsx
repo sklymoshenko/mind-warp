@@ -112,6 +112,21 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     )
   }
 
+  const invitesCount = () => {
+    return unconfirmedUsers().reduce(
+      (acc, user) => {
+        if (user.status === 'pending') {
+          acc.pending++
+        } else if (user.status === 'declined') {
+          acc.declined++
+        }
+
+        return acc
+      },
+      { pending: 0, declined: 0 }
+    )
+  }
+
   const onUserSelect = (newUsers: SearchItem[]) => {
     if (users().length > newUsers.length) {
       const isRemovedCreator = newUsers.length === 0 || newUsers.some((user) => user.id !== props.user.id)
@@ -203,12 +218,12 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   }
 
   const mainButtonText = () => {
-    if (users().length <= 1) {
-      return 'First add some company'
-    }
-
     if (props.type === 'template') {
       return 'Send Invites and Create Game'
+    }
+
+    if (invitesCount().pending > 0 && props.type === 'game') {
+      return 'Waiting for Invites'
     }
 
     return 'Start Game'
@@ -257,12 +272,18 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
         </div>
         <span class="text-2xl text-gray-500">{entity()?.description}</span>
       </div>
-      <div class="flex items-center justify-between w-full my-4">
+      <div class="flex items-center gap-6 w-full my-4">
         <span class="text-white text-xl">Rounds: {entity()?.rounds.length}</span>
         <span class="text-white text-xl">Themes: {themesCount()}</span>
         <span class="text-white text-xl">Questions: {questionsCount()}</span>
         <span class="text-white text-xl">Participants: {users().length}</span>
       </div>
+      <Show when={props.type === 'game' && unconfirmedUsers().length > 0}>
+        <div class="flex items-center w-full my-4 gap-4">
+          <span class="text-white text-xl">Pending Invites: {invitesCount().pending}</span>
+          <span class="text-white text-xl">Declined: {invitesCount().declined}</span>
+        </div>
+      </Show>
       <div class="w-full">
         <SearchComponent<SearchItem>
           searchFunction={searchUsers}
@@ -277,8 +298,10 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
       <Show when={!props.nonEditable}>
         <button
           class="p-2 w-full bg-primary text-void rounded-md text-xl font-bold hover:cursor-pointer hover:bg-primary/70 transition-bg duration-300"
-          disabled={!entity() || users().length < 2}
-          classList={{ 'opacity-50 hover:cursor-not-allowed!': !entity() || users().length < 2 }}
+          disabled={!entity() || users().length < 2 || invitesCount().pending > 0}
+          classList={{
+            'opacity-50 hover:cursor-not-allowed!': !entity() || users().length < 2 || invitesCount().pending > 0,
+          }}
           onclick={onMainButtonClick}
         >
           {mainButtonText()}
