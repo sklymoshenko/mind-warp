@@ -2,8 +2,8 @@
 import { createSignal, For, Show } from 'solid-js'
 import { Game, Round, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
-import { A } from '@solidjs/router'
 import GameFinished from '../components/GameFinish'
+import { Confirm } from '../components/Confirm'
 
 interface GamePreviewProps {
   game: Game
@@ -18,7 +18,7 @@ export default function GamePreview(props: GamePreviewProps) {
 
   const scores = props.game.users.reduce(
     (acc, curr) => {
-      const totalScore = Object.values(curr.roundScore).reduce((acc, score) => acc + score, 0)
+      const totalScore = Object.values(curr.roundScore ?? {}).reduce((acc, score) => acc + score, 0)
       acc[curr.id] = totalScore
       return acc
     },
@@ -108,7 +108,7 @@ export default function GamePreview(props: GamePreviewProps) {
                             <div class="flex items-end justify-between">
                               <span class="text-lg sm:text-2xl font-bold">{user.name}</span>
                               <span class="text-xs sm:text-sm text-gray-500 ml-2 mb-0.5">
-                                {user.roundScore[round.id]}
+                                {user.roundScore?.[round.id] ?? 0}
                               </span>
                             </div>
                           )
@@ -121,12 +121,16 @@ export default function GamePreview(props: GamePreviewProps) {
             }}
           </For>
         </div>
-        <button
-          class="my-4 sm:my-0 mx-auto w-full sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
-          onclick={handleFinish}
+        <Confirm
+          onConfirm={handleFinish}
+          onCancel={() => setIsGameFinished(false)}
+          title="Finish Game"
+          message="Are you sure you want to finish the game?"
         >
-          Finish
-        </button>
+          <button class="my-4 sm:my-0 mx-auto w-full sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
+            Finish
+          </button>
+        </Confirm>
         <div class="flex flex-col sm:flex-row justify-between p-2 gap-12 flex-wrap sm:flex-nowrap mt-4 sm:mt-0">
           <For each={props.game.users}>
             {(user) => {

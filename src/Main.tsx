@@ -10,7 +10,8 @@ import AuthGuard from './components/AuthQuard'
 import { AuthProvider } from './context/AuthContext'
 import Overview from './pages/Overview'
 import MyGames from './pages/MyGames'
-import LocalGame from './pages/LocalGame'
+import LocalGameRoutes from './pages/LocalGame'
+import RemoteGameRoutes from './pages/RemoteGameRoutes'
 
 const Main = () => {
   return (
@@ -18,7 +19,8 @@ const Main = () => {
       <BackgroundWrapper>
         <Router>
           <Route path="/" component={WelcomePage} />
-          <LocalGame />
+          <LocalGameRoutes />
+          <RemoteGameRoutes />
           <Route path="/games-history" component={GameHistory} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />

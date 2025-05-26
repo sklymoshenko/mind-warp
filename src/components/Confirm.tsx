@@ -74,11 +74,11 @@ export const Confirm = (props: ConfirmProps) => {
           </button>
           {/* Arrow (at bottom) */}
           <div class="absolute left-1/2 -translate-x-1/2 -bottom-2 w-4 h-4 bg-void rotate-45 border border-primary/10 border-t-0 border-l-0" />
-          <h3 class="text-lg font-bold">{props.title}</h3>
-          <p class="mt-2">{props.message}</p>
+          <h3 class="text-lg font-bold text-primary">{props.title}</h3>
+          <p class="mt-2 text-gray-500">{props.message}</p>
           <div class="mt-4 flex gap-2 justify-end">
             <button
-              class="px-4 py-2 rounded hover:bg-primary/10 transition-colors duration-200 hover:cursor-pointer"
+              class="px-4 py-2 rounded text-primary hover:bg-primary/10 transition-colors duration-200 hover:cursor-pointer"
               onClick={handleCancel}
             >
               {props.cancelText || 'Cancel'}
