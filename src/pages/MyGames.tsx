@@ -2,7 +2,7 @@ import { createResource, For, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
 import { Game, GameInvite, GameListItem } from '../types'
 import { DateTime } from 'luxon'
-import { A } from '@solidjs/router'
+import { A, useNavigate } from '@solidjs/router'
 import { widgetStyles } from '../utils'
 import CreateGame from './CreateGame'
 import { useApi } from '../hooks/useApi'
@@ -143,6 +143,7 @@ const GameInviteCard = (props: GameInviteCardProps) => {
 }
 
 const MyGames = () => {
+  const navigate = useNavigate()
   const { user } = useAuth()
   const { post: createTemplate } = useApi('game_templates/create_template')
   const { post: updateTemplate } = useApi('game_templates/update')
@@ -303,6 +304,10 @@ const MyGames = () => {
     }
   }
 
+  const onGameStart = async (game: Game) => {
+    navigate(`/game/${game.id}`)
+  }
+
   return (
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
@@ -444,6 +449,7 @@ const MyGames = () => {
             onRemove={onGameRemove}
             onFinish={onGameFinish}
             disableSearch={true}
+            onStart={onGameStart}
           />
         </OverlayComponent>
         <OverlayComponent isOpen={!!historyGame()} onClose={() => setHistoryGame(undefined)}>

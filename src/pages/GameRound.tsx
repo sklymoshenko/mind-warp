@@ -30,7 +30,7 @@ const GameRound = (props: Props) => {
   const scores = () => {
     return props.users.reduce(
       (acc, curr) => {
-        acc[curr.id] = curr.roundScore[props.round.id] || 0
+        acc[curr.id] = curr.roundScore?.[props.round.id] || 0
         return acc
       },
       {} as Record<User['id'], number>

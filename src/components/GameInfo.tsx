@@ -1,4 +1,4 @@
-import { createEffect, createResource, createSignal, For, Show } from 'solid-js'
+import { createResource, createSignal, For, Show } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { Game, GameTemplate, UnconfirmedUser, Round, User } from '../types'
 import Accordion from './Accordion'
@@ -21,6 +21,7 @@ type GameInfoProps<T extends GameTemplate | Game> = {
   onFinish?: (entity: T) => void
   onRemove?: (entity: T) => void
   disableSearch?: boolean
+  onStart?: (entity: T) => void
 }
 
 type AccordionTitleProps = {
@@ -158,7 +159,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   }
 
   const onGameStart = async () => {
-    navigate(`/games/me`)
+    props.onStart?.(entity()!)
   }
 
   const updateEntityId = (entity: T) => {
