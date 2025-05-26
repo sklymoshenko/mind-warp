@@ -33,7 +33,7 @@ const Welcome = () => {
         <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
           <button
             class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 hover:cursor-pointer"
-            onClick={() => navigate('/games-history')}
+            onClick={() => navigate('/local/games-history')}
           >
             Games History
           </button>
@@ -55,14 +55,14 @@ const Welcome = () => {
             classList={{
               'animate-[pulse_2s_infinite]': gameInProgress() === null,
             }}
-            onClick={() => navigate('/create-game')}
+            onClick={() => navigate('/local/create-game')}
           >
             Create New Game
           </button>
           <Show when={gameInProgress() !== null}>
             <button
               class="mt-8 bg-accent text-white text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-accent/80 transition-all duration-300 animate-[pulse_2s_infinite] hover:cursor-pointer"
-              onClick={() => navigate(`/game/${gameInProgress()!.id}`)}
+              onClick={() => navigate(`/local/game/${gameInProgress()!.id}`)}
             >
               Continue Game
             </button>

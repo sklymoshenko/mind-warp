@@ -37,7 +37,7 @@ export default function GameDashboard(props: GameDashboardProps) {
 
   const onRoundClick = (round: Round) => {
     props.onUpdateGame({ ...props.game, currentRound: round.id, currentUser: props.game.users[0].id })
-    navigate(`/game/${props.game.id}/round/${round.id}`)
+    navigate(`/local/game/${props.game.id}/round/${round.id}`)
   }
 
   const handleFinish = () => {
