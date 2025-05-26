@@ -1,9 +1,9 @@
-import { Route, Router } from '@solidjs/router'
-import GameDashboard from './Dashboard'
+import { Route, useNavigate } from '@solidjs/router'
+import GamePreview from './GamePreview'
 import CreateGame from './CreateGame'
 import { createSignal, createMemo } from 'solid-js'
 import mockGame from '../data/mockGame'
-import { Game, Question, User } from '../types'
+import { Game, Question, Round, User } from '../types'
 import GameHistory from './GameHistory'
 import GameRound from './GameRound'
 
@@ -90,22 +90,46 @@ const LocalGame = () => {
     setGame(updatedGame)
     localStorage.setItem('currentGame', JSON.stringify(updatedGame))
   }
+
+  const onRoundClick = (round: Round, navigate?: (path: string) => void) => {
+    navigate?.(`/local/game/${game().id}/round/${round.id}`)
+  }
+
+  const onGameFinish = (updatedGame: Game) => {
+    const gamesHistory: Game[] = JSON.parse(localStorage.getItem('gamesHistory') || '[]')
+    gamesHistory.push(updatedGame)
+    localStorage.setItem('gamesHistory', JSON.stringify(gamesHistory))
+    localStorage.removeItem('currentGame')
+  }
+
+  const onGameFinishClose = (navigate?: (path: string) => void) => {
+    navigate?.('/')
+  }
+
   return (
     <>
-      <Route
-        path="/local/create-game"
-        component={(props) => <CreateGame onGameUpdate={handleGameUpdate} {...props} />}
-      />
+      <Route path="/local/create-game" component={() => <CreateGame onGameUpdate={handleGameUpdate} />} />
       {game() && (
         <Route
           path="/local/game/:gameId"
-          component={(props) => <GameDashboard onUpdateGame={setGame} game={game()!} {...props} />}
+          component={() => {
+            const navigate = useNavigate()
+            return (
+              <GamePreview
+                onUpdateGame={setGame}
+                game={game()!}
+                onRoundClick={(round) => onRoundClick(round, navigate)}
+                onGameFinish={onGameFinish}
+                onGameFinishClose={() => onGameFinishClose(navigate)}
+              />
+            )
+          }}
         />
       )}
       {currentRound() && (
         <Route
           path="/local/game/:gameid/round/:roundId"
-          component={(props) => (
+          component={() => (
             <GameRound
               round={currentRound()!}
               users={game().users}
@@ -114,12 +138,11 @@ const LocalGame = () => {
               onQuestionAnswered={onQuestionAnswered}
               updateForExtraAnswerer={onUpdateForExtraAnswerer}
               currentUser={game().currentUser!}
-              {...props}
             />
           )}
         />
       )}
-      <Route path={'local/games-history'} component={GameHistory} />
+      <Route path="/games-history" component={() => <GameHistory />} />
     </>
   )
 }

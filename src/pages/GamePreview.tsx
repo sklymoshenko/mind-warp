@@ -1,17 +1,19 @@
-// src/GameDashboard.tsx
+// src/GamePreview.tsx
 import { createSignal, For, Show } from 'solid-js'
 import { Game, Round, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
-import { A, useNavigate } from '@solidjs/router'
+import { A } from '@solidjs/router'
 import GameFinished from '../components/GameFinish'
 
-interface GameDashboardProps {
+interface GamePreviewProps {
   game: Game
   onUpdateGame: (game: Game) => void
+  onRoundClick: (round: Round) => void
+  onGameFinish: (game: Game) => void
+  onGameFinishClose: () => void
 }
 
-export default function GameDashboard(props: GameDashboardProps) {
-  const navigate = useNavigate()
+export default function GamePreview(props: GamePreviewProps) {
   const [isGameFinished, setIsGameFinished] = createSignal(false)
 
   const scores = props.game.users.reduce(
@@ -37,7 +39,7 @@ export default function GameDashboard(props: GameDashboardProps) {
 
   const onRoundClick = (round: Round) => {
     props.onUpdateGame({ ...props.game, currentRound: round.id, currentUser: props.game.users[0].id })
-    navigate(`/local/game/${props.game.id}/round/${round.id}`)
+    props.onRoundClick(round)
   }
 
   const handleFinish = () => {
@@ -51,29 +53,27 @@ export default function GameDashboard(props: GameDashboardProps) {
       winner: winningUser(),
       finishDate: Date.now(),
     }
+    props.onGameFinish(updatedGame)
+  }
 
-    const gamesHistory: Game[] = JSON.parse(localStorage.getItem('gamesHistory') || '[]')
-    gamesHistory.push(updatedGame)
-    localStorage.setItem('gamesHistory', JSON.stringify(gamesHistory))
-    localStorage.removeItem('currentGame')
+  const onFinishClose = () => {
+    setIsGameFinished(false)
+    props.onGameFinishClose()
   }
 
   return (
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
-        <A
-          href="/"
+        <button
+          onClick={() => window.history.back()}
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 hover:cursor-pointer"
         >
           Back
-        </A>
+        </button>
       </div>
       <Show when={isGameFinished()}>
         <GameFinished
-          onClose={() => {
-            setIsGameFinished(true)
-            navigate('/')
-          }}
+          onClose={onFinishClose}
           isOpen={isGameFinished()}
           users={props.game.users}
           winner={winningUser()}

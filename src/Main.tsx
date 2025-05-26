@@ -1,7 +1,7 @@
 import './App.css'
 import BackgroundWrapper from './components/BackgroundWrapper'
 import WelcomePage from './pages/WelcomePage'
-import { Router, Route } from '@solidjs/router'
+import { Route, Router, useNavigate } from '@solidjs/router'
 import GameHistory from './pages/GameHistory'
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -19,11 +19,11 @@ const Main = () => {
         <Router>
           <Route path="/" component={WelcomePage} />
           <LocalGame />
-          <Route path={'games-history'} component={GameHistory} />
-          <Route path={'login'} component={Login} />
-          <Route path={'register'} component={Register} />
+          <Route path="/games-history" component={GameHistory} />
+          <Route path="/login" component={Login} />
+          <Route path="/register" component={Register} />
           <Route
-            path={'dashboard'}
+            path="/dashboard"
             component={() => {
               return (
                 <AuthGuard>
@@ -33,7 +33,7 @@ const Main = () => {
             }}
           />
           <Route
-            path={'games/me'}
+            path="/games/me"
             component={() => {
               return (
                 <AuthGuard>
