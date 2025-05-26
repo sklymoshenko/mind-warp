@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For } from 'solid-js'
+import { createMemo, createSignal, For, Show } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
@@ -7,7 +7,7 @@ import Popover from '../components/Popover'
 import AnsweredPopover, { QuestionPopover } from '../components/AnsweredPopover'
 
 type Props = {
-  round: Round
+  round?: Round
   users: Game['users']
   currentQuestion: Question['id']
   currentUser: User['id']
@@ -23,14 +23,14 @@ const GameRound = (props: Props) => {
   const [answeredQuestionsMap, setAnsweredQuestionsMap] = createSignal<Record<Question['id'], QuestionPopover>>({})
 
   const activeQuestion = () => {
-    const allQuestions = props.round.themes.flatMap((theme) => theme.questions)
+    const allQuestions = props.round?.themes.flatMap((theme) => theme.questions) || []
     return allQuestions.find((question) => question.id === props.currentQuestion)!
   }
 
   const scores = () => {
     return props.users.reduce(
       (acc, curr) => {
-        acc[curr.id] = curr.roundScore?.[props.round.id] || 0
+        acc[curr.id] = curr.roundScore?.[props.round?.id || ''] || 0
         return acc
       },
       {} as Record<User['id'], number>
@@ -126,17 +126,19 @@ const GameRound = (props: Props) => {
 
   return (
     <>
-      <QuestionModal
-        isOpen={isModalOpen()}
-        updateExtraAnswerers={updateExtraAnswerers}
-        themeTitle={activeTheme()?.name || 'Theme'}
-        points={activeQuestion()?.points || 0}
-        questionTime={props.round.time.id}
-        questionText={activeQuestion()?.text || ''}
-        onAnswerSubmit={handleAnswerSubmit}
-        users={props.users}
-        currentUser={props.currentUser}
-      />
+      <Show when={props.round}>
+        <QuestionModal
+          isOpen={isModalOpen()}
+          updateExtraAnswerers={updateExtraAnswerers}
+          themeTitle={activeTheme()?.name || 'Theme'}
+          points={activeQuestion()?.points || 0}
+          questionTime={props.round!.time.id}
+          questionText={activeQuestion()?.text || ''}
+          onAnswerSubmit={handleAnswerSubmit}
+          users={props.users}
+          currentUser={props.currentUser}
+        />
+      </Show>
       {/*Back Link */}
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <A
@@ -149,9 +151,9 @@ const GameRound = (props: Props) => {
       </div>
       <div class="flex flex-col justify-between h-full mt-10 sm:mt-0 sm:h-[60%] xl:h-[90%] 2xl:h-[70%] z-50 overflow-y-auto overflow-x-hidden">
         <div class="flex flex-col items-center text-primary mx-auto">
-          <h1 class="text-3xl sm:text-5xl font-bold mb-20">{props.round.name} </h1>
+          <h1 class="text-3xl sm:text-5xl font-bold mb-20">{props.round?.name} </h1>
           <div class="flex justify-center gap-4 sm:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none">
-            <For each={props.round.themes}>
+            <For each={props.round?.themes}>
               {(theme) => {
                 return (
                   <div class="flex flex-col items-center font-semibold min-w-[45%] sm:min-w-[200px] group">

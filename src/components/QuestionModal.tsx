@@ -32,7 +32,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   const [extraAnswerers, setExtraAnswerers] = createSignal<ExtraAnswerers>({})
 
   const answerQueue = () => {
-    return [...props.users, ...props.users, ...props.users].filter((user) => user.id !== props.currentUser)
+    return props.users.filter((user) => user.id !== props.currentUser)
   }
 
   const cleanup = () => {

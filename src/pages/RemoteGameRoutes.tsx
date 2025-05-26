@@ -1,6 +1,6 @@
 import { Route, useNavigate, useParams } from '@solidjs/router'
 import GamePreview from './GamePreview'
-import { createEffect, createMemo, createResource, createSignal, Show } from 'solid-js'
+import { createMemo, createResource, createSignal, Show } from 'solid-js'
 import { Game, Question, Round, User } from '../types'
 import GameRound from './GameRound'
 import { useApi } from '../hooks/useApi'
@@ -25,7 +25,7 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
   }
 
   const newUserTurn = () => {
-    const userIndex = game()?.users.findIndex((u) => u.id === game()?.currentUser) || -1
+    const userIndex = game()?.users.findIndex((u) => u.id === game()?.currentUser) ?? -1
 
     if (userIndex === -1 || !game()) return
 
@@ -62,12 +62,12 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
   }
 
   const onQuestionAnswered = (question: Question, isCorrect: boolean, userId: User['id']) => {
-    const currentRoundIndex = game()?.rounds.findIndex((r) => r.id === game()?.currentRound) || -1
+    const currentRoundIndex = game()?.rounds.findIndex((r) => r.id === game()?.currentRound) ?? -1
     if (currentRoundIndex === -1) return
 
     game()!.rounds[currentRoundIndex] = updateRoundQuestion(question, isCorrect, currentRoundIndex)
 
-    const userIndex = game()?.users.findIndex((u) => u.id === userId) || -1
+    const userIndex = game()?.users.findIndex((u) => u.id === userId) ?? -1
     if (userIndex === -1 || !game()) return
     game()!.users[userIndex] = updateUser(question, isCorrect, userIndex)
 
@@ -80,7 +80,7 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
   }
 
   const onUpdateForExtraAnswerer = (question: Question, isCorrect: boolean, userId: User['id']) => {
-    const userIndex = game()?.users.findIndex((u) => u.id === userId) || -1
+    const userIndex = game()?.users.findIndex((u) => u.id === userId) ?? -1
     if (userIndex === -1 || !game()) return
     game()!.users[userIndex] = updateUser(question, isCorrect, userIndex)
 
@@ -112,11 +112,13 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
           const { get: getGame } = useApi('/games')
           const params = useParams()
 
-          const [gameResource] = createResource(
+          createResource(
             () => params.gameId,
             async (gameId) => {
+              if (game()) return game()
               if (!gameId) return undefined
               const response = await getGame<Game[]>(`/${gameId}`)
+
               if (response.data) {
                 setGame(response.data[0])
                 return response.data[0]
@@ -124,10 +126,6 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
               return undefined
             }
           )
-
-          createEffect(() => {
-            console.log(gameResource())
-          })
 
           return (
             <Show when={game()}>
@@ -142,22 +140,52 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
           )
         }}
       />
-      {currentRound() && (
-        <Route
-          path="/game/:gameid/round/:roundId"
-          component={() => (
-            <GameRound
-              round={currentRound()!}
-              users={game()?.users || []}
-              currentQuestion={game()?.currentQuestion || ''}
-              onQuestionSelect={onQuestionSelect}
-              onQuestionAnswered={onQuestionAnswered}
-              updateForExtraAnswerer={onUpdateForExtraAnswerer}
-              currentUser={game()?.currentUser || ''}
-            />
-          )}
-        />
-      )}
+      <Route
+        path="/game/:gameId/round/:roundId"
+        component={() => {
+          const params = useParams()
+          const { get: getGame } = useApi('/games')
+          createResource(
+            () => params.gameId,
+            async (gameId) => {
+              if (!gameId) return undefined
+              if (game()) return game()
+
+              const response = await getGame<Game[]>(`/${gameId}`)
+              if (response.data) {
+                const game = response.data[0]
+                const currentRound = game.rounds.find((r) => r.id === params.roundId)
+                if (currentRound) {
+                  game.currentRound = currentRound.id
+                }
+
+                if (!game.currentUser) {
+                  game.currentUser = game.users[0].id
+                }
+
+                setGame(game)
+                return game
+              }
+
+              return undefined
+            }
+          )
+
+          return (
+            <Show when={game()}>
+              <GameRound
+                round={currentRound()!}
+                users={game()?.users || []}
+                currentQuestion={game()?.currentQuestion || ''}
+                onQuestionSelect={onQuestionSelect}
+                onQuestionAnswered={onQuestionAnswered}
+                updateForExtraAnswerer={onUpdateForExtraAnswerer}
+                currentUser={game()?.currentUser || ''}
+              />
+            </Show>
+          )
+        }}
+      />
     </>
   )
 }

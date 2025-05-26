@@ -134,7 +134,7 @@ func getGameByFilter(filterType string) string {
 func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.UserClient, error) {
 	query := `
 		SELECT
-			u.id, u.name, u.is_admin
+			u.id, u.name, u.is_admin, gu.round_scores
 		FROM
 			game_users gu
 		LEFT JOIN
@@ -151,10 +151,11 @@ func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.UserClie
 	var users []types.UserClient
 	for rows.Next() {
 		var user types.UserClient
-		err := rows.Scan(&user.ID, &user.Name, &user.IsAdmin)
+		err := rows.Scan(&user.ID, &user.Name, &user.IsAdmin, &user.RoundScores)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
+
 		users = append(users, user)
 	}
 
