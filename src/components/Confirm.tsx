@@ -41,7 +41,7 @@ export const Confirm = (props: ConfirmProps) => {
   })
 
   return (
-    <div class="relative inline-block w-full z-[9999]">
+    <div class="relative w-full z-[9999] flex justify-center items-center">
       {/* Trigger */}
       <span
         onClick={(e) => {

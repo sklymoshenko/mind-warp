@@ -197,7 +197,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 					ID:       themeIDStr,
 					Name:     themeName.String,
 					RoundID:  roundIDStr,
-					Position: int(themePosition.Int),
+					Position: uint16(themePosition.Int),
 				}
 				themesMap[themeIDStr] = theme
 
@@ -212,7 +212,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 						ThemeID: themeIDStr,
 						Text:    questionText.String,
 						Answer:  questionAnswer.String,
-						Points:  int(questionPoints.Int),
+						Points:  uint16(questionPoints.Int),
 					}
 
 					questionsMap[questionIDStr] = question

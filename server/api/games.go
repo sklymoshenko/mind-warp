@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"mindwarp/logger"
 	"mindwarp/types"
 	"net/http"
@@ -22,7 +23,7 @@ func (s *Server) CreateGame(c *gin.Context) {
 		return
 	}
 
-	game, rounds, themes, questions, users, err := MapGameClientToDb(gameBody)
+	game, rounds, themes, questions, users, err := MapGameClientToCreate(gameBody)
 
 	if err != nil {
 		logger.Errorf("Failed to map game client to db: %v", err)
@@ -169,10 +170,34 @@ func (s *Server) FinishGame(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Game finished"})
 }
 
+func (s *Server) UpdateGame(c *gin.Context) {
+	var gameBody types.GameClient
+	if err := c.ShouldBindJSON(&gameBody); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		return
+	}
+
+	game, users, err := MapGameClientToUpdate(gameBody)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map game client to db: " + err.Error()})
+		return
+	}
+	fmt.Println("game", game)
+	fmt.Println("users", users)
+	err = s.Db.UpdateGameAndGameUsers(c.Request.Context(), game, users)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update game: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Game updated"})
+}
+
 func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.POST("/games/create", s.CreateGame)
 	group.GET("/games/:id", s.GetGameById)
 	group.DELETE("/games/delete/:id", s.DeleteGame)
+	group.POST("/games/update/:id", s.UpdateGame)
 	group.POST("/games/finish/:id", s.FinishGame)
 	group.GET("/games/active/user/:userId", s.GetActiveGamesByUserId)
 	group.GET("/games/finished/user/:userId", s.GetFinishedGamesByUserId)

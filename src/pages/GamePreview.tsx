@@ -38,7 +38,11 @@ export default function GamePreview(props: GamePreviewProps) {
   }
 
   const onRoundClick = (round: Round) => {
-    props.onUpdateGame({ ...props.game, currentRound: round.id, currentUser: props.game.users[0].id })
+    props.onUpdateGame({
+      ...props.game,
+      currentRound: round.id,
+      currentUser: props.game.currentUser || props.game.users[0].id,
+    })
     props.onRoundClick(round)
   }
 

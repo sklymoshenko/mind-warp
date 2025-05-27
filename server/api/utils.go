@@ -1,6 +1,9 @@
 package api
 
-import "mindwarp/types"
+import (
+	"mindwarp/types"
+	"time"
+)
 
 func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplateServer, []types.TemplateRoundServer, map[string][]types.TemplateThemeServer, map[string][]types.TemplateQuestionServer, error) {
 	rounds := make([]types.TemplateRoundServer, len(body.Rounds))
@@ -34,7 +37,7 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 				ID:       theme.Id,
 				RoundID:  round.Id,
 				Name:     theme.Name,
-				Position: j,
+				Position: uint16(j),
 			})
 
 			for j, question := range theme.Questions {
@@ -44,7 +47,7 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 					Text:     question.Text,
 					Answer:   question.Answer,
 					Points:   question.Points,
-					Position: j,
+					Position: uint16(j),
 				})
 			}
 		}
@@ -59,7 +62,7 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 	}, rounds, themes, questions, nil
 }
 
-func MapGameClientToDb(body types.GameClient) (types.GameServer, []types.RoundServer, map[string][]types.ThemeServer, map[string][]types.QuestionServer, []types.UserServer, error) {
+func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.RoundServer, map[string][]types.ThemeServer, map[string][]types.QuestionServer, []types.UserServer, error) {
 	rounds := make([]types.RoundServer, len(body.Rounds))
 	themes := make(map[string][]types.ThemeServer)
 	questions := make(map[string][]types.QuestionServer)
@@ -98,7 +101,7 @@ func MapGameClientToDb(body types.GameClient) (types.GameServer, []types.RoundSe
 				ID:       theme.Id,
 				RoundID:  round.Id,
 				Name:     theme.Name,
-				Position: j,
+				Position: uint16(j),
 			})
 
 			for _, question := range theme.Questions {
@@ -119,4 +122,35 @@ func MapGameClientToDb(body types.GameClient) (types.GameServer, []types.RoundSe
 		CreatorID:  body.CreatorID,
 		TemplateID: body.TemplateID,
 	}, rounds, themes, questions, users, nil
+}
+
+func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.GameUserServer, error) {
+	finishDate := time.Time{}
+	if body.IsFinished {
+		finishDate = time.Now()
+	}
+
+	game := types.GameServer{
+		ID:                body.ID,
+		Name:              body.Name,
+		CreatorID:         body.CreatorID,
+		TemplateID:        body.TemplateID,
+		IsFinished:        body.IsFinished,
+		WinnerID:          body.Winner,
+		CurrentRoundID:    body.CurrentRound,
+		CurrentQuestionID: body.CurrentQuestion,
+		CurrentUserID:     body.CurrentUser,
+		FinishDate:        finishDate,
+	}
+
+	users := make([]types.GameUserServer, len(body.Users))
+	for i, user := range body.Users {
+		users[i] = types.GameUserServer{
+			GameID:      body.ID,
+			UserID:      user.ID,
+			RoundScores: user.RoundScores,
+		}
+	}
+
+	return game, users, nil
 }

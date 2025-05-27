@@ -38,14 +38,14 @@ type TemplateRoundServer struct {
 	Name           string         `json:"name"`
 	TimeSettings   TimeSettings   `json:"time_settings"`
 	RankSettings   []RankSettings `json:"rank_settings"`
-	Position       int            `json:"position"`
+	Position       uint16         `json:"position"`
 }
 
 type TemplateThemeServer struct {
 	ID       string `json:"id"`
 	RoundID  string `json:"round_id"`
 	Name     string `json:"name"`
-	Position int    `json:"position"`
+	Position uint16 `json:"position"`
 }
 
 type TemplateQuestionServer struct {
@@ -53,8 +53,8 @@ type TemplateQuestionServer struct {
 	ThemeID  string `json:"theme_id"`
 	Text     string `json:"text"`
 	Answer   string `json:"answer"`
-	Points   int    `json:"points"`
-	Position int    `json:"position"`
+	Points   uint16 `json:"points"`
+	Position uint16 `json:"position"`
 }
 
 type GameServer struct {
@@ -77,14 +77,14 @@ type RoundServer struct {
 	Name         string         `json:"name"`
 	TimeSettings TimeSettings   `json:"time_settings"`
 	RankSettings []RankSettings `json:"rank_settings"`
-	Position     int            `json:"position"`
+	Position     uint16         `json:"position"`
 }
 
 type ThemeServer struct {
 	ID       string `json:"id"`
 	RoundID  string `json:"round_id"`
 	Name     string `json:"name"`
-	Position int    `json:"position"`
+	Position uint16 `json:"position"`
 }
 
 type QuestionServer struct {
@@ -92,14 +92,14 @@ type QuestionServer struct {
 	ThemeID   string    `json:"theme_id"`
 	Text      string    `json:"text"`
 	Answer    string    `json:"answer"`
-	Points    int       `json:"points"`
+	Points    uint16    `json:"points"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type GameUserServer struct {
-	GameID      string         `json:"game_id"`
-	UserID      string         `json:"user_id"`
-	RoundScores map[string]any `json:"round_scores"`
+	GameID      string           `json:"game_id"`
+	UserID      string           `json:"user_id"`
+	RoundScores map[string]int16 `json:"round_scores"`
 }
 
 type AnswerServer struct {
@@ -107,7 +107,7 @@ type AnswerServer struct {
 	QuestionID   string    `json:"question_id"`
 	UserID       string    `json:"user_id"`
 	IsCorrect    bool      `json:"is_correct"`
-	TimeAnswered int       `json:"time_answered"`
+	TimeAnswered uint16    `json:"time_answered"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

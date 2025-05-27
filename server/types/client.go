@@ -18,7 +18,7 @@ type QuestionClient struct {
 	Id     string `json:"id"`
 	Text   string `json:"text"`
 	Answer string `json:"answer"`
-	Points int    `json:"points"`
+	Points uint16 `json:"points"`
 }
 
 type ThemeClient struct {
@@ -45,10 +45,10 @@ type GameTemplateClient struct {
 }
 
 type UserClient struct {
-	ID          string         `json:"id"`
-	Name        string         `json:"name"`
-	IsAdmin     bool           `json:"isAdmin,omitempty"`
-	RoundScores map[string]int `json:"roundScore"`
+	ID          string           `json:"id"`
+	Name        string           `json:"name"`
+	IsAdmin     bool             `json:"isAdmin,omitempty"`
+	RoundScores map[string]int16 `json:"roundScore"`
 }
 
 type UnconfirmedUserClient struct {
@@ -67,8 +67,8 @@ type GameClient struct {
 	CurrentQuestion  string                  `json:"currentQuestion"`
 	CurrentUser      string                  `json:"currentUser"`
 	IsFinished       bool                    `json:"isFinished"`
-	Winner           *string                 `json:"winner,omitempty"`
-	FinishDate       *int64                  `json:"finishDate,omitempty"`
+	Winner           string                  `json:"winner,omitempty"`
+	FinishDate       int64                   `json:"finishDate,omitempty"`
 	CreatorID        string                  `json:"creatorId"`
 	UnconfirmedUsers []UnconfirmedUserClient `json:"unconfirmedUsers,omitempty"`
 }

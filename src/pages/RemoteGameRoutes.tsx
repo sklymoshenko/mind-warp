@@ -1,6 +1,6 @@
-import { Route, useNavigate, useParams } from '@solidjs/router'
+import { Route, useBeforeLeave, useNavigate, useParams } from '@solidjs/router'
 import GamePreview from './GamePreview'
-import { createMemo, createResource, createSignal, Show } from 'solid-js'
+import { createEffect, createMemo, createResource, createSignal, onCleanup, Show } from 'solid-js'
 import { Game, Question, Round, User } from '../types'
 import GameRound from './GameRound'
 import { useApi } from '../hooks/useApi'
@@ -11,7 +11,24 @@ type RemoteGameProps = {
 
 const RemoteGameRoutes = (props: RemoteGameProps) => {
   const { post: finishGame } = useApi(`games/finish`)
+  const { post: updateGame } = useApi(`games/update`)
   const [game, setGame] = createSignal<Game>()
+
+  const saveGame = async () => {
+    if (!game()) return
+    await updateGame<Game>(game()!, `/${game()!.id}`)
+  }
+
+  // Watch for route changes
+  const handleRouteChange = () => {
+    if (!window.location.pathname.includes('/game/')) {
+      saveGame()
+    }
+  }
+
+  const handleBeforeUnload = () => {
+    saveGame()
+  }
 
   const currentRound = createMemo(() => {
     return game()?.rounds.find((r) => r.id === game()?.currentRound)
@@ -103,6 +120,15 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
     navigate?.('/dashboard')
   }
 
+  createEffect(() => {
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    // Cleanup listeners
+    onCleanup(() => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    })
+  })
+
   return (
     <>
       <Route
@@ -111,6 +137,10 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
           const navigate = useNavigate()
           const { get: getGame } = useApi('/games')
           const params = useParams()
+
+          useBeforeLeave(() => {
+            handleRouteChange()
+          })
 
           createResource(
             () => params.gameId,
@@ -145,6 +175,7 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
         component={() => {
           const params = useParams()
           const { get: getGame } = useApi('/games')
+
           createResource(
             () => params.gameId,
             async (gameId) => {

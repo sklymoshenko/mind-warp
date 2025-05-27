@@ -32,6 +32,8 @@ func getGameByFilter(filterType string) string {
 	baseQuery := `
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
+			g.current_round_id, g.current_question_id, g.current_user_id,
+			g.winner_id, g.finish_date,
 			r.id, r.name, r.time_settings, r.rank_settings, r.position,
 			t.id, t.name, t.position,
 			q.id, q.text, q.answer, q.points
@@ -296,11 +298,16 @@ func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []ty
 
 func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string) ([]*types.GameClient, error) {
 	var (
-		gameID         pgtype.UUID
-		gameName       pgtype.Text
-		gameIsPublic   pgtype.Bool
-		gameCreatorID  pgtype.UUID
-		gameTemplateID pgtype.UUID
+		gameID                pgtype.UUID
+		gameName              pgtype.Text
+		gameCreatorID         pgtype.UUID
+		gameTemplateID        pgtype.UUID
+		gameIsFinished        pgtype.Bool
+		gameCurrentRoundID    pgtype.UUID
+		gameCurrentQuestionID pgtype.UUID
+		gameCurrentUserID     pgtype.UUID
+		gameWinnerID          pgtype.UUID
+		gameFinishDate        pgtype.Timestamp
 
 		roundID       pgtype.UUID
 		roundName     pgtype.Text
@@ -332,7 +339,9 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 
 	for rows.Next() {
 		err := rows.Scan(
-			&gameID, &gameName, &gameIsPublic, &gameCreatorID, &gameTemplateID,
+			&gameID, &gameName, &gameIsFinished, &gameCreatorID, &gameTemplateID,
+			&gameCurrentRoundID, &gameCurrentQuestionID, &gameCurrentUserID,
+			&gameWinnerID, &gameFinishDate,
 			&roundID, &roundName, &roundTimeJSON, &roundRankJSON, &roundPosition,
 			&themeID, &themeName, &themePosition,
 			&questionID, &questionText, &questionAnswer, &questionPoints,
@@ -345,8 +354,6 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		roundIDStr := uuidToString(roundID)
 		themeIDStr := uuidToString(themeID)
 		questionIDStr := uuidToString(questionID)
-		gameTemplateIDStr := uuidToString(gameTemplateID)
-		gameCreatorIDStr := uuidToString(gameCreatorID)
 
 		// Initialize game if not exists
 		if _, exists := gamesMap[gameIDStr]; !exists {
@@ -354,12 +361,19 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 				continue
 			}
 			gamesMap[gameIDStr] = &types.GameClient{
-				ID:         gameIDStr,
-				Name:       gameName.String,
-				Rounds:     []types.RoundClient{},
-				CreatorID:  gameCreatorIDStr,
-				TemplateID: gameTemplateIDStr,
+				ID:              gameIDStr,
+				Name:            gameName.String,
+				IsFinished:      gameIsFinished.Bool,
+				CurrentRound:    uuidToString(gameCurrentRoundID),
+				CurrentQuestion: uuidToString(gameCurrentQuestionID),
+				CurrentUser:     uuidToString(gameCurrentUserID),
+				Winner:          uuidToString(gameWinnerID),
+				FinishDate:      gameFinishDate.Time.Unix(),
+				Rounds:          []types.RoundClient{},
+				CreatorID:       uuidToString(gameCreatorID),
+				TemplateID:      uuidToString(gameTemplateID),
 			}
+
 			roundsMap[gameIDStr] = make(map[string]*types.RoundServer)
 			themesMap[gameIDStr] = make(map[string]*types.ThemeServer)
 			questionsMap[gameIDStr] = make(map[string]*types.QuestionServer)
@@ -395,7 +409,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 					ID:       themeIDStr,
 					Name:     themeName.String,
 					RoundID:  roundIDStr,
-					Position: int(themePosition.Int),
+					Position: uint16(themePosition.Int),
 				}
 				themesMap[gameIDStr][themeIDStr] = theme
 
@@ -409,7 +423,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 						ThemeID: themeIDStr,
 						Text:    questionText.String,
 						Answer:  questionAnswer.String,
-						Points:  int(questionPoints.Int),
+						Points:  uint16(questionPoints.Int),
 					}
 					questionsMap[gameIDStr][questionIDStr] = question
 				}
@@ -657,6 +671,52 @@ func (db *DB) DeleteGame(ctx context.Context, gameID string) error {
 	_, err := db.pool.Exec(ctx, "DELETE FROM games WHERE id = $1", gameID)
 	if err != nil {
 		return fmt.Errorf("failed to delete game: %w", err)
+	}
+	return nil
+}
+
+func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer, users []types.GameUserServer) error {
+	tx, err := db.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	winnerID := interface{}(nil)
+	if game.WinnerID != "" {
+		winnerID = game.WinnerID
+	}
+
+	currentRoundID := interface{}(nil)
+	if game.CurrentRoundID != "" {
+		currentRoundID = game.CurrentRoundID
+	}
+
+	currentQuestionID := interface{}(nil)
+	if game.CurrentQuestionID != "" {
+		currentQuestionID = game.CurrentQuestionID
+	}
+
+	currentUserID := interface{}(nil)
+	if game.CurrentUserID != "" {
+		currentUserID = game.CurrentUserID
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE games SET name = $1, is_finished = $2, winner_id = $3, finish_date = $4, current_round_id = $5, current_question_id = $6, current_user_id = $7 WHERE id = $8", game.Name, game.IsFinished, winnerID, game.FinishDate, currentRoundID, currentQuestionID, currentUserID, game.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update game: %w", err)
+	}
+
+	for _, user := range users {
+		_, err = tx.Exec(ctx, "UPDATE game_users SET round_scores = $1 WHERE game_id = $2 AND user_id = $3", user.RoundScores, game.ID, user.UserID)
+		if err != nil {
+			return fmt.Errorf("failed to update game user: %w", err)
+		}
+	}
+
+	err = tx.Commit(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	return nil
 }
