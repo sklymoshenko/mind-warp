@@ -107,7 +107,7 @@ type AnswerServer struct {
 	QuestionID   string    `json:"question_id"`
 	UserID       string    `json:"user_id"`
 	IsCorrect    bool      `json:"is_correct"`
-	TimeAnswered uint16    `json:"time_answered"`
+	TimeAnswered uint16    `json:"time_answered,omitempty"`
 	CreatedAt    time.Time `json:"created_at"`
 }
 

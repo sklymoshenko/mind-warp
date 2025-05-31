@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from 'solid-js'
+import { createEffect, createMemo, createSignal, For, Show } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import { A } from '@solidjs/router'
@@ -54,7 +54,15 @@ const GameRound = (props: Props) => {
         continue
       }
 
-      props.updateForExtraAnswerer(activeQuestion(), isCorrect, userId)
+      const question = activeQuestion()
+      question.answeredBy = {
+        ...question.answeredBy,
+        [userId]: {
+          isCorrect,
+        },
+      }
+
+      props.updateForExtraAnswerer(question, isCorrect, userId)
     }
   }
 
@@ -65,9 +73,15 @@ const GameRound = (props: Props) => {
     }
 
     const question = activeQuestion()
-    question.timeAnswered = timeAnswered
+    question.answeredBy = {
+      ...question.answeredBy,
+      [props.currentUser]: {
+        isCorrect,
+        timeAnswered,
+      },
+    }
 
-    props.onQuestionAnswered(activeQuestion(), isCorrect, props.currentUser)
+    props.onQuestionAnswered(question, isCorrect, props.currentUser)
     setIsModalOpen(false)
   }
 
@@ -83,46 +97,51 @@ const GameRound = (props: Props) => {
   }
 
   const handleQuestionSelect = (q: Question, t: Theme) => {
-    if (q.timeAnswered) {
-      if (questionPopover()?.id !== q.id) {
-        setQuestionPopover(undefined)
-      }
+    // TODO: Add popover for answered questions
+    // if (q.timeAnswered) {
+    //   if (questionPopover()?.id !== q.id) {
+    //     setQuestionPopover(undefined)
+    //   }
 
-      if (questionPopover()?.id === q.id) {
-        setQuestionPopover(undefined)
-        return
-      }
+    //   if (questionPopover()?.id === q.id) {
+    //     setQuestionPopover(undefined)
+    //     return
+    //   }
 
-      if (answeredQuestionsMap()[q.id]) {
-        setQuestionPopover(answeredQuestionsMap()[q.id])
-        return
-      }
+    //   if (answeredQuestionsMap()[q.id]) {
+    //     setQuestionPopover(answeredQuestionsMap()[q.id])
+    //     return
+    //   }
 
-      const answeredByUser = answeredBy()
-      const qPopover: QuestionPopover = {
-        id: q.id,
-        time: q.timeAnswered,
-        isCorrect: q.isCorrect,
-        user: answeredByUser.name,
-      }
+    //   const answeredByUser = answeredBy()
+    //   const qPopover: QuestionPopover = {
+    //     id: q.id,
+    //     time: q.timeAnswered,
+    //     isCorrect: q.isCorrect,
+    //     user: answeredByUser.name,
+    //   }
 
-      if (answeredByUser) {
-        setAnsweredQuestionsMap((prev) => ({
-          ...prev,
-          [q.id]: qPopover,
-        }))
+    //   if (answeredByUser) {
+    //     setAnsweredQuestionsMap((prev) => ({
+    //       ...prev,
+    //       [q.id]: qPopover,
+    //     }))
 
-        setQuestionPopover(qPopover)
-      }
+    //     setQuestionPopover(qPopover)
+    //   }
 
-      return
-    }
+    //   return
+    // }
 
     props.onQuestionSelect(q.id)
     setActiveTheme(t)
 
     setIsModalOpen(true)
   }
+
+  createEffect(() => {
+    console.log(props.round)
+  })
 
   return (
     <>
@@ -163,6 +182,12 @@ const GameRound = (props: Props) => {
                     <div class="flex flex-col text-3xl sm:text-5xl xl:text-7xl gap-2">
                       <For each={theme.questions}>
                         {(question) => {
+                          const isCorrect = () => {
+                            // Basically we need to filter out extra answereres as they dont have timeAnswered
+                            const mainAnswer = Object.values(question.answeredBy).find((answer) => answer.timeAnswered)
+                            return mainAnswer?.isCorrect
+                          }
+
                           return (
                             <Popover
                               content={<AnsweredPopover question={questionPopover()} />}
@@ -174,15 +199,15 @@ const GameRound = (props: Props) => {
                                 onClick={() => handleQuestionSelect(question, theme)}
                                 class="child relative hover:cursor-pointer"
                                 classList={{
-                                  'click-green': question.isCorrect === true,
-                                  'click-red': question.isCorrect === false,
-                                  'hover-rank': question.isCorrect === null,
+                                  'click-green': isCorrect() === true,
+                                  'click-red': isCorrect() === false,
+                                  'hover-rank': isCorrect() === null,
                                 }}
                               >
                                 <span
                                   classList={{
-                                    'line-cross bg-red-600': question.isCorrect === false,
-                                    'line-cross bg-green-600': question.isCorrect === true,
+                                    'line-cross bg-red-600': isCorrect() === false,
+                                    'line-cross bg-green-600': isCorrect() === true,
                                   }}
                                 />
                                 {question.points}

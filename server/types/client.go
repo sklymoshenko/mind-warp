@@ -14,11 +14,17 @@ type RoundTimeClient struct {
 	IsSelected bool   `json:"isSelected"`
 }
 
+type AnsweredByClient struct {
+	IsCorrect    bool   `json:"isCorrect"`
+	TimeAnswered uint16 `json:"timeAnswered,omitempty"`
+}
+
 type QuestionClient struct {
-	Id     string `json:"id"`
-	Text   string `json:"text"`
-	Answer string `json:"answer"`
-	Points uint16 `json:"points"`
+	Id         string                      `json:"id"`
+	Text       string                      `json:"text"`
+	Answer     string                      `json:"answer"`
+	Points     uint16                      `json:"points"`
+	AnsweredBy map[string]AnsweredByClient `json:"answeredBy"`
 }
 
 type ThemeClient struct {

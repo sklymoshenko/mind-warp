@@ -62,11 +62,12 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 	}, rounds, themes, questions, nil
 }
 
-func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.RoundServer, map[string][]types.ThemeServer, map[string][]types.QuestionServer, []types.UserServer, error) {
+func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.RoundServer, map[string][]types.ThemeServer, map[string][]types.QuestionServer, []types.UserServer, []types.AnswerServer, error) {
 	rounds := make([]types.RoundServer, len(body.Rounds))
 	themes := make(map[string][]types.ThemeServer)
 	questions := make(map[string][]types.QuestionServer)
 	users := make([]types.UserServer, len(body.Users))
+	answers := make([]types.AnswerServer, 0)
 
 	for i, user := range body.Users {
 		users[i] = types.UserServer{
@@ -112,6 +113,15 @@ func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.Rou
 					Answer:  question.Answer,
 					Points:  question.Points,
 				})
+
+				for userID, answeredBy := range question.AnsweredBy {
+					answers = append(answers, types.AnswerServer{
+						QuestionID:   question.Id,
+						UserID:       userID,
+						IsCorrect:    answeredBy.IsCorrect,
+						TimeAnswered: answeredBy.TimeAnswered,
+					})
+				}
 			}
 		}
 	}
@@ -121,14 +131,15 @@ func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.Rou
 		Name:       body.Name,
 		CreatorID:  body.CreatorID,
 		TemplateID: body.TemplateID,
-	}, rounds, themes, questions, users, nil
+	}, rounds, themes, questions, users, answers, nil
 }
 
-func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.GameUserServer, error) {
+func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.GameUserServer, []types.AnswerServer, error) {
 	finishDate := time.Time{}
 	if body.IsFinished {
 		finishDate = time.Now()
 	}
+	answers := make([]types.AnswerServer, 0)
 
 	game := types.GameServer{
 		ID:                body.ID,
@@ -152,5 +163,20 @@ func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.Gam
 		}
 	}
 
-	return game, users, nil
+	for _, round := range body.Rounds {
+		for _, theme := range round.Themes {
+			for _, question := range theme.Questions {
+				for userID, answeredBy := range question.AnsweredBy {
+					answers = append(answers, types.AnswerServer{
+						QuestionID:   question.Id,
+						UserID:       userID,
+						IsCorrect:    answeredBy.IsCorrect,
+						TimeAnswered: answeredBy.TimeAnswered,
+					})
+				}
+			}
+		}
+	}
+
+	return game, users, answers, nil
 }

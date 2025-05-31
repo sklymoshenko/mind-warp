@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"mindwarp/logger"
 	"mindwarp/types"
 	"net/http"
@@ -23,7 +22,7 @@ func (s *Server) CreateGame(c *gin.Context) {
 		return
 	}
 
-	game, rounds, themes, questions, users, err := MapGameClientToCreate(gameBody)
+	game, rounds, themes, questions, users, answers, err := MapGameClientToCreate(gameBody)
 
 	if err != nil {
 		logger.Errorf("Failed to map game client to db: %v", err)
@@ -31,7 +30,7 @@ func (s *Server) CreateGame(c *gin.Context) {
 		return
 	}
 
-	err = s.Db.CreateGame(c.Request.Context(), game, rounds, themes, questions, users)
+	err = s.Db.CreateGame(c.Request.Context(), game, rounds, themes, questions, users, answers)
 	if err != nil {
 		logger.Errorf("Failed to create game: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create game: " + err.Error()})
@@ -177,14 +176,13 @@ func (s *Server) UpdateGame(c *gin.Context) {
 		return
 	}
 
-	game, users, err := MapGameClientToUpdate(gameBody)
+	game, users, answers, err := MapGameClientToUpdate(gameBody)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map game client to db: " + err.Error()})
 		return
 	}
-	fmt.Println("game", game)
-	fmt.Println("users", users)
-	err = s.Db.UpdateGameAndGameUsers(c.Request.Context(), game, users)
+
+	err = s.Db.UpdateGameAndGameUsers(c.Request.Context(), game, users, answers)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update game: " + err.Error()})
 		return

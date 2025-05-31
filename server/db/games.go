@@ -164,7 +164,7 @@ func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.UserClie
 	return users, nil
 }
 
-func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []types.RoundServer, themes map[string][]types.ThemeServer, questions map[string][]types.QuestionServer, users []types.UserServer) error {
+func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []types.RoundServer, themes map[string][]types.ThemeServer, questions map[string][]types.QuestionServer, users []types.UserServer, answers []types.AnswerServer) error {
 	tx, err := db.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -191,6 +191,7 @@ func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []ty
 		themes    int
 		questions int
 		users     int
+		answers   int
 	}{}
 
 	// Queue themes
@@ -258,6 +259,18 @@ func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []ty
 		opCounts.users++
 	}
 
+	// Queue answers
+	for _, answer := range answers {
+		batch.Queue(
+			`INSERT INTO answers (question_id, user_id, is_correct, time_answered) VALUES ($1, $2, $3, $4)`,
+			answer.QuestionID,
+			answer.UserID,
+			answer.IsCorrect,
+			answer.TimeAnswered,
+		)
+		opCounts.answers++
+	}
+
 	// Execute the batch if we have any operations
 	if batch.Len() > 0 {
 		batchResults := tx.SendBatch(ctx, batch)
@@ -294,6 +307,60 @@ func (db *DB) CreateGame(ctx context.Context, game types.GameServer, rounds []ty
 	}
 
 	return nil
+}
+
+func (db *DB) GetAnswersByQuestionIds(ctx context.Context, questionIds []string) (map[string]map[string]types.AnsweredByClient, error) {
+	if len(questionIds) == 0 {
+		return make(map[string]map[string]types.AnsweredByClient), nil
+	}
+
+	query := `
+		SELECT
+			question_id,
+			user_id,
+			is_correct,
+			time_answered
+		FROM
+			answers
+		WHERE
+			question_id = ANY($1)
+	`
+
+	rows, err := db.pool.Query(ctx, query, questionIds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query answers: %w", err)
+	}
+	defer rows.Close()
+
+	answers := make(map[string]map[string]types.AnsweredByClient)
+	for rows.Next() {
+		var (
+			questionID   string
+			userID       string
+			isCorrect    bool
+			timeAnswered uint16
+		)
+
+		err := rows.Scan(&questionID, &userID, &isCorrect, &timeAnswered)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan answer: %w", err)
+		}
+
+		if _, exists := answers[questionID]; !exists {
+			answers[questionID] = make(map[string]types.AnsweredByClient)
+		}
+
+		answers[questionID][userID] = types.AnsweredByClient{
+			IsCorrect:    isCorrect,
+			TimeAnswered: timeAnswered,
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating answers rows: %w", err)
+	}
+
+	return answers, nil
 }
 
 func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string) ([]*types.GameClient, error) {
@@ -336,6 +403,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 	roundsMap := make(map[string]map[string]*types.RoundServer)
 	themesMap := make(map[string]map[string]*types.ThemeServer)
 	questionsMap := make(map[string]map[string]*types.QuestionServer)
+	questionIds := make([]string, 0)
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -426,6 +494,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 						Points:  uint16(questionPoints.Int),
 					}
 					questionsMap[gameIDStr][questionIDStr] = question
+					questionIds = append(questionIds, questionIDStr)
 				}
 			}
 		}
@@ -440,6 +509,12 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		return []*types.GameClient{}, nil
 	}
 
+	// Get all answers for the questions
+	answers, err := db.GetAnswersByQuestionIds(ctx, questionIds)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get answers: %w", err)
+	}
+
 	// Process each game
 	var games []*types.GameClient
 	for gameID, game := range gamesMap {
@@ -451,12 +526,20 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 					var themeQuestions []types.QuestionClient
 					for _, question := range questionsMap[gameID] {
 						if question.ThemeID == theme.ID {
-							themeQuestions = append(themeQuestions, types.QuestionClient{
-								Id:     question.ID,
-								Text:   question.Text,
-								Answer: question.Answer,
-								Points: question.Points,
-							})
+							questionClient := types.QuestionClient{
+								Id:         question.ID,
+								Text:       question.Text,
+								Answer:     question.Answer,
+								Points:     question.Points,
+								AnsweredBy: make(map[string]types.AnsweredByClient),
+							}
+
+							if answers[question.ID] != nil {
+								questionClient.AnsweredBy = answers[question.ID]
+							}
+
+							themeQuestions = append(themeQuestions, questionClient)
+
 						}
 					}
 
@@ -469,6 +552,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 						Name:      theme.Name,
 						Questions: themeQuestions,
 					})
+
 				}
 			}
 
@@ -675,7 +759,7 @@ func (db *DB) DeleteGame(ctx context.Context, gameID string) error {
 	return nil
 }
 
-func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer, users []types.GameUserServer) error {
+func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer, users []types.GameUserServer, answers []types.AnswerServer) error {
 	tx, err := db.pool.Begin(ctx)
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
@@ -711,6 +795,20 @@ func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer,
 		_, err = tx.Exec(ctx, "UPDATE game_users SET round_scores = $1 WHERE game_id = $2 AND user_id = $3", user.RoundScores, game.ID, user.UserID)
 		if err != nil {
 			return fmt.Errorf("failed to update game user: %w", err)
+		}
+	}
+
+	for _, answer := range answers {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO answers (question_id, user_id, is_correct, time_answered) 
+			VALUES ($1, $2, $3, $4)
+			ON CONFLICT (question_id, user_id) 
+			DO UPDATE SET 
+				is_correct = EXCLUDED.is_correct,
+				time_answered = EXCLUDED.time_answered
+		`, answer.QuestionID, answer.UserID, answer.IsCorrect, answer.TimeAnswered)
+		if err != nil {
+			return fmt.Errorf("failed to upsert answer: %w", err)
 		}
 	}
 

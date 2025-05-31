@@ -23,13 +23,17 @@ export type Round = {
   time: RoundTime
 }
 
+type AnsweredBy = {
+  isCorrect: boolean
+  timeAnswered?: number
+}
+
 export type Question = {
   id: string
   text: string
   answer: string
-  isCorrect: boolean | null
   points: RoundRank['id']
-  timeAnswered?: number
+  answeredBy: Record<User['id'], AnsweredBy>
 }
 
 export type RoundRank = {

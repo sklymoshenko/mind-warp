@@ -125,7 +125,8 @@ CREATE TABLE answers (
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   is_correct BOOLEAN,
   time_answered INT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(question_id, user_id)
 );
 
 -- Indexes
@@ -149,6 +150,7 @@ CREATE INDEX idx_templates_name_fts ON game_templates USING GIN (to_tsvector('si
 -- Drop Full-text search indexes
 DROP INDEX IF EXISTS idx_templates_name_fts;
 DROP INDEX IF EXISTS idx_games_name_fts;
+
 
 -- Drop other indexes
 DROP INDEX IF EXISTS idx_answers_question;
@@ -177,5 +179,8 @@ DROP TABLE IF EXISTS users;
 
 -- Drop extension
 DROP EXTENSION IF EXISTS "uuid-ossp";
+
+-- Drop invite status type
+DROP TYPE IF EXISTS invite_status;
 
 -- +goose StatementEnd

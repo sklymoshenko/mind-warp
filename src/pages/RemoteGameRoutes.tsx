@@ -4,6 +4,7 @@ import { createEffect, createMemo, createResource, createSignal, onCleanup, Show
 import { Game, Question, Round, User } from '../types'
 import GameRound from './GameRound'
 import { useApi } from '../hooks/useApi'
+import AuthGuard from '../components/AuthGuard'
 
 type RemoteGameProps = {
   game?: Game
@@ -54,17 +55,15 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
     }))
   }
 
-  const updateRoundQuestion = (question: Question, isCorrect: boolean, currentRoundIndex: number) => {
+  const updateRoundQuestion = (question: Question, currentRoundIndex: number) => {
     const newRound = { ...game()!.rounds[currentRoundIndex] }
 
     const newThemes = newRound.themes.map((theme) => {
-      const newQuestions = theme.questions.map((q) => {
-        if (q.id === question.id) {
-          return { ...q, isCorrect }
-        }
-        return q
-      })
-      return { ...theme, questions: newQuestions }
+      const questionIndex = theme.questions.findIndex((q) => q.id === question.id)
+      if (questionIndex === -1) return theme
+
+      theme.questions[questionIndex] = question
+      return { ...theme }
     })
 
     return { ...newRound, themes: newThemes }
@@ -82,10 +81,10 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
     const currentRoundIndex = game()?.rounds.findIndex((r) => r.id === game()?.currentRound) ?? -1
     if (currentRoundIndex === -1) return
 
-    game()!.rounds[currentRoundIndex] = updateRoundQuestion(question, isCorrect, currentRoundIndex)
-
+    game()!.rounds[currentRoundIndex] = updateRoundQuestion(question, currentRoundIndex)
     const userIndex = game()?.users.findIndex((u) => u.id === userId) ?? -1
     if (userIndex === -1 || !game()) return
+
     game()!.users[userIndex] = updateUser(question, isCorrect, userIndex)
 
     const newGame = { ...game()! }
@@ -149,24 +148,29 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
               if (!gameId) return undefined
               const response = await getGame<Game[]>(`/${gameId}`)
 
-              if (response.data) {
+              if (response.data && response.data.length > 0) {
                 setGame(response.data[0])
                 return response.data[0]
+              } else {
+                navigate('/games/me')
               }
+
               return undefined
             }
           )
 
           return (
-            <Show when={game()}>
-              <GamePreview
-                onUpdateGame={setGame}
-                game={game()!}
-                onRoundClick={(round) => onRoundClick(round, navigate)}
-                onGameFinish={(finishedGame) => onGameFinish(finishedGame, navigate)}
-                onGameFinishClose={() => onGameFinishClose(navigate)}
-              />
-            </Show>
+            <AuthGuard>
+              <Show when={game()}>
+                <GamePreview
+                  onUpdateGame={setGame}
+                  game={game()!}
+                  onRoundClick={(round) => onRoundClick(round, navigate)}
+                  onGameFinish={(finishedGame) => onGameFinish(finishedGame, navigate)}
+                  onGameFinishClose={() => onGameFinishClose(navigate)}
+                />
+              </Show>
+            </AuthGuard>
           )
         }}
       />
@@ -174,6 +178,7 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
         path="/game/:gameId/round/:roundId"
         component={() => {
           const params = useParams()
+          const navigate = useNavigate()
           const { get: getGame } = useApi('/games')
 
           createResource(
@@ -183,7 +188,7 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
               if (game()) return game()
 
               const response = await getGame<Game[]>(`/${gameId}`)
-              if (response.data) {
+              if (response.data && response.data.length > 0) {
                 const game = response.data[0]
                 const currentRound = game.rounds.find((r) => r.id === params.roundId)
                 if (currentRound) {
@@ -196,6 +201,8 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
 
                 setGame(game)
                 return game
+              } else {
+                navigate('/games/me')
               }
 
               return undefined
@@ -203,17 +210,19 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
           )
 
           return (
-            <Show when={game()}>
-              <GameRound
-                round={currentRound()!}
-                users={game()?.users || []}
-                currentQuestion={game()?.currentQuestion || ''}
-                onQuestionSelect={onQuestionSelect}
-                onQuestionAnswered={onQuestionAnswered}
-                updateForExtraAnswerer={onUpdateForExtraAnswerer}
-                currentUser={game()?.currentUser || ''}
-              />
-            </Show>
+            <AuthGuard>
+              <Show when={game()}>
+                <GameRound
+                  round={currentRound()!}
+                  users={game()?.users || []}
+                  currentQuestion={game()?.currentQuestion || ''}
+                  onQuestionSelect={onQuestionSelect}
+                  onQuestionAnswered={onQuestionAnswered}
+                  updateForExtraAnswerer={onUpdateForExtraAnswerer}
+                  currentUser={game()?.currentUser || ''}
+                />
+              </Show>
+            </AuthGuard>
           )
         }}
       />
