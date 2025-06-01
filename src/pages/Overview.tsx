@@ -13,6 +13,8 @@ import OverlayComponent from '../components/OverlayComponent'
 import GameTemplateInfo from '../components/GameInfo'
 import CreateGame from './CreateGame'
 import GameInfo from '../components/GameInfo'
+import { SearchItem } from '../components/Search'
+import SearchComponent from '../components/Search'
 type OverviewProps = {}
 
 const settingItemStyles = {
@@ -26,7 +28,8 @@ const Overview = (props: OverviewProps) => {
   const { user, logout } = useAuth()
   const { get } = useApi('users')
   const navigate = useNavigate()
-  const { get: getGameTemplatesList } = useApi('game_templates')
+  const { get: getGameTemplatesSearch } = useApi('game_templates/search')
+  const { get: getGameTemplatesList } = useApi('game_templates/public')
   const { get: getGameTemplate } = useApi('game_templates/info')
   const [gameTemplateId, setGameTemplateId] = createSignal<GameTemplate['id'] | undefined>(undefined)
   const [isEditing, setIsEditing] = createSignal(false)
@@ -59,6 +62,21 @@ const Overview = (props: OverviewProps) => {
 
   const getGameInfo = async (id: string) => {
     setGameTemplateId(id)
+  }
+
+  const searchTemplates = async (term: string): Promise<SearchItem[]> => {
+    const response = await getGameTemplatesSearch<GameTemplate[]>(`?query=${term}`)
+    return (
+      response.data?.map((template) => ({
+        id: template.id,
+        name: template.name,
+        description: template.description,
+      })) || []
+    )
+  }
+
+  const onTemplateSelect = (templates: SearchItem[]) => {
+    getGameInfo(templates[0].id as string)
   }
 
   return (
@@ -96,7 +114,13 @@ const Overview = (props: OverviewProps) => {
           </button>
         </div>
         <div class="w-full">
-          <input type="search" placeholder="Search for games" class="input-colors w-full outline-1 outline-primary" />
+          <div class="w-full">
+            <SearchComponent<SearchItem>
+              searchFunction={searchTemplates}
+              placeholder="Search for game templates"
+              onSelect={onTemplateSelect}
+            />
+          </div>
         </div>
         <div class="flex gap-4 items-start w-full">
           <div class={widgetStyles.base + ' w-1/2 px-4! pb-4!'}>

@@ -15,6 +15,7 @@ import GameInfo from '../components/GameInfo'
 import { BsEnvelopePaperHeart } from 'solid-icons/bs'
 import { FaSolidThumbsDown, FaSolidThumbsUp } from 'solid-icons/fa'
 import { Confirm } from '../components/Confirm'
+import { FaSolidLock } from 'solid-icons/fa'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -26,7 +27,7 @@ const GameCard = (props: Game | GameListItem) => {
       <IoGameControllerOutline class="text-primary w-20 h-20" />
       <div class="flex flex-col gap-2 ">
         <div class="flex gap-2 items-center justify-between">
-          <span class="text-4xl font-bold">{props.name}</span>
+          <span class="text-4xl font-bold max-w-full truncate overflow-hidden">{props.name}</span>
           <Show when={props.isPublic === false}>
             <RiDevelopmentGitRepositoryPrivateFill class="text-primary w-6 h-6" title="Private Game" />
           </Show>
@@ -55,6 +56,7 @@ type GameTemplateCardProps = {
   game: GameListItem
   onDelete?: () => void
   onClick?: () => void
+  isHistory?: boolean
 }
 
 const GameTemplateCard = (props: GameTemplateCardProps) => {
@@ -70,13 +72,22 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
 
   return (
     <div
-      class="relative flex items-center group gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[150px] min-h-20 hover:min-[200px]"
+      class="relative flex items-center group gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group min-w-[200px] max-h-21 min-h-20 hover:min-[200px] max-w-[300px]"
       onClick={props.onClick}
     >
       <IoDice class="w-15 h-15 text-primary/50 group-hover:animate-spin" />
-      <div class="flex flex-col gap-1">
-        <span class="text-2xl font-bold">{props.game.name}</span>
-        <span class="text-xl text-primary/50">{props.game.description}</span>
+      <div class="flex flex-col gap-1 min-w-[150px]">
+        <div class="flex justify-between items-center">
+          <span class="text-2xl font-bold max-w-full truncate overflow-hidden" title={props.game.name}>
+            {props.game.name}
+          </span>
+          <Show when={!props.game.isPublic && !props.isHistory}>
+            <FaSolidLock class="w-4 h-4 text-primary/50" title="Private Game Template" />
+          </Show>
+        </div>
+        <span class="text-sm text-primary/50 max-w-full truncate overflow-hidden" title={props.game.description}>
+          {props.game.description}
+        </span>
       </div>
       <Show when={props.onDelete}>
         <Confirm
@@ -84,7 +95,7 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
           message="Are you sure you want to delete this game template?"
           onConfirm={onDeleteGameTemplate}
         >
-          <button class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer">
+          <button class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in ml-1 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer">
             <IoTrashOutline class="min-w-0 min-h-0 group-hover:min-w-10 group-hover:min-h-10 transition-all duration-300" />
           </button>
         </Confirm>
@@ -403,7 +414,7 @@ const MyGames = () => {
           >
             <div class="flex flex-wrap gap-6 items-center overflow-y-auto">
               <For each={gamesHistory()}>
-                {(game) => <GameTemplateCard game={game} onClick={() => setHistoryGame(game)} />}
+                {(game) => <GameTemplateCard game={game} onClick={() => setHistoryGame(game)} isHistory={true} />}
               </For>
             </div>
           </Show>

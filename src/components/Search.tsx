@@ -16,7 +16,7 @@ type SearchProps<T extends SearchItem> = {
   multiselect?: boolean
   onSelect?: (items: T[]) => void
   defaultSelected?: T[]
-  selectedItems: T[]
+  selectedItems?: T[]
   disabled?: boolean
 }
 
@@ -55,7 +55,7 @@ function SearchComponent<T extends SearchItem>(props: SearchProps<T>) {
 
   const handleItemClick = (item: T) => {
     if (props.multiselect) {
-      let newSelectedItems = [...props.selectedItems]
+      let newSelectedItems = [...(props.selectedItems || [])]
       const alreadySelected = !!newSelectedItems.find((selected) => selected.id === item.id)
 
       if (alreadySelected) {
@@ -74,7 +74,7 @@ function SearchComponent<T extends SearchItem>(props: SearchProps<T>) {
   }
 
   const isSelected = (item: T) => {
-    return props.selectedItems.some((selected) => selected.id === item.id)
+    return props.selectedItems?.some((selected) => selected.id === item.id) || false
   }
 
   return (
@@ -99,7 +99,7 @@ function SearchComponent<T extends SearchItem>(props: SearchProps<T>) {
       <div
         class="max-h-0 overflow-y-auto transition-max-height duration-300 ease-in-out my-2"
         classList={{
-          'max-h-10': props.selectedItems.length > 0,
+          'max-h-10': (props.selectedItems?.length || 0) > 0,
         }}
       >
         <div class="flex flex-wrap gap-2">

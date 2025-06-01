@@ -143,7 +143,7 @@ const CreateGame = (props: Props) => {
     if (emptyRoundName() || emptyThemes() || emptyRanks() || emptyTime()) return
     const ranks = roundRanks().filter((r) => r.isSelected)
 
-    const roundThemes = themes().map((theme) => ({
+    const roundThemes: Theme[] = themes().map((theme) => ({
       id: createUUID(),
       name: theme,
       questions: ranks.map((r) => ({
@@ -151,8 +151,8 @@ const CreateGame = (props: Props) => {
         text: '',
         answer: '',
         points: r.id,
-        isCorrect: null,
-        timeAnswered: undefined,
+        answeredBy: {},
+        timeAnswered: null,
       })),
     }))
 
@@ -215,6 +215,7 @@ const CreateGame = (props: Props) => {
         questions: theme.questions.map((q, i) => ({
           ...q,
           text: questions()[theme.id]?.[i]?.text || '',
+          answer: questions()[theme.id]?.[i]?.answer || '',
         })),
       }))
 
@@ -290,8 +291,8 @@ const CreateGame = (props: Props) => {
             text: '',
             answer: '',
             points: r.id,
-            isCorrect: null,
-            timeAnswered: undefined,
+            answeredBy: {},
+            timeAnswered: null,
           })),
         }
       })

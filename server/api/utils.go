@@ -23,7 +23,7 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 		rounds[i] = types.TemplateRoundServer{
 			ID:             round.Id,
 			Name:           round.Name,
-			GameTemplateID: body.Id,
+			GameTemplateID: body.ID,
 			TimeSettings: types.TimeSettings{
 				ID:         round.Time.Id,
 				Label:      round.Time.Label,
@@ -54,7 +54,7 @@ func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplat
 	}
 
 	return types.GameTemplateServer{
-		ID:          body.Id,
+		ID:          body.ID,
 		Name:        body.Name,
 		Description: body.Description,
 		IsPublic:    body.IsPublic,

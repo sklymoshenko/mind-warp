@@ -8,18 +8,49 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s *Server) GetAllGames(c *gin.Context) {
-	games, err := s.Db.GetAllGames(c.Request.Context())
+func (s *Server) GetAllGameTemplates(c *gin.Context) {
+	games, err := s.Db.GetAllGameTemplates(c.Request.Context())
+	clientGames := make([]types.GameTemplateClient, len(games))
 	if err != nil {
 		logger.Errorf("Failed to get games: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get games: " + err.Error()})
 	}
-	c.JSON(http.StatusOK, games)
+
+	for i, game := range games {
+		clientGames[i] = types.GameTemplateClient{
+			ID:          game.ID,
+			Name:        game.Name,
+			Description: game.Description,
+			IsPublic:    game.IsPublic,
+		}
+	}
+
+	c.JSON(http.StatusOK, clientGames)
 }
 
-func (s *Server) GetGameByID(c *gin.Context) {
+func (s *Server) GetPublicGameTemplates(c *gin.Context) {
+	games, err := s.Db.GetPublicGameTemplates(c.Request.Context())
+	if err != nil {
+		logger.Errorf("Failed to get public games: %v", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get public games: " + err.Error()})
+	}
+
+	clientGames := make([]types.GameTemplateClient, len(games))
+	for i, game := range games {
+		clientGames[i] = types.GameTemplateClient{
+			ID:          game.ID,
+			Name:        game.Name,
+			Description: game.Description,
+			IsPublic:    game.IsPublic,
+		}
+	}
+
+	c.JSON(http.StatusOK, clientGames)
+}
+
+func (s *Server) GetGameTemplateByID(c *gin.Context) {
 	gameID := c.Param("id")
-	game, err := s.Db.GetGameByID(c.Request.Context(), gameID)
+	game, err := s.Db.GetGameTemplateByID(c.Request.Context(), gameID)
 	if err != nil {
 		logger.Errorf("Failed to get game: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game: " + err.Error()})
@@ -27,19 +58,30 @@ func (s *Server) GetGameByID(c *gin.Context) {
 	c.JSON(http.StatusOK, game)
 }
 
-func (s *Server) GetGameByCreatorID(c *gin.Context) {
+func (s *Server) GetGameTemplatesByCreatorID(c *gin.Context) {
 	userID := c.Param("id")
-	game, err := s.Db.GetGameByCreatorID(c.Request.Context(), userID)
+	game, err := s.Db.GetGameTemplatesByCreatorID(c.Request.Context(), userID)
 	if err != nil {
 		logger.Errorf("Failed to get game: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game: " + err.Error()})
 	}
-	c.JSON(http.StatusOK, game)
+
+	clientGames := make([]types.GameTemplateClient, len(game))
+	for i, game := range game {
+		clientGames[i] = types.GameTemplateClient{
+			ID:          game.ID,
+			Name:        game.Name,
+			Description: game.Description,
+			IsPublic:    game.IsPublic,
+		}
+	}
+
+	c.JSON(http.StatusOK, clientGames)
 }
 
-func (s *Server) SearchGames(c *gin.Context) {
+func (s *Server) SearchGameTemplates(c *gin.Context) {
 	query := c.Query("query")
-	games, err := s.Db.SearchGames(c.Request.Context(), query)
+	games, err := s.Db.SearchGameTemplates(c.Request.Context(), query)
 	if err != nil {
 		logger.Errorf("Failed to search games: %v", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to search games: " + err.Error()})
@@ -116,9 +158,11 @@ func (s *Server) DeleteGameTemplate(c *gin.Context) {
 }
 
 func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
-	group.GET("/game_templates", s.GetAllGames)
-	group.GET("/game_templates/:id", s.GetGameByID)
-	group.GET("/game_templates/user/:id", s.GetGameByCreatorID)
+	group.GET("/game_templates", s.GetAllGameTemplates)
+	group.GET("/game_templates/public", s.GetPublicGameTemplates)
+	group.GET("/game_templates/search", s.SearchGameTemplates)
+	group.GET("/game_templates/:id", s.GetGameTemplateByID)
+	group.GET("/game_templates/user/:id", s.GetGameTemplatesByCreatorID)
 	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)
 	group.POST("/game_templates/create_template", s.CreateGameTemplate)
 	group.POST("/game_templates/update", s.UpdateGameTemplate)

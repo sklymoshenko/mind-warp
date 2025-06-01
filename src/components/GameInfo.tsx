@@ -24,6 +24,14 @@ type GameInfoProps<T extends GameTemplate | Game> = {
   onStart?: (entity: T) => void
 }
 
+const isGame = (entity: GameTemplate | Game | undefined): entity is Game => {
+  if (entity && 'users' in entity && 'rounds' in entity) {
+    return true
+  }
+
+  return false
+}
+
 type AccordionTitleProps = {
   round: Round
   onShowQuestions: (isShown: boolean) => void
@@ -231,10 +239,24 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   }
 
   const onGameFinish = () => {
+    if (!isGame(entity())) {
+      return
+    }
+
+    const game = entity() as Game
+
+    if (!game.winner) {
+      game.winner = users()[0].id
+    }
+
     props.onFinish?.(entity()!)
   }
 
   const onGameRemove = () => {
+    if (!isGame(entity())) {
+      return
+    }
+
     props.onRemove?.(entity()!)
   }
 
@@ -255,6 +277,14 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     )
 
     return items
+  }
+
+  const winner = () => {
+    if (!isGame(entity())) {
+      return undefined
+    }
+
+    return users().find((user) => user.id === (entity() as Game).winner)?.name
   }
 
   return (
@@ -283,6 +313,11 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
         <div class="flex items-center w-full my-4 gap-4">
           <span class="text-white text-xl">Pending Invites: {invitesCount().pending}</span>
           <span class="text-white text-xl">Declined: {invitesCount().declined}</span>
+        </div>
+      </Show>
+      <Show when={winner()}>
+        <div class="flex items-center w-full my-4 gap-4">
+          <span class="text-white text-xl">Winner: {winner()}</span>
         </div>
       </Show>
       <div class="w-full">

@@ -17,7 +17,7 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	games := []types.GameTemplateServer{}
 	for rows.Next() {
 		var game types.GameTemplateServer
-		err := rows.Scan(&game.ID, &game.Name, &game.Description)
+		err := rows.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic)
 		if err != nil {
 			return nil, err
 		}
@@ -26,8 +26,8 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	return games, nil
 }
 
-func (db *DB) GetAllGames(ctx context.Context) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates")
+func (db *DB) GetAllGameTemplates(ctx context.Context) ([]types.GameTemplateServer, error) {
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates")
 	if err != nil {
 		return nil, err
 	}
@@ -41,19 +41,33 @@ func (db *DB) GetAllGames(ctx context.Context) ([]types.GameTemplateServer, erro
 	return games, nil
 }
 
-func (db *DB) GetGameByID(ctx context.Context, id string) (*types.GameTemplateServer, error) {
-	row := db.pool.QueryRow(ctx, "SELECT id, name, description FROM game_templates WHERE id = $1", id)
+func (db *DB) GetPublicGameTemplates(ctx context.Context) ([]types.GameTemplateServer, error) {
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE is_public = true")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	games, err := scanGameTemplate(rows)
+	if err != nil {
+		return nil, err
+	}
+	return games, nil
+}
+
+func (db *DB) GetGameTemplateByID(ctx context.Context, id string) (*types.GameTemplateServer, error) {
+	row := db.pool.QueryRow(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE id = $1", id)
 
 	var game types.GameTemplateServer
-	err := row.Scan(&game.ID, &game.Name, &game.Description)
+	err := row.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic)
 	if err != nil {
 		return nil, err
 	}
 	return &game, nil
 }
 
-func (db *DB) GetGameByCreatorID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates WHERE creator_id = $1", userID)
+func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE creator_id = $1", userID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +80,8 @@ func (db *DB) GetGameByCreatorID(ctx context.Context, userID string) ([]types.Ga
 	return games, nil
 }
 
-func (db *DB) SearchGames(ctx context.Context, query string) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description FROM game_templates WHERE name ILIKE $1", "%"+query+"%")
+func (db *DB) SearchGameTemplates(ctx context.Context, query string) ([]types.GameTemplateServer, error) {
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE name ILIKE $1 AND is_public = true", "%"+query+"%")
 	if err != nil {
 		return nil, err
 	}
@@ -158,7 +172,7 @@ func (db *DB) GetFullGameTemplateById(ctx context.Context, id string) (*types.Ga
 				continue
 			}
 			gameTemplate = &types.GameTemplateClient{
-				Id:          gameIDStr,
+				ID:          gameIDStr,
 				Name:        gameName.String,
 				Description: gameDescription.String,
 				IsPublic:    gameIsPublic.Bool,
