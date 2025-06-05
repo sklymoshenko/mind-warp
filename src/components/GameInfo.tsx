@@ -246,7 +246,10 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     const game = entity() as Game
 
     if (!game.winner) {
-      game.winner = users()[0].id
+      game.winner = {
+        id: users()[0].id,
+        name: users()[0].name,
+      }
     }
 
     props.onFinish?.(entity()!)
@@ -261,11 +264,15 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   }
 
   const userSelectedItems = (): SearchItem[] => {
-    let items = users().map((user) => ({
-      id: user.id,
-      name: user.name,
-      isRemovable: props.user.id !== user.id,
-    }))
+    const winnerId = (entity() as Game)?.winner?.id
+    let items = users().map((user) => {
+      return {
+        id: user.id,
+        name: user.name,
+        isRemovable: props.user.id !== user.id,
+        class: winnerId === user.id ? 'bg-green-500/50! text-white!' : '',
+      }
+    })
 
     items.push(
       ...unconfirmedUsers().map((user) => ({
@@ -284,7 +291,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
       return undefined
     }
 
-    return users().find((user) => user.id === (entity() as Game).winner)?.name
+    return users().find((user) => user.id === (entity() as Game)?.winner?.id)?.name
   }
 
   return (

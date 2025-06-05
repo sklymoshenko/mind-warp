@@ -116,8 +116,9 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     }
 
     // Everyone answered
+    // Fallback to 1 bc could be some quick clicking
+    const timeAnswered = (props.questionTime || 180) - questionTime() || 1
     if (mainUserAnswered && extraAnswered) {
-      const timeAnswered = (props.questionTime || 180) - questionTime()
       props.updateExtraAnswerers(extraAnswerers())
       props.onAnswerSubmit(timeAnswered, !!isCorrect())
       return
@@ -125,7 +126,6 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
 
     // User answered and no1 wants to answer anymore
     if (mainUserAnswered && !extraAnswerersExists) {
-      const timeAnswered = (props.questionTime || 180) - questionTime()
       props.onAnswerSubmit(timeAnswered, !!isCorrect())
       return
     }

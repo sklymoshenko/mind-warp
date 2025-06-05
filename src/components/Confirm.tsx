@@ -41,7 +41,7 @@ export const Confirm = (props: ConfirmProps) => {
   })
 
   return (
-    <div class="relative w-full z-[9999] flex justify-center items-center">
+    <div class="relative w-full flex justify-center items-center">
       {/* Trigger */}
       <span
         onClick={(e) => {
@@ -56,7 +56,7 @@ export const Confirm = (props: ConfirmProps) => {
       <Show when={open()}>
         <div
           ref={dialogRef}
-          class="absolute left-1/2 bottom-full mb-3 z-50 bg-void shadow-lg rounded-lg p-4 min-w-[300px] max-w-[90vw] transition-all duration-200 border border-primary/10"
+          class="absolute  z-[9999] left-1/2 bottom-full mb-3  bg-void shadow-lg rounded-lg p-4 min-w-[300px] max-w-[90vw] transition-all duration-200 border border-primary/10"
           style={{ transform: 'translateX(-50%)' }}
         >
           {/* Close Icon */}

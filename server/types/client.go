@@ -50,11 +50,16 @@ type GameTemplateClient struct {
 	CreatorID   string        `json:"creatorId"`
 }
 
-type UserClient struct {
+type GameUserClient struct {
 	ID          string           `json:"id"`
 	Name        string           `json:"name"`
 	IsAdmin     bool             `json:"isAdmin,omitempty"`
 	RoundScores map[string]int16 `json:"roundScore"`
+}
+
+type UserClient struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 type UnconfirmedUserClient struct {
@@ -67,13 +72,13 @@ type GameClient struct {
 	ID               string                  `json:"id"`
 	TemplateID       string                  `json:"templateId"`
 	Name             string                  `json:"name"`
-	Users            []UserClient            `json:"users"`
+	Users            []GameUserClient        `json:"users"`
 	Rounds           []RoundClient           `json:"rounds"`
 	CurrentRound     string                  `json:"currentRound"`
 	CurrentQuestion  string                  `json:"currentQuestion"`
 	CurrentUser      string                  `json:"currentUser"`
 	IsFinished       bool                    `json:"isFinished"`
-	Winner           string                  `json:"winner,omitempty"`
+	Winner           UserClient              `json:"winner,omitempty"`
 	FinishDate       int64                   `json:"finishDate,omitempty"`
 	CreatorID        string                  `json:"creatorId"`
 	UnconfirmedUsers []UnconfirmedUserClient `json:"unconfirmedUsers,omitempty"`

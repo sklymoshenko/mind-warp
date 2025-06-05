@@ -88,6 +88,21 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
         <span class="text-sm text-primary/50 max-w-full truncate overflow-hidden" title={props.game.description}>
           {props.game.description}
         </span>
+        <Show when={props.isHistory}>
+          <>
+            <div class="flex flex-row gap-2 text-sm">
+              <span class="text-gray-400">{(props.game as Game).users.length} players</span>
+              <span class="text-gray-400">{(props.game as Game).rounds.length} rounds</span>
+            </div>
+            <Show when={(props.game as Game).finishDate}>
+              <div class="flex flex-row gap-2 text-sm">
+                <span class="text-green-500 text-sm">{(props.game as Game).winner?.name}</span>
+                <span class="text-gray-400">won on</span>
+                {DateTime.fromMillis((props.game as Game).finishDate!).toLocaleString(DateTime.DATE_MED)}
+              </div>
+            </Show>
+          </>
+        </Show>
       </div>
       <Show when={props.onDelete}>
         <Confirm

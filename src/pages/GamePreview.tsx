@@ -15,6 +15,7 @@ interface GamePreviewProps {
 
 export default function GamePreview(props: GamePreviewProps) {
   const [isGameFinished, setIsGameFinished] = createSignal(false)
+  const [finishTimeout, setFinishTimeout] = createSignal<number>()
 
   const scores = props.game.users.reduce(
     (acc, curr) => {
@@ -26,7 +27,7 @@ export default function GamePreview(props: GamePreviewProps) {
   )
 
   const winningUser = () => {
-    return Object.entries(scores).reduce(
+    const winningUserId = Object.entries(scores).reduce(
       (acc, curr) => {
         if (curr[1] > scores[acc]) {
           return curr[0] as User['id']
@@ -35,6 +36,8 @@ export default function GamePreview(props: GamePreviewProps) {
       },
       Object.keys(scores)[0] as User['id']
     )
+
+    return props.game.users.find((user) => user.id === winningUserId)
   }
 
   const onRoundClick = (round: Round) => {
@@ -57,12 +60,26 @@ export default function GamePreview(props: GamePreviewProps) {
       winner: winningUser(),
       finishDate: Date.now(),
     }
-    props.onGameFinish(updatedGame)
+
+    const timeout = setTimeout(() => {
+      props.onGameFinish(updatedGame)
+    }, 20000)
+    setFinishTimeout(timeout)
   }
 
   const onFinishClose = () => {
     setIsGameFinished(false)
-    props.onGameFinishClose()
+    const updatedGame: Game = {
+      ...props.game,
+      isFinished: true,
+      currentRound: '',
+      currentQuestion: '',
+      currentUser: '',
+      winner: winningUser(),
+      finishDate: Date.now(),
+    }
+    clearTimeout(finishTimeout())
+    props.onGameFinish(updatedGame)
   }
 
   return (
@@ -80,7 +97,7 @@ export default function GamePreview(props: GamePreviewProps) {
           onClose={onFinishClose}
           isOpen={isGameFinished()}
           users={props.game.users}
-          winner={winningUser()}
+          winningUser={winningUser()}
           scores={scores}
         />
       </Show>
@@ -141,11 +158,11 @@ export default function GamePreview(props: GamePreviewProps) {
               return (
                 <div class="flex flex-col items-center justify-between gap-2 sm:gap-4">
                   <div class="text-lg sm:text-3xl font-bold text-primary flex items-center gap-4 sm:gap-2">
-                    <span>{user.name}</span> {winningUser() === user.id && <TbConfetti class="text-orange-300" />}
+                    <span>{user.name}</span> {winningUser()?.id === user.id && <TbConfetti class="text-orange-300" />}
                   </div>
                   <span
                     class="text-2xl text-gray-500 ml-2 mb-0.5"
-                    classList={{ 'text-green-600': winningUser() === user.id }}
+                    classList={{ 'text-green-600': winningUser()?.id === user.id }}
                   >
                     {scores[user.id]}
                   </span>

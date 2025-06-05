@@ -1,19 +1,18 @@
 // GameFinish.tsx
 import { onMount, onCleanup, For } from 'solid-js'
 import confetti from 'canvas-confetti'
-import { User } from '../types'
+import { Game, User } from '../types'
 import { sarcasticCongrats } from '../data/utils'
 
 type Props = {
   isOpen: boolean
   onClose: () => void
-  winner: User['id']
+  winningUser: Game['winner']
   users: User[]
   scores: Record<User['id'], number>
 }
 
 const GameFinish = (props: Props) => {
-  const winningUser = (): User => props.users.find((user) => user.id === props.winner) || ({ name: 'Player' } as User)
   const sortedUsers = () => {
     return props.users.sort((a, b) => props.scores[b.id] - props.scores[a.id])
   }
@@ -35,7 +34,6 @@ const GameFinish = (props: Props) => {
 
   // Confetti animation configuration
   const launchConfetti = (): void => {
-    console.log('launching fireworks')
     const duration: number = 5 * 1000
     const animationEnd: number = Date.now() + duration
     const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 1000 }
@@ -109,7 +107,7 @@ const GameFinish = (props: Props) => {
       {/* Content container */}
       <div class="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/3 min-w-[300px] sm:min-w-[400px] transform transition-all duration-300 h-fit">
         <h1 class="bg-clip-text text-transparent bg-gradient-to-br from-primary to-primary/50 text-5xl min-h-[300px] text-center">
-          {getRandomCongrats(winningUser().name)}
+          {getRandomCongrats(props.winningUser?.name || 'Player')}
         </h1>
 
         <div class="flex flex-col justify-between p-2 gap-4 sm:gap-12">
@@ -122,13 +120,13 @@ const GameFinish = (props: Props) => {
                 >
                   <div
                     class="text-2xl font-bold text-primary flex items-center gap-2"
-                    classList={{ 'text-5xl': props.winner === user.id }}
+                    classList={{ 'text-5xl': props.winningUser?.id === user.id }}
                   >
                     <span>{user.name}</span>
                   </div>
                   <span
                     class="text-2xl text-gray-500 ml-2 mb-0.5"
-                    classList={{ 'text-green-600': props.winner === user.id }}
+                    classList={{ 'text-green-600': props.winningUser?.id === user.id }}
                   >
                     {props.scores[user.id]}
                   </span>

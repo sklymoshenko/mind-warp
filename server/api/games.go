@@ -160,7 +160,8 @@ func (s *Server) DeleteGame(c *gin.Context) {
 
 func (s *Server) FinishGame(c *gin.Context) {
 	gameID := c.Param("id")
-	err := s.Db.FinishGame(c.Request.Context(), gameID)
+	winningUserID := c.Param("userId")
+	err := s.Db.FinishGame(c.Request.Context(), gameID, winningUserID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finish game: " + err.Error()})
 		return
@@ -196,7 +197,7 @@ func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.GET("/games/:id", s.GetGameById)
 	group.DELETE("/games/delete/:id", s.DeleteGame)
 	group.POST("/games/update/:id", s.UpdateGame)
-	group.POST("/games/finish/:id", s.FinishGame)
+	group.POST("/games/finish/:id/:userId", s.FinishGame)
 	group.GET("/games/active/user/:userId", s.GetActiveGamesByUserId)
 	group.GET("/games/finished/user/:userId", s.GetFinishedGamesByUserId)
 	group.POST("/games/remove-user", s.RemoveUserFromGame)

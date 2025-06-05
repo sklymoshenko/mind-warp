@@ -2,7 +2,6 @@ package api
 
 import (
 	"mindwarp/types"
-	"time"
 )
 
 func MapGameTemplateClientToDb(body types.GameTemplateClient) (types.GameTemplateServer, []types.TemplateRoundServer, map[string][]types.TemplateThemeServer, map[string][]types.TemplateQuestionServer, error) {
@@ -135,10 +134,6 @@ func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.Rou
 }
 
 func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.GameUserServer, []types.AnswerServer, error) {
-	finishDate := time.Time{}
-	if body.IsFinished {
-		finishDate = time.Now()
-	}
 	answers := make([]types.AnswerServer, 0)
 
 	game := types.GameServer{
@@ -146,12 +141,10 @@ func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.Gam
 		Name:              body.Name,
 		CreatorID:         body.CreatorID,
 		TemplateID:        body.TemplateID,
-		IsFinished:        body.IsFinished,
-		WinnerID:          body.Winner,
+		WinnerID:          body.Winner.ID,
 		CurrentRoundID:    body.CurrentRound,
 		CurrentQuestionID: body.CurrentQuestion,
 		CurrentUserID:     body.CurrentUser,
-		FinishDate:        finishDate,
 	}
 
 	users := make([]types.GameUserServer, len(body.Users))

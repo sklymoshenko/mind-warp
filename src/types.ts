@@ -59,7 +59,7 @@ export type Game = {
   currentQuestion?: Question['id']
   currentUser?: User['id']
   isFinished?: boolean
-  winner?: User['id']
+  winner?: Pick<User, 'id' | 'name'>
   finishDate?: number
   isPublic?: boolean
   creatorId: User['id']

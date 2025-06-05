@@ -33,12 +33,15 @@ func getGameByFilter(filterType string) string {
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
 			g.current_round_id, g.current_question_id, g.current_user_id,
-			g.winner_id, g.finish_date,
+			g.finish_date,
+			w.id as winner_id, w.name as winner_name,
 			r.id, r.name, r.time_settings, r.rank_settings, r.position,
 			t.id, t.name, t.position,
 			q.id, q.text, q.answer, q.points
 		FROM
 			games g
+		LEFT JOIN
+			users w ON g.winner_id = w.id
 		%s
 	`
 
@@ -133,7 +136,7 @@ func getGameByFilter(filterType string) string {
 	return fmt.Sprintf(baseQuery, filters)
 }
 
-func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.UserClient, error) {
+func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.GameUserClient, error) {
 	query := `
 		SELECT
 			u.id, u.name, u.is_admin, gu.round_scores
@@ -150,9 +153,9 @@ func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.UserClie
 	}
 	defer rows.Close()
 
-	var users []types.UserClient
+	var users []types.GameUserClient
 	for rows.Next() {
-		var user types.UserClient
+		var user types.GameUserClient
 		err := rows.Scan(&user.ID, &user.Name, &user.IsAdmin, &user.RoundScores)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
@@ -373,8 +376,9 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		gameCurrentRoundID    pgtype.UUID
 		gameCurrentQuestionID pgtype.UUID
 		gameCurrentUserID     pgtype.UUID
-		gameWinnerID          pgtype.UUID
 		gameFinishDate        pgtype.Timestamp
+		gameWinnerName        pgtype.Text
+		gameWinnerID          pgtype.UUID
 
 		roundID       pgtype.UUID
 		roundName     pgtype.Text
@@ -409,7 +413,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		err := rows.Scan(
 			&gameID, &gameName, &gameIsFinished, &gameCreatorID, &gameTemplateID,
 			&gameCurrentRoundID, &gameCurrentQuestionID, &gameCurrentUserID,
-			&gameWinnerID, &gameFinishDate,
+			&gameFinishDate, &gameWinnerID, &gameWinnerName,
 			&roundID, &roundName, &roundTimeJSON, &roundRankJSON, &roundPosition,
 			&themeID, &themeName, &themePosition,
 			&questionID, &questionText, &questionAnswer, &questionPoints,
@@ -435,11 +439,17 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 				CurrentRound:    uuidToString(gameCurrentRoundID),
 				CurrentQuestion: uuidToString(gameCurrentQuestionID),
 				CurrentUser:     uuidToString(gameCurrentUserID),
-				Winner:          uuidToString(gameWinnerID),
-				FinishDate:      gameFinishDate.Time.Unix(),
-				Rounds:          []types.RoundClient{},
-				CreatorID:       uuidToString(gameCreatorID),
-				TemplateID:      uuidToString(gameTemplateID),
+				Winner: types.UserClient{
+					ID:   uuidToString(gameWinnerID),
+					Name: gameWinnerName.String,
+				},
+				Rounds:     []types.RoundClient{},
+				CreatorID:  uuidToString(gameCreatorID),
+				TemplateID: uuidToString(gameTemplateID),
+			}
+
+			if gameFinishDate.Status == pgtype.Present {
+				gamesMap[gameIDStr].FinishDate = gameFinishDate.Time.UnixMilli()
 			}
 
 			roundsMap[gameIDStr] = make(map[string]*types.RoundServer)
@@ -766,11 +776,6 @@ func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer,
 	}
 	defer tx.Rollback(ctx)
 
-	winnerID := interface{}(nil)
-	if game.WinnerID != "" {
-		winnerID = game.WinnerID
-	}
-
 	currentRoundID := interface{}(nil)
 	if game.CurrentRoundID != "" {
 		currentRoundID = game.CurrentRoundID
@@ -786,7 +791,7 @@ func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer,
 		currentUserID = game.CurrentUserID
 	}
 
-	_, err = tx.Exec(ctx, "UPDATE games SET name = $1, is_finished = $2, winner_id = $3, finish_date = $4, current_round_id = $5, current_question_id = $6, current_user_id = $7 WHERE id = $8", game.Name, game.IsFinished, winnerID, game.FinishDate, currentRoundID, currentQuestionID, currentUserID, game.ID)
+	_, err = tx.Exec(ctx, "UPDATE games SET name = $1, current_round_id = $2, current_question_id = $3, current_user_id = $4 WHERE id = $5", game.Name, currentRoundID, currentQuestionID, currentUserID, game.ID)
 	if err != nil {
 		return fmt.Errorf("failed to update game: %w", err)
 	}
@@ -819,8 +824,9 @@ func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer,
 	return nil
 }
 
-func (db *DB) FinishGame(ctx context.Context, gameID string) error {
-	_, err := db.pool.Exec(ctx, "UPDATE games SET is_finished = true WHERE id = $1", gameID)
+func (db *DB) FinishGame(ctx context.Context, gameID string, winningUserID string) error {
+	logger.Info("Finishing game", "gameID", gameID, "winningUserID", winningUserID)
+	_, err := db.pool.Exec(ctx, "UPDATE games SET is_finished = true, winner_id = $1, finish_date = NOW() WHERE id = $2", winningUserID, gameID)
 	if err != nil {
 		return fmt.Errorf("failed to finish game: %w", err)
 	}

@@ -109,8 +109,9 @@ const RemoteGameRoutes = (props: RemoteGameProps) => {
   }
 
   const onGameFinish = async (finishedGame: Game, navigate?: (path: string) => void) => {
-    const response = await finishGame<Game>({}, `/${finishedGame.id}`)
+    const response = await finishGame<Game>({}, `/${finishedGame.id}/${finishedGame.winner?.id}`)
     if (!response.error) {
+      setGame(finishedGame)
       navigate?.('/dashboard')
     }
   }

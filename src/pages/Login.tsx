@@ -1,10 +1,11 @@
-import { createSignal } from 'solid-js'
+import { createEffect, createSignal } from 'solid-js'
 import { IoDiceSharp } from 'solid-icons/io'
 import { toast } from 'solid-toast'
 import ErrorToast from '../components/ErrorToast'
 import { useLocation, useNavigate } from '@solidjs/router'
 import { useAuth } from '../context/AuthContext'
 const Login = () => {
+  const { user } = useAuth()
   const [email, setEmail] = createSignal('admin@example.com')
   const [password, setPassword] = createSignal('adminpassword')
   const [error, setError] = createSignal('')
@@ -33,8 +34,21 @@ const Login = () => {
     setEmail('')
     setPassword('')
     setIsLoading(false)
+
     navigate(next, { replace: true })
   }
+
+  createEffect(() => {
+    if (!user()) return
+
+    const loc = useLocation()
+    const params = new URLSearchParams(loc.search)
+    const next = params.get('next')
+
+    if (next) {
+      navigate(next, { replace: true })
+    }
+  })
 
   return (
     <div class="flex flex-col items-center justify-center h-screen">
