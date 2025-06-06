@@ -25,7 +25,7 @@ func NewServer() *Server {
 func (s *Server) Start() {
 	// Public routes (no auth required)
 	public := s.router.Group("/")
-	s.AddAuthRoutes(public) // Login/register endpoints
+	s.AddAuthRoutes(public)
 
 	// Protected routes (require auth)
 	protected := s.router.Group("/")
@@ -33,6 +33,8 @@ func (s *Server) Start() {
 	s.AddUserRoutes(protected)
 	s.AddGameTemplateRoutes(protected)
 	s.AddGameRoutes(protected)
+
+	// s.FillDb()
 
 	s.router.Run(s.port)
 }

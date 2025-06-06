@@ -145,16 +145,6 @@ const Overview = (props: OverviewProps) => {
             </div>
           </div>
           <div class={widgetStyles.base + ' w-1/3'}>
-            <h1 class="text-2xl font-bold">Overview</h1>
-            <div class="flex flex-col gap-2 items-center">
-              <div class="flex items-center gap-2">
-                <BiRegularTrophy class="w-10 h-10 text-primary/50" />
-                <span class="text-3xl">Games Played</span>
-              </div>
-              <span class="text-4xl font-bold">42</span>
-            </div>
-          </div>
-          <div class={widgetStyles.base + ' w-1/3'}>
             <h1 class="text-2xl font-bold">Leaderboard</h1>
             <div class="flex flex-wrap gap-4 items-center">
               <For each={users()}>
