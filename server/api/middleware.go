@@ -8,13 +8,13 @@ func (s *Server) AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		accessToken, err := c.Cookie("access_token")
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "Unauthorized: No access token"})
+			c.AbortWithStatusJSON(401, ErrorResponse{Code: MISSING_ACCESS_TOKEN_ERROR, Message: "Unauthorized: No access token"})
 			return
 		}
 
 		userID, err := s.AuthService().ValidateToken(accessToken)
 		if err != nil {
-			c.AbortWithStatusJSON(401, gin.H{"error": "Unauthorized: Invalid access token"})
+			c.AbortWithStatusJSON(401, ErrorResponse{Code: INVALID_ACCESS_TOKEN_ERROR, Message: "Unauthorized: Invalid access token"})
 			return
 		}
 

@@ -18,7 +18,7 @@ func (s *Server) CreateGame(c *gin.Context) {
 	var gameBody types.GameClient
 	if err := c.ShouldBindJSON(&gameBody); err != nil {
 		logger.Errorf("Failed to bind JSON: %v", err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 		return
 	}
 
@@ -26,14 +26,14 @@ func (s *Server) CreateGame(c *gin.Context) {
 
 	if err != nil {
 		logger.Errorf("Failed to map game client to db: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to process game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_MAP_GAME_CLIENT_TO_DB_ERROR, Message: err.Error()})
 		return
 	}
 
 	err = s.Db.CreateGame(c.Request.Context(), game, rounds, themes, questions, users, answers)
 	if err != nil {
 		logger.Errorf("Failed to create game: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_CREATE_GAME_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -45,7 +45,7 @@ func (s *Server) GetGameById(c *gin.Context) {
 	game, err := s.Db.GetGameByFilter(c.Request.Context(), "id", gameID)
 	if err != nil {
 		logger.Errorf("Failed to get game by id: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game by id: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_GAME_BY_ID_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -61,7 +61,7 @@ func (s *Server) GetActiveGamesByUserId(c *gin.Context) {
 		unconfirmedUsers, err := s.Db.GetUnconfirmedUsersByGameId(c.Request.Context(), game.ID)
 		if err != nil {
 			logger.Errorf("Failed to get pending users by game id: %v", err)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get pending users by game id: " + err.Error()})
+			c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_PENDING_USERS_BY_GAME_ID_ERROR, Message: err.Error()})
 			return
 		}
 		game.UnconfirmedUsers = unconfirmedUsers
@@ -69,7 +69,7 @@ func (s *Server) GetActiveGamesByUserId(c *gin.Context) {
 
 	if err != nil {
 		logger.Errorf("Failed to get active games: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get active games: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_ACTIVE_GAMES_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -81,7 +81,7 @@ func (s *Server) GetFinishedGamesByUserId(c *gin.Context) {
 	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user_finished", userId)
 	if err != nil {
 		logger.Errorf("Failed to get finished games: %v", err)
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get finished games: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_FINISHED_GAMES_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -91,13 +91,13 @@ func (s *Server) GetFinishedGamesByUserId(c *gin.Context) {
 func (s *Server) RemoveUserFromGame(c *gin.Context) {
 	var reqBody AddUserToGameRequest
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 		return
 	}
 
 	err := s.Db.RemoveUserFromGame(c.Request.Context(), reqBody.GameID, reqBody.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove user from game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_REMOVE_USER_FROM_GAME_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -108,7 +108,7 @@ func (s *Server) GetGameInvitesByUserId(c *gin.Context) {
 	userId := c.Param("userId")
 	gameInvites, err := s.Db.GetGameInvitesByUserId(c.Request.Context(), userId)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get game invites: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_GAME_INVITES_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -118,13 +118,13 @@ func (s *Server) GetGameInvitesByUserId(c *gin.Context) {
 func (s *Server) AcceptGameInvite(c *gin.Context) {
 	var reqBody InviteRequest
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 		return
 	}
 
 	err := s.Db.AcceptGameInvite(c.Request.Context(), reqBody.InviteID, reqBody.GameID, reqBody.UserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to accept game invite: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_ACCEPT_GAME_INVITE_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -134,13 +134,13 @@ func (s *Server) AcceptGameInvite(c *gin.Context) {
 func (s *Server) DeclineGameInvite(c *gin.Context) {
 	var reqBody InviteRequest
 	if err := c.ShouldBindJSON(&reqBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 		return
 	}
 
 	err := s.Db.DeclineGameInvite(c.Request.Context(), reqBody.InviteID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to accept game invite: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_DECLINE_GAME_INVITE_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -151,7 +151,7 @@ func (s *Server) DeleteGame(c *gin.Context) {
 	gameID := c.Param("id")
 	err := s.Db.DeleteGame(c.Request.Context(), gameID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_DELETE_GAME_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -163,7 +163,7 @@ func (s *Server) FinishGame(c *gin.Context) {
 	winningUserID := c.Param("userId")
 	err := s.Db.FinishGame(c.Request.Context(), gameID, winningUserID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to finish game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_FINISH_GAME_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -173,19 +173,19 @@ func (s *Server) FinishGame(c *gin.Context) {
 func (s *Server) UpdateGame(c *gin.Context) {
 	var gameBody types.GameClient
 	if err := c.ShouldBindJSON(&gameBody); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body: " + err.Error()})
+		c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 		return
 	}
 
 	game, users, answers, err := MapGameClientToUpdate(gameBody)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to map game client to db: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_MAP_GAME_CLIENT_TO_DB_ERROR, Message: err.Error()})
 		return
 	}
 
 	err = s.Db.UpdateGameAndGameUsers(c.Request.Context(), game, users, answers)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update game: " + err.Error()})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_UPDATE_GAME_ERROR, Message: err.Error()})
 		return
 	}
 

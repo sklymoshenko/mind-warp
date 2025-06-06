@@ -9,7 +9,7 @@ const Register = () => {
   const [username, setUsername] = createSignal('')
   const [email, setEmail] = createSignal('')
   const [password, setPassword] = createSignal('')
-  const [error, setError] = createSignal('asd')
+  const [error, setError] = createSignal('')
   const { post, isLoading } = useApi('auth/register')
   const navigate = useNavigate()
 

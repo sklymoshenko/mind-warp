@@ -1,10 +1,5 @@
 import { createSignal } from 'solid-js'
-
-type FieldError = {
-  field: string
-  tag: string
-  param?: string
-}
+import { errorMessages } from './errors'
 
 export const useApi = (url: string) => {
   const [isLoading, setIsLoading] = createSignal(false)
@@ -17,11 +12,9 @@ export const useApi = (url: string) => {
     setIsLoading(false)
     const error = await response.json()
 
-    if ('validationErrors' in error) {
+    if (error.code) {
       return {
-        error: error.validationErrors
-          .map((e: FieldError) => `Field: ${e.field}, reason: ${e.tag}, param: ${e.param}`)
-          .join(', '),
+        error: errorMessages[error.code as keyof typeof errorMessages],
       }
     }
 

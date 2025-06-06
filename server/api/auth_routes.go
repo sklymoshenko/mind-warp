@@ -23,65 +23,95 @@ type registerRequest struct {
 	Password string `json:"password" binding:"required,min=8"`
 }
 
-type FieldError struct {
-	Field string `json:"field"`
-	Tag   string `json:"tag"`
-	Param string `json:"param,omitempty"`
-}
-
-type ValidationErrorResponse struct {
-	ValidationErrors []FieldError `json:"validationErrors"`
-}
-
-func validateRequest(c *gin.Context, err error) (ValidationErrorResponse, error) {
+func validateRequest(c *gin.Context, err error) (ErrorResponse, error) {
 	// collect all validator errors
 	verrs, ok := err.(validator.ValidationErrors)
 	if !ok {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return ValidationErrorResponse{}, err
+		return ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()}, err
 	}
 
-	out := ValidationErrorResponse{}
+	out := ErrorResponse{}
 	for _, fe := range verrs {
-		out.ValidationErrors = append(out.ValidationErrors, FieldError{
-			Field: fe.Field(), // e.g. “Email”
-			Tag:   fe.Tag(),   // e.g. “email” or “min”
-			Param: fe.Param(), // e.g. “8” for min=8
-		})
+		if fe.Tag() == "min" && fe.Field() == "Password" {
+			out.Code = VALIDATION_PASSWORD_TOO_SHORT
+			out.Message = "Password must be at least 8 characters long"
+		}
+
+		if fe.Tag() == "max" && fe.Field() == "Username" {
+			out.Code = VALIDATION_USERNAME_TOO_LONG
+			out.Message = "Username must be less than 32 characters long"
+		}
+
+		if fe.Tag() == "min" && fe.Field() == "Username" {
+			out.Code = VALIDATION_USERNAME_TOO_SHORT
+			out.Message = "Username must be at least 2 characters long"
+		}
+
+		if fe.Tag() == "email" && fe.Field() == "Email" {
+			out.Code = VALIDATION_INVALID_EMAIL
+			out.Message = "Invalid email address"
+		}
 	}
 
 	return out, nil
 }
 
+func parseLoginError(err error) ErrorResponse {
+	if err.Error() == "no rows in result set" {
+		return ErrorResponse{
+			Code:    USER_LOGIN_NOT_FOUND_ERROR,
+			Message: "User not found",
+		}
+	}
+
+	return ErrorResponse{
+		Code:    "UNKNOWN_ERROR",
+		Message: err.Error(),
+	}
+}
+
 func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
 	user, err := s.Db.GetUserByEmail(req.Email)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Error while getting user: " + err.Error()})
+		response := parseLoginError(err)
+		c.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(req.Password, user.Password)
 
 	if err != nil || !match {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid login or password: " + err.Error()})
+		response := ErrorResponse{
+			Code:    FAIL_PASSWORD_COMPARE_ERROR,
+			Message: err.Error(),
+		}
+
+		if !match {
+			response = ErrorResponse{
+				Code:    INVALID_PASSWORD_ERROR,
+				Message: "Invalid login or password",
+			}
+		}
+
+		c.JSON(http.StatusUnauthorized, response)
 		return
 	}
 
 	accessTokenTTL, err := time.ParseDuration(os.Getenv("ACCESS_TOKEN_TTL"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse access token TTL"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_ACCESS_TOKEN_PARSE_ERROR, Message: err.Error()})
 		return
 	}
 
 	refreshTokenTTL, err := time.ParseDuration(os.Getenv("REFRESH_TOKEN_TTL"))
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse refresh token TTL"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_REFRESH_TOKEN_PARSE_ERROR, Message: err.Error()})
 		return
 	}
 
 	accessToken, refreshToken, err := s.AuthService().GenerateTokens(user.ID, accessTokenTTL, refreshTokenTTL)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GENERATE_TOKENS_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -113,7 +143,13 @@ func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
 func (s *Server) Login(c *gin.Context) {
 	var req loginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		out, err := validateRequest(c, err)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
+			return
+		}
+
+		c.JSON(http.StatusBadRequest, out)
 		return
 	}
 
@@ -125,7 +161,7 @@ func (s *Server) Register(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		out, err := validateRequest(c, err)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to validate request" + err.Error()})
+			c.JSON(http.StatusBadRequest, ErrorResponse{Code: INVALID_REQUEST_BODY, Message: err.Error()})
 			return
 		}
 
@@ -135,7 +171,7 @@ func (s *Server) Register(c *gin.Context) {
 
 	hashedPassword, err := argon2id.CreateHash(req.Password, argon2id.DefaultParams)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_HASH_PASSWORD_ERROR, Message: err.Error()})
 		return
 	}
 
@@ -147,7 +183,8 @@ func (s *Server) Register(c *gin.Context) {
 
 	err = s.Db.CreateUser(user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create user:" + err.Error()})
+		response := ParseSqlError(err)
+		c.JSON(http.StatusInternalServerError, response)
 		return
 	}
 

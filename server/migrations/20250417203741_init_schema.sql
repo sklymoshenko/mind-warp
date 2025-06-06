@@ -13,7 +13,9 @@ CREATE TABLE users (
   email TEXT UNIQUE,
   password_hash TEXT,
   is_admin BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE(email),
+  UNIQUE(name)
 );
 
 -- Game Templates (prototypes)
