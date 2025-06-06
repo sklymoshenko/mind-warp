@@ -97,9 +97,9 @@ type QuestionServer struct {
 }
 
 type GameUserServer struct {
-	GameID      string           `json:"game_id"`
-	UserID      string           `json:"user_id"`
-	RoundScores map[string]int16 `json:"round_scores"`
+	GameID     string           `json:"game_id"`
+	UserID     string           `json:"user_id"`
+	RoundScore map[string]int16 `json:"round_scores"`
 }
 
 type AnswerServer struct {

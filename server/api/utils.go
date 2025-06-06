@@ -241,9 +241,9 @@ func MapGameClientToUpdate(body types.GameClient) (types.GameServer, []types.Gam
 	users := make([]types.GameUserServer, len(body.Users))
 	for i, user := range body.Users {
 		users[i] = types.GameUserServer{
-			GameID:      body.ID,
-			UserID:      user.ID,
-			RoundScores: user.RoundScores,
+			GameID:     body.ID,
+			UserID:     user.ID,
+			RoundScore: user.RoundScore,
 		}
 	}
 

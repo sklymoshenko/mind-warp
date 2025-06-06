@@ -29,16 +29,6 @@ const Welcome = () => {
 
   return (
     <>
-      <Show when={showHistory()}>
-        <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
-          <button
-            class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 hover:cursor-pointer"
-            onClick={() => navigate('/local/games-history')}
-          >
-            Games History
-          </button>
-        </div>
-      </Show>
       <div class="relative z-10 text-center ">
         <h1
           class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000"

@@ -51,10 +51,10 @@ type GameTemplateClient struct {
 }
 
 type GameUserClient struct {
-	ID          string           `json:"id"`
-	Name        string           `json:"name"`
-	IsAdmin     bool             `json:"isAdmin,omitempty"`
-	RoundScores map[string]int16 `json:"roundScore"`
+	ID         string           `json:"id"`
+	Name       string           `json:"name"`
+	IsAdmin    bool             `json:"isAdmin,omitempty"`
+	RoundScore map[string]int16 `json:"roundScore"`
 }
 
 type UserClient struct {

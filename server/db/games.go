@@ -156,14 +156,13 @@ func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.GameUser
 	var users []types.GameUserClient
 	for rows.Next() {
 		var user types.GameUserClient
-		err := rows.Scan(&user.ID, &user.Name, &user.IsAdmin, &user.RoundScores)
+		err := rows.Scan(&user.ID, &user.Name, &user.IsAdmin, &user.RoundScore)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan user: %w", err)
 		}
 
 		users = append(users, user)
 	}
-
 	return users, nil
 }
 
@@ -797,7 +796,7 @@ func (db *DB) UpdateGameAndGameUsers(ctx context.Context, game types.GameServer,
 	}
 
 	for _, user := range users {
-		_, err = tx.Exec(ctx, "UPDATE game_users SET round_scores = $1 WHERE game_id = $2 AND user_id = $3", user.RoundScores, game.ID, user.UserID)
+		_, err = tx.Exec(ctx, "UPDATE game_users SET round_scores = $1 WHERE game_id = $2 AND user_id = $3", user.RoundScore, game.ID, user.UserID)
 		if err != nil {
 			return fmt.Errorf("failed to update game user: %w", err)
 		}

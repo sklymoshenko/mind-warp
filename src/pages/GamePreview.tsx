@@ -1,9 +1,10 @@
 // src/GamePreview.tsx
-import { createSignal, For, Show } from 'solid-js'
+import { createMemo, createSignal, For, Show } from 'solid-js'
 import { Game, Round, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import GameFinished from '../components/GameFinish'
 import { Confirm } from '../components/Confirm'
+import { calculateUserGameScore } from '../utils'
 
 interface GamePreviewProps {
   game: Game
@@ -17,19 +18,12 @@ export default function GamePreview(props: GamePreviewProps) {
   const [isGameFinished, setIsGameFinished] = createSignal(false)
   const [finishTimeout, setFinishTimeout] = createSignal<number>()
 
-  const scores = props.game.users.reduce(
-    (acc, curr) => {
-      const totalScore = Object.values(curr.roundScore ?? {}).reduce((acc, score) => acc + score, 0)
-      acc[curr.id] = totalScore
-      return acc
-    },
-    {} as Record<User['id'], number>
-  )
+  const scores = createMemo(() => calculateUserGameScore(props.game.users))
 
   const winningUser = () => {
     const winningUserId = Object.entries(scores).reduce(
       (acc, curr) => {
-        if (curr[1] > scores[acc]) {
+        if (curr[1] > scores()[acc]) {
           return curr[0] as User['id']
         }
         return acc
@@ -98,7 +92,7 @@ export default function GamePreview(props: GamePreviewProps) {
           isOpen={isGameFinished()}
           users={props.game.users}
           winningUser={winningUser()}
-          scores={scores}
+          scores={scores()}
         />
       </Show>
       <div class="flex flex-col justify-between h-[90%] sm:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
@@ -164,7 +158,7 @@ export default function GamePreview(props: GamePreviewProps) {
                     class="text-2xl text-gray-500 ml-2 mb-0.5"
                     classList={{ 'text-green-600': winningUser()?.id === user.id }}
                   >
-                    {scores[user.id]}
+                    {scores()[user.id]}
                   </span>
                 </div>
               )

@@ -36,6 +36,7 @@ const GameRound = (props: Props) => {
       {} as Record<User['id'], number>
     )
   }
+
   const winningUser = createMemo(() => {
     return Object.entries(scores()).reduce(
       (acc, curr) => {

@@ -1,4 +1,4 @@
-import { createResource, createSignal, For, Show } from 'solid-js'
+import { createMemo, createResource, createSignal, For, Show } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { Game, GameTemplate, UnconfirmedUser, Round, User } from '../types'
 import Accordion from './Accordion'
@@ -10,6 +10,7 @@ import { useNavigate } from '@solidjs/router'
 import { FiEdit } from 'solid-icons/fi'
 import { createUUID } from '../pages/CreateGame'
 import { Confirm } from './Confirm'
+import { calculateUserGameScore, isEmptyObject } from '../utils'
 
 type GameInfoProps<T extends GameTemplate | Game> = {
   id?: T['id']
@@ -263,12 +264,23 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     props.onRemove?.(entity()!)
   }
 
-  const userSelectedItems = (): SearchItem[] => {
+  const userScores = createMemo(() => {
+    if (!entity() || !users()?.length) {
+      return {} as Record<User['id'], number>
+    }
+
+    return calculateUserGameScore(users())
+  })
+
+  const userSelectedItems = createMemo(() => {
     const winnerId = (entity() as Game)?.winner?.id
+
     let items = users().map((user) => {
+      const score = userScores()[user.id] ?? 0
+      const name = !!score && score !== 0 ? `${user.name} (${score})` : user.name
       return {
         id: user.id,
-        name: user.name,
+        name,
         isRemovable: props.user.id !== user.id,
         class: winnerId === user.id ? 'bg-green-500/50! text-white!' : '',
       }
@@ -284,7 +296,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
     )
 
     return items
-  }
+  })
 
   const winner = () => {
     if (!isGame(entity())) {
