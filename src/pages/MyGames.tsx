@@ -203,6 +203,10 @@ const MyGames = () => {
   const [editingGame, setEditingGame] = createSignal<Game>()
   const [historyGame, setHistoryGame] = createSignal<Game>()
   const [gameInvite, setGameInvite] = createSignal<GameInvite>()
+  const [templatesPagination, setTemplatesPagination] = createSignal({ limit: 25, offset: 0 })
+  const [activeGamesPagination, setActiveGamesPagination] = createSignal({ limit: 25, offset: 0 })
+  const [invitesPagination, setInvitesPagination] = createSignal({ limit: 25, offset: 0 })
+  const [historyPagination, setHistoryPagination] = createSignal({ limit: 25, offset: 0 })
 
   const invitesColumns: TableColumn<GameInvite>[] = [
     { label: 'Game', key: 'gameName' },
@@ -246,8 +250,10 @@ const MyGames = () => {
     },
   ]
 
-  const [gameInvites, { mutate: setGameInvites }] = createResource(async () => {
-    const response = await getGameInvites<GameInvite[]>()
+  const [gameInvites, { refetch: refetchGameInvites, mutate: setGameInvites }] = createResource(async () => {
+    const response = await getGameInvites<GameInvite[]>(
+      `?limit=${invitesPagination().limit}&offset=${invitesPagination().offset}`
+    )
     if (response.data) {
       return response.data
     }
@@ -255,7 +261,9 @@ const MyGames = () => {
   })
 
   const [games, { refetch: refetchActiveGames, mutate: setActiveGames }] = createResource(async () => {
-    const response = await getActiveGames<Game[]>()
+    const response = await getActiveGames<Game[]>(
+      `?limit=${activeGamesPagination().limit}&offset=${activeGamesPagination().offset}`
+    )
 
     if (response.data) {
       return response.data
@@ -264,8 +272,10 @@ const MyGames = () => {
     return []
   })
 
-  const [gamesHistory, { mutate: setGamesHistory }] = createResource(async () => {
-    const response = await getGamesHistory<Game[]>()
+  const [gamesHistory, { refetch: refetchGamesHistory, mutate: setGamesHistory }] = createResource(async () => {
+    const response = await getGamesHistory<Game[]>(
+      `?limit=${historyPagination().limit}&offset=${historyPagination().offset}`
+    )
 
     if (response.data) {
       return response.data
@@ -274,8 +284,10 @@ const MyGames = () => {
     return []
   })
 
-  const [gameTemplates, { mutate: setGameTemplates }] = createResource(async () => {
-    const response = await get<GameListItem[]>()
+  const [gameTemplates, { refetch: refetchGameTemplates, mutate: setGameTemplates }] = createResource(async () => {
+    const response = await get<GameListItem[]>(
+      `?limit=${templatesPagination().limit}&offset=${templatesPagination().offset}`
+    )
     if (response.data) {
       return response.data
     }
@@ -386,6 +398,26 @@ const MyGames = () => {
     navigate(`/game/${game.id}`)
   }
 
+  const handleTemplatesPagination = async (offset: number, limit: number, page: number) => {
+    setTemplatesPagination({ offset, limit, page })
+    await refetchGameTemplates()
+  }
+
+  const handleActiveGamesPagination = async (offset: number, limit: number, page: number) => {
+    setActiveGamesPagination({ offset, limit, page })
+    await refetchActiveGames()
+  }
+
+  const handleInvitesPagination = async (offset: number, limit: number, page: number) => {
+    setInvitesPagination({ offset, limit, page })
+    await refetchGameInvites()
+  }
+
+  const handleHistoryPagination = async (offset: number, limit: number, page: number) => {
+    setHistoryPagination({ offset, limit, page })
+    await refetchGamesHistory()
+  }
+
   return (
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
@@ -417,6 +449,9 @@ const MyGames = () => {
                   Create New Template
                 </button>
               )}
+              pageSize={templatesPagination().limit}
+              onPageChange={handleTemplatesPagination}
+              totalItems={30}
             />
           </div>
 
@@ -429,6 +464,9 @@ const MyGames = () => {
               fallbackTitle="No Active Games"
               fallbackDetail="You haven't started any games yet."
               onRowClick={(game) => setEditingGame(game)}
+              pageSize={activeGamesPagination().limit}
+              onPageChange={handleActiveGamesPagination}
+              totalItems={30}
             />
           </div>
           <div class="flex h-[25rem]">
@@ -439,6 +477,9 @@ const MyGames = () => {
               fallbackTitle="No Invites"
               fallbackDetail="You haven't received any invites yet."
               disableOverflow={true}
+              pageSize={invitesPagination().limit}
+              onPageChange={handleInvitesPagination}
+              totalItems={30}
             />
           </div>
         </div>
@@ -451,6 +492,9 @@ const MyGames = () => {
             fallbackTitle="No Games History"
             fallbackDetail="You haven't finished any games yet."
             onRowClick={(game) => setHistoryGame(game)}
+            pageSize={historyPagination().limit}
+            onPageChange={handleHistoryPagination}
+            totalItems={30}
           />
         </div>
         {/* <div class={`${widgetStyles.base} mt-12 w-full`}>

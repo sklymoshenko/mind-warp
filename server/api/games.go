@@ -42,7 +42,9 @@ func (s *Server) CreateGame(c *gin.Context) {
 
 func (s *Server) GetGameById(c *gin.Context) {
 	gameID := c.Param("id")
-	game, err := s.Db.GetGameByFilter(c.Request.Context(), "id", gameID)
+	offset := c.Query("offset")
+	limit := c.Query("limit")
+	game, err := s.Db.GetGameByFilter(c.Request.Context(), "id", gameID, offset, limit)
 	if err != nil {
 		logger.Errorf("Failed to get game by id: %v", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_GAME_BY_ID_ERROR, Message: err.Error()})
@@ -54,7 +56,9 @@ func (s *Server) GetGameById(c *gin.Context) {
 
 func (s *Server) GetActiveGamesByUserId(c *gin.Context) {
 	userId := c.Param("userId")
-	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user", userId)
+	offset := c.Query("offset")
+	limit := c.Query("limit")
+	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user", userId, offset, limit)
 
 	// Optimize later by creating endpoints for list preview
 	for _, game := range games {
@@ -78,7 +82,9 @@ func (s *Server) GetActiveGamesByUserId(c *gin.Context) {
 
 func (s *Server) GetFinishedGamesByUserId(c *gin.Context) {
 	userId := c.Param("userId")
-	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user_finished", userId)
+	offset := c.Query("offset")
+	limit := c.Query("limit")
+	games, err := s.Db.GetGameByFilter(c.Request.Context(), "user_finished", userId, offset, limit)
 	if err != nil {
 		logger.Errorf("Failed to get finished games: %v", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_FINISHED_GAMES_ERROR, Message: err.Error()})

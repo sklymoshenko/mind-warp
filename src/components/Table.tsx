@@ -1,5 +1,6 @@
-import { For, Show } from 'solid-js'
+import { createMemo, createSignal, For, Show } from 'solid-js'
 import { TiCancel } from 'solid-icons/ti'
+import { FaSolidArrowLeftLong, FaSolidArrowRightLong } from 'solid-icons/fa'
 
 export interface TableColumn<T> {
   label: string
@@ -21,11 +22,16 @@ interface TableProps<T> {
   fallbackDetail?: string
   minWidth?: string
   disableOverflow?: boolean
+  // Pagination props
+  pageSize?: number
+  currentPage?: number
+  onPageChange?: (offset: number, limit: number, page: number) => void
+  totalItems?: number
 }
 
-const TableSkeleton = (props: { columns: TableColumn<any>[] }) => {
+const TableSkeleton = (props: { columns: TableColumn<any>[]; rows: number }) => {
   return (
-    <For each={Array(5)}>
+    <For each={Array(props.rows)}>
       {() => (
         <tr class="animate-pulse">
           <For each={props.columns}>
@@ -55,9 +61,69 @@ const DefaultEmptyState = (props: { columns: TableColumn<any>[]; title?: string;
   )
 }
 
-const Table = <T,>(props: TableProps<T>) => {
+const Pagination = (props: {
+  currentPage: number
+  totalPages: number
+  onPageChange: (offset: number, limit: number, page: number) => void
+  pageSize: number
+}) => {
+  const [offset, setOffset] = createSignal(props.currentPage * props.pageSize)
+  const [limit, setLimit] = createSignal(props.pageSize)
+
+  const handlePageChange = (offset: number, limit: number, page: number) => {
+    if (offset < 0) {
+      offset = 0
+    }
+
+    const maxOffset = (props.totalPages - 1) * props.pageSize
+    if (offset > maxOffset) {
+      offset = maxOffset
+    }
+
+    setOffset(offset)
+    setLimit(limit)
+    props.onPageChange(offset, limit, page)
+  }
+
   return (
-    <div class="flex flex-col gap-4 w-full">
+    <div class="flex items-center justify-end px-1 py-2 bg-void/70 border border-primary/20 rounded-lg">
+      <div class="flex items-center gap-2">
+        <Show when={props.currentPage > 1}>
+          <button
+            class="px-3 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer"
+            onClick={() => handlePageChange(offset() - limit(), limit(), props.currentPage - 1)}
+          >
+            <FaSolidArrowLeftLong class="w-3 h-3" />
+          </button>
+        </Show>
+        <span class="text-sm text-white/70" classList={{ 'mr-2': props.currentPage === props.totalPages }}>
+          Page <span class="font-bold">{props.currentPage}</span> of <span class="font-bold">{props.totalPages}</span>
+        </span>
+        <Show when={props.currentPage < props.totalPages}>
+          <button
+            class="px-3 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer"
+            onClick={() => handlePageChange(offset() + limit(), limit(), props.currentPage + 1)}
+          >
+            <FaSolidArrowRightLong class="w-3 h-3" />
+          </button>
+        </Show>
+      </div>
+    </div>
+  )
+}
+
+const Table = <T,>(props: TableProps<T>) => {
+  const pageSize = props.pageSize || 10
+  const [currentPage, setCurrentPage] = createSignal(props.currentPage || 1)
+  const totalPages = createMemo(() => Math.ceil((props.totalItems || props.data.length) / pageSize))
+
+  const handlePageChange = (offset: number, limit: number, page: number) => {
+    setCurrentPage(page)
+    props.onPageChange?.(offset, limit, page)
+  }
+
+  return (
+    <div class="flex flex-col gap-4 w-full h-full">
       <div class="flex items-center justify-between">
         <Show when={props.name}>
           <h2 class="text-lg font-bold text-primary uppercase tracking-wider">{props.name}</h2>
@@ -89,7 +155,7 @@ const Table = <T,>(props: TableProps<T>) => {
               </tr>
             </thead>
             <tbody class="bg-void/70 divide-y divide-primary/10">
-              <Show when={!props.loading} fallback={<TableSkeleton columns={props.columns} />}>
+              <Show when={!props.loading} fallback={<TableSkeleton columns={props.columns} rows={pageSize || 5} />}>
                 <Show
                   when={props.data.length > 0 && !props.loading}
                   fallback={
@@ -126,6 +192,14 @@ const Table = <T,>(props: TableProps<T>) => {
           </table>
         </div>
       </div>
+      <Show when={pageSize > 0 && totalPages() > 1}>
+        <Pagination
+          currentPage={currentPage()}
+          totalPages={totalPages()}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+        />
+      </Show>
     </div>
   )
 }

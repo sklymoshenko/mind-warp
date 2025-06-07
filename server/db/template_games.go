@@ -13,6 +13,21 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
+const (
+	DEFAULT_LIMIT  = "25"
+	DEFAULT_OFFSET = "0"
+)
+
+func getLimitAndOffset(offset string, limit string) (string, string) {
+	if offset == "" {
+		offset = DEFAULT_OFFSET
+	}
+	if limit == "" {
+		limit = DEFAULT_LIMIT
+	}
+	return offset, limit
+}
+
 func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	games := []types.GameTemplateServer{}
 	for rows.Next() {
@@ -26,8 +41,9 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	return games, nil
 }
 
-func (db *DB) GetAllGameTemplates(ctx context.Context) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates")
+func (db *DB) GetAllGameTemplates(ctx context.Context, offset string, limit string) ([]types.GameTemplateServer, error) {
+	offset, limit = getLimitAndOffset(offset, limit)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -41,8 +57,9 @@ func (db *DB) GetAllGameTemplates(ctx context.Context) ([]types.GameTemplateServ
 	return games, nil
 }
 
-func (db *DB) GetPublicGameTemplates(ctx context.Context) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE is_public = true")
+func (db *DB) GetPublicGameTemplates(ctx context.Context, offset string, limit string) ([]types.GameTemplateServer, error) {
+	offset, limit = getLimitAndOffset(offset, limit)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE is_public = true LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -55,8 +72,9 @@ func (db *DB) GetPublicGameTemplates(ctx context.Context) ([]types.GameTemplateS
 	return games, nil
 }
 
-func (db *DB) GetGameTemplateByID(ctx context.Context, id string) (*types.GameTemplateServer, error) {
-	row := db.pool.QueryRow(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE id = $1", id)
+func (db *DB) GetGameTemplateByID(ctx context.Context, id string, offset string, limit string) (*types.GameTemplateServer, error) {
+	offset, limit = getLimitAndOffset(offset, limit)
+	row := db.pool.QueryRow(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE id = $1 LIMIT $2 OFFSET $3", id, limit, offset)
 
 	var game types.GameTemplateServer
 	err := row.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic)
@@ -66,8 +84,9 @@ func (db *DB) GetGameTemplateByID(ctx context.Context, id string) (*types.GameTe
 	return &game, nil
 }
 
-func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE creator_id = $1", userID)
+func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string, offset string, limit string) ([]types.GameTemplateServer, error) {
+	offset, limit = getLimitAndOffset(offset, limit)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE creator_id = $1 LIMIT $2 OFFSET $3", userID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +99,9 @@ func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string) ([
 	return games, nil
 }
 
-func (db *DB) SearchGameTemplates(ctx context.Context, query string) ([]types.GameTemplateServer, error) {
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE name ILIKE $1 AND is_public = true", "%"+query+"%")
+func (db *DB) SearchGameTemplates(ctx context.Context, query string, offset string, limit string) ([]types.GameTemplateServer, error) {
+	offset, limit = getLimitAndOffset(offset, limit)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE name ILIKE $1 AND is_public = true LIMIT $2 OFFSET $3", "%"+query+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}

@@ -43,13 +43,14 @@ const columns: TableColumn<GameTemplate>[] = [
 
 const Overview = (props: OverviewProps) => {
   const { user, logout } = useAuth()
-  const { get } = useApi('users')
+  // const { get } = useApi('users')
   const navigate = useNavigate()
   const { get: getGameTemplatesSearch } = useApi('game_templates/search')
   const { get: getGameTemplatesList } = useApi('game_templates/public')
   const { get: getGameTemplate } = useApi('game_templates/info')
   const [gameTemplateId, setGameTemplateId] = createSignal<GameTemplate['id'] | undefined>(undefined)
   const [isEditing, setIsEditing] = createSignal(false)
+  const [templatesPagination, setTemplatesPagination] = createSignal({ limit: 25, offset: 0 })
 
   const [gameTemplate, { mutate: setGameTemplate }] = createResource(gameTemplateId, async () => {
     if (!gameTemplateId()) return undefined
@@ -58,18 +59,20 @@ const Overview = (props: OverviewProps) => {
     return response.data
   })
 
-  const [users] = createResource(async () => {
-    const response = await get<User[]>()
-    return (
-      (response.data?.map((user) => ({
-        ...user,
-        score: 500,
-      })) as User[]) || []
-    )
-  })
+  // const [users] = createResource(async () => {
+  //   const response = await get<User[]>()
+  //   return (
+  //     (response.data?.map((user) => ({
+  //       ...user,
+  //       score: 500,
+  //     })) as User[]) || []
+  //   )
+  // })
 
-  const [gameTemplates] = createResource(async () => {
-    const response = await getGameTemplatesList<GameTemplate[]>()
+  const [gameTemplates, { refetch: refetchGameTemplates }] = createResource(async () => {
+    const response = await getGameTemplatesList<GameTemplate[]>(
+      `?limit=${templatesPagination().limit}&offset=${templatesPagination().offset}`
+    )
     return response.data
   })
 
@@ -99,6 +102,11 @@ const Overview = (props: OverviewProps) => {
 
   const onTemplateSelect = (templates: SearchItem[]) => {
     getGameInfo(templates[0].id as string)
+  }
+
+  const handleTemplatesPagination = async (offset: number, limit: number) => {
+    setTemplatesPagination({ offset, limit })
+    await refetchGameTemplates()
   }
 
   return (
@@ -145,13 +153,16 @@ const Overview = (props: OverviewProps) => {
           </div>
         </div>
         <div class="flex gap-4 items-start w-full">
-          <div class="w-[40%] mx-auto">
+          <div class="w-[50%] mx-auto h-[45rem] min-h-[25rem]">
             <Table
               columns={columns}
               loading={gameTemplates.loading}
               data={gameTemplates() || []}
               name="Game Templates"
               onRowClick={(template) => getGameInfo(template.id)}
+              pageSize={templatesPagination().limit}
+              onPageChange={handleTemplatesPagination}
+              totalItems={30}
             />
           </div>
           {/* <div class="w-fit">

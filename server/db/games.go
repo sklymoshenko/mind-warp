@@ -28,7 +28,7 @@ func insertGameRound(ctx context.Context, tx pgx.Tx, round types.RoundServer) er
 	return nil
 }
 
-func getGameByFilter(filterType string) string {
+func getGameByFilter(filterType string, offset string, limit string) string {
 	baseQuery := `
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
@@ -44,7 +44,9 @@ func getGameByFilter(filterType string) string {
 			users w ON g.winner_id = w.id
 		%s
 		ORDER BY
-			r.position, t.position, q.points, g.created_at DESC;
+			r.position, t.position, q.points, g.created_at DESC
+		OFFSET %s
+		LIMIT %s;
 	`
 
 	filters := `
@@ -69,8 +71,6 @@ func getGameByFilter(filterType string) string {
 			questions q ON t.id = q.theme_id
 		WHERE
 			g.creator_id = $1
-		ORDER BY
-			g.created_at DESC;
 		`
 	case "user":
 		filters = `
@@ -125,7 +125,14 @@ func getGameByFilter(filterType string) string {
 	default:
 	}
 
-	return fmt.Sprintf(baseQuery, filters)
+	if offset == "" {
+		offset = "0"
+	}
+	if limit == "" {
+		limit = "25"
+	}
+
+	return fmt.Sprintf(baseQuery, filters, offset, limit)
 }
 
 func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.GameUserClient, error) {
@@ -357,7 +364,7 @@ func (db *DB) GetAnswersByQuestionIds(ctx context.Context, questionIds []string)
 	return answers, nil
 }
 
-func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string) ([]*types.GameClient, error) {
+func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string, offset string, limit string) ([]*types.GameClient, error) {
 	var (
 		gameID                pgtype.UUID
 		gameName              pgtype.Text
@@ -387,7 +394,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		questionAnswer pgtype.Text
 		questionPoints pgtype.Int4
 	)
-	query := getGameByFilter(filter)
+	query := getGameByFilter(filter, offset, limit)
 
 	rows, err := db.pool.Query(ctx, query, filterValue)
 	if err != nil {
