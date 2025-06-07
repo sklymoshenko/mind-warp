@@ -9,13 +9,18 @@ import { useApi } from '../hooks/useApi'
 import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
 import { useAuth } from '../context/AuthContext'
 import OverlayComponent from '../components/OverlayComponent'
-import { IoDice, IoGameControllerOutline, IoTrashOutline } from 'solid-icons/io'
+import {
+  IoCheckmarkCircleOutline,
+  IoCloseCircleOutline,
+  IoDice,
+  IoGameControllerOutline,
+  IoTrashOutline,
+} from 'solid-icons/io'
 import Carousel from '../components/Carousel'
 import GameInfo from '../components/GameInfo'
-import { BsEnvelopePaperHeart } from 'solid-icons/bs'
-import { FaSolidThumbsDown, FaSolidThumbsUp } from 'solid-icons/fa'
 import { Confirm } from '../components/Confirm'
 import { FaSolidLock } from 'solid-icons/fa'
+import Table, { TableColumn } from '../components/Table'
 
 const isFullGame = (item: Game | GameListItem): item is Game => {
   return 'users' in item && 'rounds' in item
@@ -119,54 +124,17 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
   )
 }
 
-type GameInviteCardProps = {
-  gameInvite: GameInvite
-  onInviteAccept: (gameInvite: GameInvite) => void
-  onInviteDecline: (gameInviteId: string) => void
-  onInviteClick?: (gameInvite: GameInvite) => void
-}
+const activeGamesColumns: TableColumn<Game>[] = [
+  { label: 'Name', key: 'name', maxWidth: '200px' },
+  { label: 'Players', key: 'users', render: (game) => `${game?.users.length} players` },
+  { label: 'Rounds', key: 'rounds', render: (game) => `${game?.rounds.length} rounds` },
+  { label: 'Created at', key: 'createdAt', render: (game) => DateTime.fromMillis(game!.createdAt).toLocaleString() },
+]
 
-const GameInviteCard = (props: GameInviteCardProps) => {
-  return (
-    <div
-      class="w-[80%] mx-auto relative group flex justify-between items-center bg-primary/10 hover:cursor-pointer hover:bg-primary/20 transition-all duration-300"
-      onClick={() => props.onInviteClick?.(props.gameInvite)}
-    >
-      <div class="flex flex-row gap-4 items-center  rounded-md p-4">
-        <BsEnvelopePaperHeart class="text-primary w-10 h-10" />
-        <div class="flex flex-col gap-2">
-          <span class="text-2xl font-bold">Game: {props.gameInvite.gameName}</span>
-          <span class="text-gray-400 text-sm">
-            Sent at {DateTime.fromISO(props.gameInvite.createdAt).toLocaleString()} by{' '}
-            {props.gameInvite.gameCreatorName}
-          </span>
-        </div>
-      </div>
-      <div>
-        <button
-          class="text-green-500 hover:text-green-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
-          onclick={(e) => {
-            e.stopPropagation()
-            props.onInviteAccept(props.gameInvite)
-          }}
-          title="Accept Invite"
-        >
-          <FaSolidThumbsUp class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
-        </button>
-        <button
-          class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in p-3 z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
-          onclick={(e) => {
-            e.stopPropagation()
-            props.onInviteDecline(props.gameInvite.id)
-          }}
-          title="Decline Invite"
-        >
-          <FaSolidThumbsDown class="min-w-0 min-h-0 group-hover:min-w-9 group-hover:min-h-9 transition-all duration-300" />
-        </button>
-      </div>
-    </div>
-  )
-}
+const columns: TableColumn<GameListItem>[] = [
+  { label: 'Name', key: 'name' },
+  { label: 'Description', key: 'description' },
+]
 
 const MyGames = () => {
   const navigate = useNavigate()
@@ -194,13 +162,45 @@ const MyGames = () => {
   const [historyGame, setHistoryGame] = createSignal<Game>()
   const [gameInvite, setGameInvite] = createSignal<GameInvite>()
 
-  const [inviteGameInfo] = createResource(gameInvite, async (invite) => {
-    if (!invite) return
-    const response = await getGame<Game[]>(`/${invite.gameId}`)
-    if (response.data) {
-      return response.data[0]!
-    }
-  })
+  const invitesColumns: TableColumn<GameInvite>[] = [
+    { label: 'Game', key: 'gameName' },
+    { label: 'Invited by', key: 'gameCreatorName' },
+    {
+      label: 'Status',
+      key: 'status',
+      render: (invite) => (
+        <div class="flex items-center gap-2">
+          <button
+            class="text-green-500 hover:text-green-500/50 transition-all duration-300 hover:cursor-pointer"
+            title="Accept Invite"
+            onClick={(e) => {
+              e.stopPropagation()
+              onInviteAccept(invite!)
+            }}
+          >
+            <IoCheckmarkCircleOutline class="w-6 h-6" />
+          </button>
+          <Confirm
+            title="Decline Invite"
+            message="Are you sure you want to decline this invite?"
+            onConfirm={() => onInviteDecline(invite!.id)}
+          >
+            <button
+              class="text-red-500 hover:text-red-500/50 transition-all duration-300 hover:cursor-pointer"
+              title="Decline Invite"
+            >
+              <IoCloseCircleOutline class="w-6 h-6" />
+            </button>
+          </Confirm>
+        </div>
+      ),
+    },
+    {
+      label: 'Created at',
+      key: 'createdAt',
+      render: (invite) => DateTime.fromISO(invite!.createdAt).toLocaleString(),
+    },
+  ]
 
   const [gameInvites, { mutate: setGameInvites }] = createResource(async () => {
     const response = await getGameInvites<GameInvite[]>()
@@ -239,6 +239,14 @@ const MyGames = () => {
     return [mockGame]
   })
 
+  const [inviteGameInfo] = createResource(gameInvite, async (invite) => {
+    if (!invite) return
+    const response = await getGame<Game[]>(`/${invite.gameId}`)
+    if (response.data) {
+      return response.data[0]!
+    }
+  })
+
   const createGameTemplate = async () => {
     if (!newGameTemplate()) return
 
@@ -257,7 +265,7 @@ const MyGames = () => {
   }
 
   const onToggleCreateNewGameTemplate = async () => {
-    setIsCreatingNewGameTemplate(!isCreatingNewGameTemplate())
+    setIsCreatingNewGameTemplate((prev) => !prev)
   }
 
   const onTemplateDelete = async (gameId: string) => {
@@ -347,79 +355,38 @@ const MyGames = () => {
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
         <div class="flex flex-row gap-6 w-full">
-          <div class={`${widgetStyles.base} mt-12 md:min-w-[25%] p-4`}>
-            <span class="text-3xl font-bold text-center">
-              Active Games {games() && games()!.length > 0 ? `(${games()!.length})` : ''}
-            </span>
-            <div class="flex justify-center items-center">
-              <Show
-                when={games() && games()!.length > 0}
-                fallback={<span class="text-gray-400 text-2xl text-center p-4">No Games</span>}
-              >
-                <Carousel
-                  items={
-                    games()?.map((game) => (
-                      <div class="w-[80%] mx-auto" onClick={() => setEditingGame(game)}>
-                        {<GameCard {...game} />}
-                      </div>
-                    )) ?? []
-                  }
-                />
-              </Show>
-            </div>
-          </div>
-          <div class={`${widgetStyles.base} mt-12 md:min-w-[25%] p-4`}>
-            <span class="text-3xl font-bold text-center">
-              Game Invites {gameInvites() && gameInvites()!.length > 0 ? `(${gameInvites()!.length})` : ''}
-            </span>
-            <div class="flex justify-center items-center [&>*:first-child]:p-4">
-              <Show
-                when={gameInvites() && gameInvites()!.length > 0}
-                fallback={<span class="text-gray-400 text-2xl text-center p-4">No Invites</span>}
-              >
-                <Carousel
-                  items={
-                    gameInvites()?.map((gameInvite) => (
-                      <GameInviteCard
-                        gameInvite={gameInvite}
-                        onInviteAccept={onInviteAccept}
-                        onInviteDecline={onInviteDecline}
-                        onInviteClick={setGameInvite}
-                      />
-                    )) ?? []
-                  }
-                />
-              </Show>
-            </div>
-          </div>
-          <div class={`${widgetStyles.base} mt-12 w-full`}>
-            <div class="flex justify-between items-center">
-              <span class="text-2xl font-bold ">Created Templates</span>
+          <Table
+            columns={activeGamesColumns}
+            data={games() || []}
+            name="Active Games"
+            fallbackTitle="No Active Games"
+            fallbackDetail="You haven't started any games yet."
+            onRowClick={(game) => setEditingGame(game)}
+          />
+          <Table
+            columns={invitesColumns}
+            data={gameInvites() || []}
+            name="Pending Invites"
+            fallbackTitle="No Invites"
+            fallbackDetail="You haven't received any invites yet."
+          />
+          <Table
+            columns={columns}
+            minWidth="min-w-[400px]"
+            data={gameTemplates() || []}
+            name="Created Templates"
+            onRowClick={(template) => onTemplateClick(template.id)}
+            fallbackTitle="No Templates Created"
+            fallbackDetail="You haven't created any templates yet."
+            renderButton={() => (
               <button
-                class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md"
+                class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md z-[51]"
                 onClick={onToggleCreateNewGameTemplate}
-                classList={{ 'bg-red-600/70 hover:bg-red-600/50': isCreatingNewGameTemplate() }}
               >
-                {isCreatingNewGameTemplate() ? 'Cancel Creating' : 'Create New Template'}
+                Create New Template
               </button>
-            </div>
-            <Show
-              when={gameTemplates() && gameTemplates()!.length > 0}
-              fallback={<span class="text-gray-400 text-2xl text-center p-4">No Templates Created</span>}
-            >
-              <div class="flex flex-wrap gap-6 items-center flex-1">
-                <For each={gameTemplates()}>
-                  {(game) => (
-                    <GameTemplateCard
-                      game={game}
-                      onDelete={() => onTemplateDelete(game.id)}
-                      onClick={() => onTemplateClick(game.id)}
-                    />
-                  )}
-                </For>
-              </div>
-            </Show>
-          </div>
+            )}
+          />
         </div>
         <div class={`${widgetStyles.base} mt-12 w-full`}>
           <span class="text-2xl font-bold">History</span>

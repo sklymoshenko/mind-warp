@@ -78,10 +78,11 @@ type GameClient struct {
 	CurrentQuestion  string                  `json:"currentQuestion"`
 	CurrentUser      string                  `json:"currentUser"`
 	IsFinished       bool                    `json:"isFinished"`
-	Winner           UserClient              `json:"winner,omitempty"`
+	Winner           UserClient              `json:"winner"`
 	FinishDate       int64                   `json:"finishDate,omitempty"`
 	CreatorID        string                  `json:"creatorId"`
 	UnconfirmedUsers []UnconfirmedUserClient `json:"unconfirmedUsers,omitempty"`
+	CreatedAt        int64                   `json:"createdAt"`
 }
 
 type GameInviteClient struct {

@@ -34,7 +34,7 @@ func getGameByFilter(filterType string) string {
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
 			g.current_round_id, g.current_question_id, g.current_user_id,
 			g.finish_date,
-			w.id as winner_id, w.name as winner_name,
+			w.id as winner_id, w.name as winner_name,  g.created_at,
 			r.id, r.name, r.time_settings, r.rank_settings, r.position,
 			t.id, t.name, t.position,
 			q.id, q.text, q.answer, q.points
@@ -378,6 +378,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		gameFinishDate        pgtype.Timestamp
 		gameWinnerName        pgtype.Text
 		gameWinnerID          pgtype.UUID
+		gameCreatedAt         pgtype.Timestamp
 
 		roundID       pgtype.UUID
 		roundName     pgtype.Text
@@ -412,7 +413,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		err := rows.Scan(
 			&gameID, &gameName, &gameIsFinished, &gameCreatorID, &gameTemplateID,
 			&gameCurrentRoundID, &gameCurrentQuestionID, &gameCurrentUserID,
-			&gameFinishDate, &gameWinnerID, &gameWinnerName,
+			&gameFinishDate, &gameWinnerID, &gameWinnerName, &gameCreatedAt,
 			&roundID, &roundName, &roundTimeJSON, &roundRankJSON, &roundPosition,
 			&themeID, &themeName, &themePosition,
 			&questionID, &questionText, &questionAnswer, &questionPoints,
@@ -445,6 +446,7 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 				Rounds:     []types.RoundClient{},
 				CreatorID:  uuidToString(gameCreatorID),
 				TemplateID: uuidToString(gameTemplateID),
+				CreatedAt:  gameCreatedAt.Time.UnixMilli(),
 			}
 
 			if gameFinishDate.Status == pgtype.Present {

@@ -78,14 +78,14 @@ function SearchComponent<T extends SearchItem>(props: SearchProps<T>) {
   }
 
   return (
-    <div class="text-primary bg-void relative my-2">
+    <div class="text-white bg-void relative my-2">
       <input
         type="text"
         disabled={props.disabled}
         placeholder={props.placeholder || 'Search...'}
         value={searchTerm()}
         onInput={(e) => setSearchTerm(e.target.value)}
-        class="input-colors w-full outline-1 outline-primary mb-2"
+        class="input-colors w-full outline-1 outline-primary mb-2 text-white!"
         onFocus={() => searchTerm() && setIsResultsOpen(true)}
         onBlur={() => setTimeout(() => setIsResultsOpen(false), 100)}
       />

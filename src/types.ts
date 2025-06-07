@@ -64,6 +64,7 @@ export type Game = {
   isPublic?: boolean
   creatorId: User['id']
   templateId?: GameTemplate['id']
+  createdAt: number
 }
 
 export type GameTemplate = Omit<

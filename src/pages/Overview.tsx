@@ -1,20 +1,19 @@
-import { createResource, createSignal, For } from 'solid-js'
+import { createResource, createSignal, Component } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { TbSettings, TbDeviceGamepad2 } from 'solid-icons/tb'
 import { RiDocumentFileList3Fill, RiUserFacesSpyLine } from 'solid-icons/ri'
 import { Game, GameTemplate, User } from '../types'
-import { BiRegularTrophy } from 'solid-icons/bi'
-import { RiUserFacesOpenArmLine } from 'solid-icons/ri'
-import { IoDice } from 'solid-icons/io'
 import { useNavigate } from '@solidjs/router'
-import { widgetStyles } from '../utils'
 import OverlayComponent from '../components/OverlayComponent'
-import GameTemplateInfo from '../components/GameInfo'
 import CreateGame from './CreateGame'
 import GameInfo from '../components/GameInfo'
 import { SearchItem } from '../components/Search'
 import SearchComponent from '../components/Search'
+import Table from '../components/Table'
+import { TableColumn } from '../components/Table'
+import { template } from 'solid-js/web'
+
 type OverviewProps = {}
 
 const settingItemStyles = {
@@ -23,6 +22,24 @@ const settingItemStyles = {
     'text-bold text-2xl opacity-0 group-hover:opacity-100 transition-all duration-400 whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-xs',
   icon: 'w-7 h-7 flex-shrink-0',
 }
+
+// const leaderboardColumns: TableColumn<User>[] = [
+//   {
+//     label: 'Name',
+//     key: 'name',
+//     render: (user) => (
+//       <div class="flex items-center gap-2">
+//         <RiUserFacesSpyLine class="w-6 h-6 text-primary" /> <span>{user?.name}</span>
+//       </div>
+//     ),
+//   },
+//   { label: 'Score', key: 'score', render: (user) => <span>{user?.score || 0}</span> },
+// ]
+
+const columns: TableColumn<GameTemplate>[] = [
+  { label: 'Name', key: 'name' },
+  { label: 'Description', key: 'description' },
+]
 
 const Overview = (props: OverviewProps) => {
   const { user, logout } = useAuth()
@@ -43,7 +60,12 @@ const Overview = (props: OverviewProps) => {
 
   const [users] = createResource(async () => {
     const response = await get<User[]>()
-    return response.data
+    return (
+      (response.data?.map((user) => ({
+        ...user,
+        score: 500,
+      })) as User[]) || []
+    )
   })
 
   const [gameTemplates] = createResource(async () => {
@@ -123,48 +145,17 @@ const Overview = (props: OverviewProps) => {
           </div>
         </div>
         <div class="flex gap-4 items-start w-full">
-          <div class={widgetStyles.base + ' w-1/2 px-4! pb-4!'}>
-            <h1 class="text-2xl font-bold">Popular</h1>
-            <div class="flex flex-wrap justify-start items-start gap-4 ">
-              <For each={gameTemplates()}>
-                {(gameTemplate) => {
-                  return (
-                    <div
-                      class="flex items-center gap-2 hover:bg-primary/10 transition-all duration-300 rounded-md p-2 hover:cursor-pointer group"
-                      onclick={() => getGameInfo(gameTemplate.id)}
-                    >
-                      <IoDice class="w-10 h-10 text-primary/50 group-hover:animate-spin" />
-                      <div class="flex flex-col gap-1">
-                        <span>{gameTemplate.name}</span>
-                        <span class="text-sm text-primary/50">{gameTemplate.description}</span>
-                      </div>
-                    </div>
-                  )
-                }}
-              </For>
-            </div>
+          <div class="w-[40%]">
+            <Table
+              columns={columns}
+              data={gameTemplates() || []}
+              name="Game Templates"
+              onRowClick={(template) => getGameInfo(template.id)}
+            />
           </div>
-          <div class={widgetStyles.base + ' w-1/3'}>
-            <h1 class="text-2xl font-bold">Leaderboard</h1>
-            <div class="flex flex-wrap gap-4 items-center">
-              <For each={users()}>
-                {(user, i) => {
-                  return (
-                    <div class="flex items-center gap-2">
-                      <RiUserFacesOpenArmLine
-                        class="w-10 h-10"
-                        classList={{ 'text-primary': i() === 0, 'text-primary/30': i() !== 0 }}
-                      />
-                      <div class="flex flex-col gap-1">
-                        <span class="text-2xl">{user.name}</span>
-                        <span class="text-sm text-primary/50">{500}</span>
-                      </div>
-                    </div>
-                  )
-                }}
-              </For>
-            </div>
-          </div>
+          {/* <div class="w-fit">
+            <Table columns={leaderboardColumns} data={users() || []} name="Leaderboard" />
+          </div> */}
         </div>
         <OverlayComponent isOpen={!!gameTemplateId() && !!gameTemplate()} onClose={() => setGameTemplateId(undefined)}>
           <GameInfo
