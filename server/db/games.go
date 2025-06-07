@@ -43,6 +43,8 @@ func getGameByFilter(filterType string) string {
 		LEFT JOIN
 			users w ON g.winner_id = w.id
 		%s
+		ORDER BY
+			r.position, t.position, q.points, g.created_at DESC;
 	`
 
 	filters := `
@@ -54,8 +56,6 @@ func getGameByFilter(filterType string) string {
 		questions q ON t.id = q.theme_id
 	WHERE
 		g.id = $1
-	ORDER BY
-		r.position, t.position, q.points;
 	`
 
 	switch filterType {
@@ -70,7 +70,7 @@ func getGameByFilter(filterType string) string {
 		WHERE
 			g.creator_id = $1
 		ORDER BY
-			r.position, t.position, q.points;
+			g.created_at DESC;
 		`
 	case "user":
 		filters = `
@@ -84,8 +84,6 @@ func getGameByFilter(filterType string) string {
 			questions q ON t.id = q.theme_id
 		WHERE
 			g.is_finished = false
-		ORDER BY
-			r.position, t.position, q.points;
 		`
 	case "user_finished":
 		filters = `
@@ -99,8 +97,6 @@ func getGameByFilter(filterType string) string {
 			questions q ON t.id = q.theme_id
 		WHERE
 			g.is_finished = true
-		ORDER BY
-			r.position, t.position, q.points;
 		`
 	case "public_unfinished":
 		filters = `
@@ -112,8 +108,6 @@ func getGameByFilter(filterType string) string {
 			questions q ON t.id = q.theme_id
 		WHERE
 			g.is_public = true AND g.is_finished = false
-		ORDER BY
-			r.position, t.position, q.points;
 		`
 	case "public_finished":
 		filters = `
@@ -125,8 +119,6 @@ func getGameByFilter(filterType string) string {
 			questions q ON t.id = q.theme_id
 		WHERE
 			g.is_public = true AND g.is_finished = true
-		ORDER BY
-			r.position, t.position, q.points;
 		`
 	case "all":
 		filters = "1=1"

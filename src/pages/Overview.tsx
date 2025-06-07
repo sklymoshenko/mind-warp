@@ -69,7 +69,7 @@ const Overview = (props: OverviewProps) => {
   })
 
   const [gameTemplates] = createResource(async () => {
-    const response = await getGameTemplatesList<Game[]>()
+    const response = await getGameTemplatesList<GameTemplate[]>()
     return response.data
   })
 
@@ -145,9 +145,10 @@ const Overview = (props: OverviewProps) => {
           </div>
         </div>
         <div class="flex gap-4 items-start w-full">
-          <div class="w-[40%]">
+          <div class="w-[40%] mx-auto">
             <Table
               columns={columns}
+              loading={gameTemplates.loading}
               data={gameTemplates() || []}
               name="Game Templates"
               onRowClick={(template) => getGameInfo(template.id)}

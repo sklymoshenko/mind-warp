@@ -1,7 +1,7 @@
 import { createResource, For, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
 import { Game, GameInvite, GameListItem } from '../types'
-import { DateTime } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 import { A, useNavigate } from '@solidjs/router'
 import { widgetStyles } from '../utils'
 import CreateGame from './CreateGame'
@@ -126,14 +126,56 @@ const GameTemplateCard = (props: GameTemplateCardProps) => {
 
 const activeGamesColumns: TableColumn<Game>[] = [
   { label: 'Name', key: 'name', maxWidth: '200px' },
-  { label: 'Players', key: 'users', render: (game) => `${game?.users.length} players` },
+  {
+    label: 'Players',
+    key: 'users',
+    render: (game) => (
+      <span title={game?.unconfirmedUsers?.length ? `Pending ${game?.unconfirmedUsers?.length}` : ''}>
+        {game?.unconfirmedUsers?.length ? (
+          <span class="text-orange-300">
+            {game?.users.length}/{(game?.unconfirmedUsers?.length || 0) + (game?.users.length || 0)} players
+          </span>
+        ) : (
+          <span>{game?.users.length} players</span>
+        )}
+      </span>
+    ),
+  },
   { label: 'Rounds', key: 'rounds', render: (game) => `${game?.rounds.length} rounds` },
-  { label: 'Created at', key: 'createdAt', render: (game) => DateTime.fromMillis(game!.createdAt).toLocaleString() },
+  {
+    label: 'Created at',
+    key: 'createdAt',
+    render: (game) => DateTime.fromMillis(game!.createdAt).toFormat('MMM d, yyyy h:mm a'),
+  },
 ]
 
 const columns: TableColumn<GameListItem>[] = [
   { label: 'Name', key: 'name' },
   { label: 'Description', key: 'description' },
+]
+
+const historyColumns: TableColumn<Game>[] = [
+  { label: 'Name', key: 'name' },
+  { label: 'Winner', key: 'winner', render: (game) => <span class="text-green-500">{game?.winner?.name}</span> },
+  { label: 'Players', key: 'users', render: (game) => `${game?.users.length} players` },
+  { label: 'Rounds', key: 'rounds', render: (game) => `${game?.rounds.length} rounds` },
+  {
+    label: 'Duration',
+    key: 'isFinished',
+    render: (game) => {
+      return Duration.fromMillis(game!.finishDate! - game!.createdAt).toFormat('hh:mm:ss')
+    },
+  },
+  {
+    label: 'Created at',
+    key: 'createdAt',
+    render: (game) => DateTime.fromMillis(game!.createdAt).toFormat('MMM d, yyyy h:mm a'),
+  },
+  {
+    label: 'Finished at',
+    key: 'finishDate',
+    render: (game) => DateTime.fromMillis(game!.finishDate!).toFormat('MMM d, yyyy h:mm a'),
+  },
 ]
 
 const MyGames = () => {
@@ -183,7 +225,9 @@ const MyGames = () => {
           <Confirm
             title="Decline Invite"
             message="Are you sure you want to decline this invite?"
-            onConfirm={() => onInviteDecline(invite!.id)}
+            onConfirm={() => {
+              onInviteDecline(invite!.id)
+            }}
           >
             <button
               class="text-red-500 hover:text-red-500/50 transition-all duration-300 hover:cursor-pointer"
@@ -198,7 +242,7 @@ const MyGames = () => {
     {
       label: 'Created at',
       key: 'createdAt',
-      render: (invite) => DateTime.fromISO(invite!.createdAt).toLocaleString(),
+      render: (invite) => DateTime.fromISO(invite!.createdAt).toFormat('MMM d, yyyy h:mm a'),
     },
   ]
 
@@ -354,41 +398,62 @@ const MyGames = () => {
       </div>
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
-        <div class="flex flex-row gap-6 w-full">
+        <div class="flex flex-row gap-6 w-full mt-10 justify-between">
+          <div class="flex h-[25rem]">
+            <Table
+              columns={columns}
+              minWidth="min-w-[600px]"
+              loading={gameTemplates.loading}
+              data={gameTemplates() || []}
+              name="Created Templates"
+              onRowClick={(template) => onTemplateClick(template.id)}
+              fallbackTitle="No Templates Created"
+              fallbackDetail="You haven't created any templates yet."
+              renderButton={() => (
+                <button
+                  class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md z-[51]"
+                  onClick={onToggleCreateNewGameTemplate}
+                >
+                  Create New Template
+                </button>
+              )}
+            />
+          </div>
+
+          <div class="flex h-[25rem]">
+            <Table
+              columns={activeGamesColumns}
+              loading={games.loading}
+              data={games() || []}
+              name="Active Games"
+              fallbackTitle="No Active Games"
+              fallbackDetail="You haven't started any games yet."
+              onRowClick={(game) => setEditingGame(game)}
+            />
+          </div>
+          <div class="flex h-[25rem]">
+            <Table
+              columns={invitesColumns}
+              data={gameInvites() || []}
+              name="Pending Invites"
+              fallbackTitle="No Invites"
+              fallbackDetail="You haven't received any invites yet."
+              disableOverflow={true}
+            />
+          </div>
+        </div>
+        <div class="flex h-[25rem] w-2/3 mx-auto mt-10">
           <Table
-            columns={activeGamesColumns}
-            data={games() || []}
-            name="Active Games"
-            fallbackTitle="No Active Games"
-            fallbackDetail="You haven't started any games yet."
-            onRowClick={(game) => setEditingGame(game)}
-          />
-          <Table
-            columns={invitesColumns}
-            data={gameInvites() || []}
-            name="Pending Invites"
-            fallbackTitle="No Invites"
-            fallbackDetail="You haven't received any invites yet."
-          />
-          <Table
-            columns={columns}
-            minWidth="min-w-[400px]"
-            data={gameTemplates() || []}
-            name="Created Templates"
-            onRowClick={(template) => onTemplateClick(template.id)}
-            fallbackTitle="No Templates Created"
-            fallbackDetail="You haven't created any templates yet."
-            renderButton={() => (
-              <button
-                class="bg-accent text-white hover:bg-accent/80 transition-all duration-300 hover:cursor-pointer px-2 py-1 rounded-md z-[51]"
-                onClick={onToggleCreateNewGameTemplate}
-              >
-                Create New Template
-              </button>
-            )}
+            columns={historyColumns}
+            loading={gamesHistory.loading}
+            data={gamesHistory() || []}
+            name="History"
+            fallbackTitle="No Games History"
+            fallbackDetail="You haven't finished any games yet."
+            onRowClick={(game) => setHistoryGame(game)}
           />
         </div>
-        <div class={`${widgetStyles.base} mt-12 w-full`}>
+        {/* <div class={`${widgetStyles.base} mt-12 w-full`}>
           <span class="text-2xl font-bold">History</span>
           <Show
             when={gamesHistory() && gamesHistory()!.length > 0}
@@ -400,7 +465,7 @@ const MyGames = () => {
               </For>
             </div>
           </Show>
-        </div>
+        </div> */}
         <OverlayComponent
           isOpen={isCreatingNewGameTemplate()}
           onClose={() => {
