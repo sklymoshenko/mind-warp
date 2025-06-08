@@ -73,6 +73,13 @@ const AccordionTitle = (props: AccordionTitleProps) => {
   )
 }
 
+const shuffleText = (text: string) => {
+  return text
+    .split('')
+    .sort(() => Math.random() - 0.5)
+    .join('')
+}
+
 const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   const navigate = useNavigate()
   const { get: getGameTemplateInfo } = useApi('game_templates/info')
@@ -307,7 +314,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
   }
 
   return (
-    <div class="flex flex-col w-full">
+    <div class="flex flex-col w-[90%] lg:w-full">
       <div class="flex flex-col gap-4">
         <div class="flex items-center w-full justify-between">
           <span class="text-bold text-5xl">{entity()?.name}</span>
@@ -322,20 +329,20 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
         </div>
         <span class="text-2xl text-gray-500">{entity()?.description}</span>
       </div>
-      <div class="flex items-center gap-6 w-full my-4">
-        <span class="text-white text-xl">Rounds: {entity()?.rounds.length}</span>
-        <span class="text-white text-xl">Themes: {themesCount()}</span>
-        <span class="text-white text-xl">Questions: {questionsCount()}</span>
-        <span class="text-white text-xl">Participants: {users().length}</span>
+      <div class="flex items-center gap-6 w-full my-1 lg:my-4">
+        <span class="text-white text-sm lg:text-xl">Rounds: {entity()?.rounds.length}</span>
+        <span class="text-white text-sm lg:text-xl">Themes: {themesCount()}</span>
+        <span class="text-white text-sm lg:text-xl">Questions: {questionsCount()}</span>
+        <span class="text-white text-sm lg:text-xl">Participants: {users().length}</span>
       </div>
       <Show when={props.type === 'game' && unconfirmedUsers().length > 0}>
-        <div class="flex items-center w-full my-4 gap-4">
-          <span class="text-white text-xl">Pending Invites: {invitesCount().pending}</span>
-          <span class="text-white text-xl">Declined: {invitesCount().declined}</span>
+        <div class="flex items-center w-full my-1 lg:my-4 gap-4">
+          <span class="text-white text-sm lg:text-xl">Pending Invites: {invitesCount().pending}</span>
+          <span class="text-white text-sm lg:text-xl">Declined: {invitesCount().declined}</span>
         </div>
       </Show>
       <Show when={winner()}>
-        <div class="flex items-center w-full my-4 gap-4">
+        <div class="flex items-center w-full my-1 lg:my-4 gap-4">
           <span class="text-white text-xl">Winner: {winner()}</span>
         </div>
       </Show>
@@ -385,17 +392,11 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
                       <For each={theme.questions}>
                         {(question) => (
                           <div class="flex flex-col gap-2">
-                            <p
-                              class="text-lg text-gray-500 transition-all duration-300"
-                              classList={{ 'blur-[4px]': !showQuestions()[round.id] }}
-                            >
-                              {question.text || 'No question text'}
+                            <p class="text-lg text-gray-500 transition-all duration-300">
+                              {!showQuestions()[round.id] ? 'Question is hidden' : question.text || 'No question text'}
                             </p>
-                            <p
-                              class="text-base text-gray-500 transition-all duration-300"
-                              classList={{ 'blur-[4px]': !showAnswers()[round.id] }}
-                            >
-                              {question.answer || 'No answer'}
+                            <p class="text-base text-gray-500 transition-all duration-300">
+                              {!showAnswers()[round.id] ? 'Answer is hidden' : question.answer || 'No answer'}
                             </p>
                           </div>
                         )}
@@ -408,14 +409,14 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
           )}
         </For>
         <Show when={props.type === 'game'}>
-          <div class="flex gap-2">
+          <div class="flex justify-between w-full">
             <Show when={!props.nonEditable}>
               <Confirm
                 title="Finish Game"
                 message="Are you sure you want to finish this game?"
                 onConfirm={() => onGameFinish()}
               >
-                <button class="p-2 w-full text-primary rounded-md text-xl font-bold hover:cursor-pointer hover:text-primary/70 hover:bg-primary/10 transition-colors duration-300">
+                <button class="p-2 mx-auto text-primary rounded-md text-xl font-bold hover:cursor-pointer hover:text-primary/70 hover:bg-primary/10 transition-colors duration-300">
                   Finish Game
                 </button>
               </Confirm>
@@ -424,7 +425,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
                 message="Are you sure you want to remove this game?"
                 onConfirm={() => onGameRemove()}
               >
-                <button class="p-2 w-full text-red-500 rounded-md text-xl font-bold hover:cursor-pointer hover:text-red-500/70 hover:bg-red-500/10 transition-colors duration-300">
+                <button class="p-2 mx-auto text-red-500 rounded-md text-xl font-bold hover:cursor-pointer hover:text-red-500/70 hover:bg-red-500/10 transition-colors duration-300">
                   Remove Game
                 </button>
               </Confirm>

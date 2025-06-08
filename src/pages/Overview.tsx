@@ -1,18 +1,15 @@
-import { createResource, createSignal, Component } from 'solid-js'
+import { createResource, createSignal } from 'solid-js'
 import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { TbSettings, TbDeviceGamepad2 } from 'solid-icons/tb'
 import { RiDocumentFileList3Fill, RiUserFacesSpyLine } from 'solid-icons/ri'
-import { Game, GameTemplate, User } from '../types'
+import { Game, GameTemplate } from '../types'
 import { useNavigate } from '@solidjs/router'
 import OverlayComponent from '../components/OverlayComponent'
 import CreateGame from './CreateGame'
 import GameInfo from '../components/GameInfo'
-import { SearchItem } from '../components/Search'
-import SearchComponent from '../components/Search'
 import Table from '../components/Table'
 import { TableColumn } from '../components/Table'
-import { template } from 'solid-js/web'
 
 type OverviewProps = {}
 
@@ -124,7 +121,7 @@ const Overview = (props: OverviewProps) => {
 
   return (
     <>
-      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
+      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[51]">
         <button
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white hover:cursor-pointer transition-all duration-300 "
           onclick={handleLogout}
@@ -157,7 +154,7 @@ const Overview = (props: OverviewProps) => {
           </button>
         </div>
         <div class="flex gap-4 items-start w-full h-full">
-          <div class="w-[50%] mx-auto h-full min-h-[30rem]">
+          <div class="min-w-full md:min-w-[50%] mx-auto md:min-h-[80%] md:h-[80%] 2xl:h-full 2xl:min-h-[30rem]">
             <Table
               columns={columns}
               loading={gameTemplates.loading}

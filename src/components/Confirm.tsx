@@ -43,16 +43,18 @@ export const Confirm = (props: ConfirmProps) => {
     onCleanup(() => document.removeEventListener('mousedown', handleClick))
   })
 
+  const isMobile = () => window.innerWidth < 640 // or use a more robust check
+
   const calculatePosition = () => {
     if (dialogRef && triggerRef) {
       const dialogRect = dialogRef.getBoundingClientRect()
       const triggerRect = triggerRef.getBoundingClientRect()
 
-      // Default: position above, centered horizontally
       let left = triggerRect.left + triggerRect.width / 2 - dialogRect.width / 2
-      let top = triggerRect.top - dialogRect.height - 12 // 12px gap above
+      let top
 
-      // If not enough space above, show below
+      // Default: position above, centered horizontally
+      top = triggerRect.top - dialogRect.height - 12
       if (top < 0) {
         top = triggerRect.bottom + 12
         setArrowDirection('top')
@@ -75,7 +77,7 @@ export const Confirm = (props: ConfirmProps) => {
     <div class="relative w-full flex items-center">
       {/* Trigger */}
       <div
-        class="flex"
+        class="flex w-full"
         ref={triggerRef}
         onClick={(e) => {
           e.stopPropagation()

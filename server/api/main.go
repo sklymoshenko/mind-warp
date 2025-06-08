@@ -15,7 +15,7 @@ type Server struct {
 
 func NewServer() *Server {
 	return &Server{
-		port:        ":8080",
+		port:        "0.0.0.0:8080",
 		router:      gin.Default(),
 		authService: NewAuthService(),
 		Db:          db.CreateDB(),

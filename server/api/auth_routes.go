@@ -122,9 +122,9 @@ func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
 		accessToken,
 		int(accessTokenTTL.Seconds()),
 		"/",
-		"",   // domain, empty for same domain
-		true, // secure
-		true, // httpOnly
+		"",                               // domain, empty for same domain
+		os.Getenv("ENV") == "production", // secure
+		true,                             // httpOnly
 	)
 
 	c.SetCookie(
@@ -132,9 +132,9 @@ func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
 		refreshToken,
 		int(refreshTokenTTL.Seconds()),
 		"/auth/refresh",
-		"",   // domain
-		true, // secure
-		true, // httpOnly
+		"",                               // domain
+		os.Getenv("ENV") == "production", // secure
+		true,                             // httpOnly
 	)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login successful"})

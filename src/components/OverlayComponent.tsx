@@ -18,7 +18,7 @@ const OverlayComponent = (props: OverlayComponentProps) => {
 
   return (
     <div
-      class="fixed inset-0 flex items-center justify-center backdrop-blur-sm transition-all duration-300 ease-out"
+      class="fixed inset-0 flex items-center justify-center backdrop-blur-sm transition-all duration-300 ease-out overflow-y-auto"
       onClick={handleOverlayClick}
       aria-modal="true"
       role="dialog"

@@ -24,7 +24,7 @@ const Login = () => {
     if (error) {
       setError(error)
       toast.custom((t) => <ErrorToast toast={t} error={error} title="Login failed" />, {
-        duration: 500000,
+        duration: 15000,
       })
       setIsLoading(false)
       return

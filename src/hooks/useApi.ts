@@ -5,7 +5,7 @@ export const useApi = (url: string) => {
   const [isLoading, setIsLoading] = createSignal(false)
 
   const createBaseUrl = () => {
-    return `http://localhost:5173/api/${url}`
+    return `/api/${url}`
   }
 
   const handleError = async (response: Response) => {
