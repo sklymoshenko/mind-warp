@@ -95,15 +95,15 @@ export default function GamePreview(props: GamePreviewProps) {
           scores={scores()}
         />
       </Show>
-      <div class="flex flex-col justify-between h-[90%] sm:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
-        <div class="mx-auto flex gap-12 md:flex-nowrap flex-wrap max-w-full sm:max-w-none">
+      <div class="flex flex-col justify-between h-full max-w-full sm:max-w-none overflow-y-auto max-h-[90dvh] md:max-h-[90%] lg:max-h-[90%]">
+        <div class="mx-auto flex gap-12 lg:flex-nowrap flex-wrap max-w-full sm:max-w-none mb-10">
           <For each={props.game.rounds}>
             {(round, i) => {
               return (
-                <div class="flex flex-col gap-4 w-[90%] mx-auto lg:w-auto lg:mx-0">
+                <div class="flex flex-col gap-4 w-[90%] mx-auto lg:w-auto lg:mx-0 lg:h-full">
                   <h1 class="text-primary font-semibold text-xl sm:text-2xl">{round.name}</h1>
                   <div
-                    class="flex justify-between min-w-[250px] w-full h-fit border border-primary/20 p-4 text-white rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
+                    class="flex justify-between min-w-[250px] w-full h-fit border border-primary/20 p-4 text-white rounded-md hover:-translate-y-1  hover:cursor-pointer transition-all duration-300 lg:flex-grow"
                     onclick={() => onRoundClick(round)}
                   >
                     <div class="flex flex-col lg:w-[45%]">
@@ -151,7 +151,7 @@ export default function GamePreview(props: GamePreviewProps) {
           title="Finish Game"
           message="Are you sure you want to finish the game?"
         >
-          <button class="mx-auto w-[90%] sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
+          <button class=" mx-auto w-[90%] sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
             Finish
           </button>
         </Confirm>

@@ -27,7 +27,7 @@ const OverlayComponent = (props: OverlayComponentProps) => {
         'animate-slide-down pointer-events-auto z-[51]': props.isOpen,
       }}
     >
-      <div class="flex flex-col min-w-[90%] sm:min-w-[500px] items-center z-[52]">
+      <div class="flex flex-col min-w-[90%] sm:min-w-[500px] items-center z-[52] max-h-[90%] overflow-y-auto px-2">
         <div class="flex flex-col items-center justify-center w-full" onClick={stopPropagation}>
           <Show when={props.isOpen}>{props.children}</Show>
         </div>

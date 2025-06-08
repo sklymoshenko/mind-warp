@@ -77,7 +77,7 @@ const TableCardSkeleton = (props: { columns: TableColumn<any>[]; rows: number })
 const DefaultTableEmptyState = (props: { columns: TableColumn<any>[]; title?: string; detail?: string }) => {
   return (
     <tr>
-      <td colspan={props.columns.length} class="h-full">
+      <td colspan={props.columns.length} class="h-full p-4">
         <div class="flex flex-col items-center justify-center h-full text-gray-400">
           <TiCancel class="w-20 h-20 mb-2" />
           <p class="text-lg font-medium">{props.title || 'No data available'}</p>
@@ -301,7 +301,7 @@ const Table = <T,>(props: TableProps<T>) => {
         </Show>
         <Show when={props.renderButton}>{props.renderButton!()}</Show>
       </div>
-      <Show when={props.onSearch}>
+      <Show when={props.onSearch && props.data.length > 0}>
         <input
           type="text"
           class="px-3 py-2 rounded-md border border-primary/30 bg-void text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
@@ -316,13 +316,15 @@ const Table = <T,>(props: TableProps<T>) => {
       <Show when={!isMobile()} fallback={<CardView {...props} pageSize={pageSize} />}>
         <TableView {...props} pageSize={pageSize} />
       </Show>
-      <Pagination
-        currentPage={currentPage()}
-        totalPages={totalPages()}
-        pageSize={pageSize}
-        onPageChange={handlePageChange}
-        totalItems={props.totalItems || props.data.length}
-      />
+      <Show when={props.data.length > 0}>
+        <Pagination
+          currentPage={currentPage()}
+          totalPages={totalPages()}
+          pageSize={pageSize}
+          onPageChange={handlePageChange}
+          totalItems={props.totalItems || props.data.length}
+        />
+      </Show>
     </div>
   )
 }

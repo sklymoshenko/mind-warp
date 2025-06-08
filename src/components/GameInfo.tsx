@@ -355,6 +355,7 @@ const GameInfo = <T extends GameTemplate | Game>(props: GameInfoProps<T>) => {
           onSelect={onUserSelect}
           defaultSelected={userSelectedItems()}
           disabled={props.nonEditable || props.disableSearch}
+          hideSearch={props.nonEditable || props.disableSearch}
         />
       </div>
       <Show when={!props.nonEditable}>

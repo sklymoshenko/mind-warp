@@ -565,8 +565,8 @@ const MyGames = () => {
       </div>
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
-        <div class="flex gap-6 w-full mt-10 flex-col 2xl:flex-row justify-between">
-          <div class="flex max-h-[35rem] 2xl:w-[50%]">
+        <div class="flex gap-6 w-full mt-10 flex-col justify-between">
+          <div class="flex max-h-[35rem] w-full">
             <Table
               columns={activeGamesColumns}
               loading={games.loading}
@@ -582,8 +582,8 @@ const MyGames = () => {
               searchPlaceholder="Search Active Games"
             />
           </div>
-          <div class="flex flex-col gap-4 lg:gap-0 lg:flex-row justify-between">
-            <div class="flex max-h-[35rem] md:w-[60%] 2xl:w-auto">
+          <div class="flex flex-col gap-4 lg:gap-0 xl:flex-row justify-between">
+            <div class="flex max-h-[35rem] w-full xl:w-[50%]">
               <Table
                 columns={columns}
                 minWidth="min-w-[600px]"
@@ -608,7 +608,7 @@ const MyGames = () => {
                 searchPlaceholder="Search Created Templates"
               />
             </div>
-            <div class="flex max-h-[35rem] md:w-[35%] 2xl:w-auto">
+            <div class="flex max-h-[35rem] w-full xl:w-[49%] mt-10 xl:mt-0">
               <Table
                 columns={invitesColumns}
                 data={gameInvites() || []}

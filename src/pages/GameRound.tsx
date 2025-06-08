@@ -156,7 +156,7 @@ const GameRound = (props: Props) => {
         />
       </Show>
       {/*Back Link */}
-      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
+      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
         <A
           href="#"
           onClick={() => window.history.back()}
