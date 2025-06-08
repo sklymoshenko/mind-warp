@@ -211,5 +211,4 @@ func (s *Server) AddGameRoutes(group *gin.RouterGroup) {
 	group.GET("/games/invites/user/:userId", s.GetGameInvitesByUserId)
 	group.POST("/games/invites/accept", s.AcceptGameInvite)
 	group.POST("/games/invites/decline", s.DeclineGameInvite)
-
 }

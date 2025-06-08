@@ -1,4 +1,4 @@
-import { createMemo, createSignal, For, Show } from 'solid-js'
+import { createMemo, createSignal, For, Show, createEffect } from 'solid-js'
 import { TiCancel } from 'solid-icons/ti'
 import { FaSolidArrowLeftLong, FaSolidArrowRightLong } from 'solid-icons/fa'
 
@@ -64,49 +64,62 @@ const DefaultEmptyState = (props: { columns: TableColumn<any>[]; title?: string;
 const Pagination = (props: {
   currentPage: number
   totalPages: number
+  totalItems: number
   onPageChange: (offset: number, limit: number, page: number) => void
   pageSize: number
 }) => {
-  const [offset, setOffset] = createSignal(props.currentPage * props.pageSize)
-  const [limit, setLimit] = createSignal(props.pageSize)
+  const [showingRange, setShowingRange] = createSignal({ start: 1, end: Math.min(props.pageSize, props.totalItems) })
 
-  const handlePageChange = (offset: number, limit: number, page: number) => {
-    if (offset < 0) {
-      offset = 0
-    }
+  createEffect(() => {
+    const start = (props.currentPage - 1) * props.pageSize + 1
+    const end = Math.min(props.currentPage * props.pageSize, props.totalItems)
+    setShowingRange({ start, end })
+  })
 
-    const maxOffset = (props.totalPages - 1) * props.pageSize
-    if (offset > maxOffset) {
-      offset = maxOffset
-    }
-
-    setOffset(offset)
-    setLimit(limit)
-    props.onPageChange(offset, limit, page)
+  const handlePageChange = (page: number) => {
+    const offset = (page - 1) * props.pageSize
+    props.onPageChange(offset, props.pageSize, page)
   }
 
+  const showingPaginationControls = createMemo(() => props.pageSize > 0 && props.totalPages > 1)
+
   return (
-    <div class="flex items-center justify-end px-1 py-2 bg-void/70 border border-primary/20 rounded-lg">
-      <div class="flex items-center gap-2">
-        <Show when={props.currentPage > 1}>
-          <button
-            class="px-3 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer"
-            onClick={() => handlePageChange(offset() - limit(), limit(), props.currentPage - 1)}
-          >
-            <FaSolidArrowLeftLong class="w-3 h-3" />
-          </button>
-        </Show>
-        <span class="text-sm text-white/70" classList={{ 'mr-2': props.currentPage === props.totalPages }}>
-          Page <span class="font-bold">{props.currentPage}</span> of <span class="font-bold">{props.totalPages}</span>
-        </span>
-        <Show when={props.currentPage < props.totalPages}>
-          <button
-            class="px-3 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer"
-            onClick={() => handlePageChange(offset() + limit(), limit(), props.currentPage + 1)}
-          >
-            <FaSolidArrowRightLong class="w-3 h-3" />
-          </button>
-        </Show>
+    <div
+      class="flex items-center justify-between px-1 py-2 bg-void/70 border border-primary/20 rounded-lg"
+      classList={{ 'justify-end': !showingPaginationControls() }}
+    >
+      <Show when={showingPaginationControls()}>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-white/70 ml-2">
+            Page <span class="font-bold">{props.currentPage}</span> of <span class="font-bold">{props.totalPages}</span>
+          </span>
+          <div class="flex items-center">
+            <button
+              class="px-2 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(props.currentPage - 1)}
+              disabled={props.currentPage === 1}
+            >
+              <FaSolidArrowLeftLong class="w-3 h-3" />
+            </button>
+            <div class="flex items-center">
+              <span class="text-sm text-white/70">
+                <span class="font-bold">
+                  {showingRange().start} - {showingRange().end}
+                </span>
+              </span>
+            </div>
+            <button
+              class="px-2 py-1 rounded-md text-sm font-medium text-white/90 hover:bg-primary/10 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => handlePageChange(props.currentPage + 1)}
+              disabled={props.currentPage === props.totalPages}
+            >
+              <FaSolidArrowRightLong class="w-3 h-3" />
+            </button>
+          </div>
+        </div>
+      </Show>
+      <div>
+        <span class="text-sm text-white/70 mr-2 font-bold">Total: {props.totalItems}</span>
       </div>
     </div>
   )
@@ -192,14 +205,13 @@ const Table = <T,>(props: TableProps<T>) => {
           </table>
         </div>
       </div>
-      <Show when={pageSize > 0 && totalPages() > 1}>
-        <Pagination
-          currentPage={currentPage()}
-          totalPages={totalPages()}
-          pageSize={pageSize}
-          onPageChange={handlePageChange}
-        />
-      </Show>
+      <Pagination
+        currentPage={currentPage()}
+        totalPages={totalPages()}
+        pageSize={pageSize}
+        onPageChange={handlePageChange}
+        totalItems={props.totalItems || props.data.length}
+      />
     </div>
   )
 }

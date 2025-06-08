@@ -1,9 +1,9 @@
-import { createResource, For, Show, createSignal } from 'solid-js'
+import { createResource, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
-import { Game, GameInvite, GameListItem } from '../types'
+import { Counts, Game, GameInvite, GameListItem } from '../types'
 import { DateTime, Duration } from 'luxon'
 import { A, useNavigate } from '@solidjs/router'
-import { widgetStyles } from '../utils'
+
 import CreateGame from './CreateGame'
 import { useApi } from '../hooks/useApi'
 import { RiDevelopmentGitRepositoryPrivateFill } from 'solid-icons/ri'
@@ -16,7 +16,7 @@ import {
   IoGameControllerOutline,
   IoTrashOutline,
 } from 'solid-icons/io'
-import Carousel from '../components/Carousel'
+
 import GameInfo from '../components/GameInfo'
 import { Confirm } from '../components/Confirm'
 import { FaSolidLock } from 'solid-icons/fa'
@@ -149,11 +149,6 @@ const activeGamesColumns: TableColumn<Game>[] = [
   },
 ]
 
-const columns: TableColumn<GameListItem>[] = [
-  { label: 'Name', key: 'name' },
-  { label: 'Description', key: 'description' },
-]
-
 const historyColumns: TableColumn<Game>[] = [
   { label: 'Name', key: 'name' },
   { label: 'Winner', key: 'winner', render: (game) => <span class="text-green-500">{game?.winner?.name}</span> },
@@ -193,6 +188,7 @@ const MyGames = () => {
   const { get: getGamesHistory } = useApi(`games/finished/user/${user()?.id}`)
   const { get: getGameInvites } = useApi(`games/invites/user/${user()?.id}`)
   const { get: getGame } = useApi('games')
+  const { get: getCounts } = useApi(`my-games/count?userId=${user()?.id}`)
 
   const { del: deleteGame } = useApi(`games/delete`)
   const { post: finishGame } = useApi(`games/finish`)
@@ -207,6 +203,19 @@ const MyGames = () => {
   const [activeGamesPagination, setActiveGamesPagination] = createSignal({ limit: 25, offset: 0 })
   const [invitesPagination, setInvitesPagination] = createSignal({ limit: 25, offset: 0 })
   const [historyPagination, setHistoryPagination] = createSignal({ limit: 25, offset: 0 })
+
+  const [counts] = createResource(async () => {
+    const response = await getCounts<Counts>()
+    if (response.data) {
+      return response.data
+    }
+
+    return {
+      gamesCount: 0,
+      templatesCount: 0,
+      historyGamesCount: 0,
+    }
+  })
 
   const invitesColumns: TableColumn<GameInvite>[] = [
     { label: 'Game', key: 'gameName' },
@@ -247,6 +256,33 @@ const MyGames = () => {
       label: 'Created at',
       key: 'createdAt',
       render: (invite) => DateTime.fromISO(invite!.createdAt).toFormat('MMM d, yyyy h:mm a'),
+    },
+  ]
+
+  const columns: TableColumn<GameListItem>[] = [
+    { label: 'Name', key: 'name' },
+    {
+      label: 'Description',
+      key: 'description',
+      render: (game) => (
+        <div class="flex items-center gap-2 group h-full justify-between w-full">
+          <span>{game?.description}</span>
+          <div>
+            <Confirm
+              title="Delete Game Template"
+              message="Are you sure you want to delete this game template?"
+              onConfirm={() => onTemplateDelete(game!.id!)}
+            >
+              <button
+                title="Delete Game Template"
+                class="text-red-500 hover:text-red-500/50 transition-all duration-300 group-hover:animate-slide-in z-0 opacity-0 group-hover:opacity-100 hover:cursor-pointer"
+              >
+                <IoTrashOutline class="w-6 h-6 transition-all duration-300" />
+              </button>
+            </Confirm>
+          </div>
+        </div>
+      ),
     },
   ]
 
@@ -324,8 +360,13 @@ const MyGames = () => {
     setIsCreatingNewGameTemplate((prev) => !prev)
   }
 
-  const onTemplateDelete = async (gameId: string) => {
-    setGameTemplates(gameTemplates()!.filter((game) => game.id !== gameId))
+  const onTemplateDelete = async (templateId: string) => {
+    const { del: deleteGameTemplate } = useApi(`game_templates/${templateId}`)
+    const response = await deleteGameTemplate()
+
+    if (!response.error) {
+      setGameTemplates(gameTemplates()!.filter((template) => template.id !== templateId))
+    }
   }
 
   const onTemplateClick = async (gameId: string) => {
@@ -451,7 +492,7 @@ const MyGames = () => {
               )}
               pageSize={templatesPagination().limit}
               onPageChange={handleTemplatesPagination}
-              totalItems={30}
+              totalItems={counts()?.templatesCount || 0}
             />
           </div>
 
@@ -466,7 +507,7 @@ const MyGames = () => {
               onRowClick={(game) => setEditingGame(game)}
               pageSize={activeGamesPagination().limit}
               onPageChange={handleActiveGamesPagination}
-              totalItems={30}
+              totalItems={counts()?.gamesCount || 0}
             />
           </div>
           <div class="flex h-[25rem]">
@@ -479,7 +520,6 @@ const MyGames = () => {
               disableOverflow={true}
               pageSize={invitesPagination().limit}
               onPageChange={handleInvitesPagination}
-              totalItems={30}
             />
           </div>
         </div>
@@ -494,7 +534,7 @@ const MyGames = () => {
             onRowClick={(game) => setHistoryGame(game)}
             pageSize={historyPagination().limit}
             onPageChange={handleHistoryPagination}
-            totalItems={30}
+            totalItems={counts()?.historyGamesCount || 0}
           />
         </div>
         {/* <div class={`${widgetStyles.base} mt-12 w-full`}>

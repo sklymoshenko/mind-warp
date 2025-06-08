@@ -33,7 +33,7 @@ func (s *Server) Start() {
 	s.AddUserRoutes(protected)
 	s.AddGameTemplateRoutes(protected)
 	s.AddGameRoutes(protected)
-
+	s.AddCountRoutes(protected)
 	// s.FillDb()
 
 	s.router.Run(s.port)

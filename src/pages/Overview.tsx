@@ -48,9 +48,20 @@ const Overview = (props: OverviewProps) => {
   const { get: getGameTemplatesSearch } = useApi('game_templates/search')
   const { get: getGameTemplatesList } = useApi('game_templates/public')
   const { get: getGameTemplate } = useApi('game_templates/info')
+  const { get: getPublicTemplatesCount } = useApi('public-templates/count')
+
   const [gameTemplateId, setGameTemplateId] = createSignal<GameTemplate['id'] | undefined>(undefined)
   const [isEditing, setIsEditing] = createSignal(false)
   const [templatesPagination, setTemplatesPagination] = createSignal({ limit: 25, offset: 0 })
+
+  const [publicTemplatesCount] = createResource(async () => {
+    const response = await getPublicTemplatesCount<{ count: number }>()
+
+    if (response.data) {
+      return response.data.count
+    }
+    return 0
+  })
 
   const [gameTemplate, { mutate: setGameTemplate }] = createResource(gameTemplateId, async () => {
     if (!gameTemplateId()) return undefined
@@ -162,7 +173,7 @@ const Overview = (props: OverviewProps) => {
               onRowClick={(template) => getGameInfo(template.id)}
               pageSize={templatesPagination().limit}
               onPageChange={handleTemplatesPagination}
-              totalItems={30}
+              totalItems={publicTemplatesCount() || 0}
             />
           </div>
           {/* <div class="w-fit">

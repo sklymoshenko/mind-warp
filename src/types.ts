@@ -84,3 +84,9 @@ export type GameInvite = {
   updatedAt: string
   gameCreatorName: string
 }
+
+export type Counts = {
+  gamesCount: number
+  templatesCount: number
+  historyGamesCount: number
+}

@@ -1,5 +1,5 @@
 import { FiX } from 'solid-icons/fi'
-import { createEffect, createSignal, JSX, Show, onCleanup, onMount } from 'solid-js'
+import { createSignal, JSX, Show, onCleanup, onMount } from 'solid-js'
 import { Portal } from 'solid-js/web'
 
 type ConfirmProps = {
@@ -17,10 +17,6 @@ export const Confirm = (props: ConfirmProps) => {
   const [arrowDirection, setArrowDirection] = createSignal<'top' | 'bottom'>('bottom')
   let dialogRef: HTMLDivElement | undefined
   let triggerRef: HTMLDivElement | undefined
-
-  createEffect(() => {
-    console.log('open', open())
-  })
 
   const handleConfirm = (e: MouseEvent) => {
     e.stopPropagation()
@@ -76,7 +72,7 @@ export const Confirm = (props: ConfirmProps) => {
   }
 
   return (
-    <div class="relative w-full flex justify-center items-center">
+    <div class="relative w-full flex items-center">
       {/* Trigger */}
       <div
         class="flex"
