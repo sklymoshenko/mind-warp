@@ -45,7 +45,6 @@ const Overview = (props: OverviewProps) => {
   const { user, logout } = useAuth()
   // const { get } = useApi('users')
   const navigate = useNavigate()
-  const { get: getGameTemplatesSearch } = useApi('game_templates/search')
   const { get: getGameTemplatesList } = useApi('game_templates/public')
   const { get: getGameTemplate } = useApi('game_templates/info')
   const { get: getPublicTemplatesCount } = useApi('public-templates/count')
@@ -54,14 +53,15 @@ const Overview = (props: OverviewProps) => {
   const [isEditing, setIsEditing] = createSignal(false)
   const [templatesPagination, setTemplatesPagination] = createSignal({ limit: 25, offset: 0 })
 
-  const [publicTemplatesCount] = createResource(async () => {
-    const response = await getPublicTemplatesCount<{ count: number }>()
+  const [publicTemplatesCount, { mutate: setPublicTemplatesCount, refetch: refetchPublicTemplatesCount }] =
+    createResource(async () => {
+      const response = await getPublicTemplatesCount<{ count: number }>()
 
-    if (response.data) {
-      return response.data.count
-    }
-    return 0
-  })
+      if (response.data) {
+        return response.data.count
+      }
+      return 0
+    })
 
   const [gameTemplate, { mutate: setGameTemplate }] = createResource(gameTemplateId, async () => {
     if (!gameTemplateId()) return undefined
@@ -80,7 +80,7 @@ const Overview = (props: OverviewProps) => {
   //   )
   // })
 
-  const [gameTemplates, { refetch: refetchGameTemplates }] = createResource(async () => {
+  const [gameTemplates, { refetch: refetchGameTemplates, mutate: mutateGameTemplates }] = createResource(async () => {
     const response = await getGameTemplatesList<GameTemplate[]>(
       `?limit=${templatesPagination().limit}&offset=${templatesPagination().offset}`
     )
@@ -100,19 +100,21 @@ const Overview = (props: OverviewProps) => {
     setGameTemplateId(id)
   }
 
-  const searchTemplates = async (term: string): Promise<SearchItem[]> => {
-    const response = await getGameTemplatesSearch<GameTemplate[]>(`?query=${term}`)
-    return (
-      response.data?.map((template) => ({
-        id: template.id,
-        name: template.name,
-        description: template.description,
-      })) || []
-    )
-  }
+  const searchTemplates = async (term: string): Promise<GameTemplate[]> => {
+    if (!term) {
+      refetchPublicTemplatesCount()
+      refetchGameTemplates()
+      return []
+    }
 
-  const onTemplateSelect = (templates: SearchItem[]) => {
-    getGameInfo(templates[0].id as string)
+    const response = await getGameTemplatesList<GameTemplate[]>(`?query=${term}`)
+    if (response.data) {
+      setPublicTemplatesCount(response.data.length)
+      mutateGameTemplates(response.data)
+      return response.data
+    }
+
+    return []
   }
 
   const handleTemplatesPagination = async (offset: number, limit: number) => {
@@ -154,17 +156,8 @@ const Overview = (props: OverviewProps) => {
             <span class={settingItemStyles.title}>My Games</span>
           </button>
         </div>
-        <div class="w-full">
-          <div class="w-full">
-            <SearchComponent<SearchItem>
-              searchFunction={searchTemplates}
-              placeholder="Search for game templates"
-              onSelect={onTemplateSelect}
-            />
-          </div>
-        </div>
-        <div class="flex gap-4 items-start w-full">
-          <div class="w-[50%] mx-auto h-[45rem] min-h-[25rem]">
+        <div class="flex gap-4 items-start w-full h-full">
+          <div class="w-[50%] mx-auto h-full min-h-[30rem]">
             <Table
               columns={columns}
               loading={gameTemplates.loading}
@@ -174,6 +167,8 @@ const Overview = (props: OverviewProps) => {
               pageSize={templatesPagination().limit}
               onPageChange={handleTemplatesPagination}
               totalItems={publicTemplatesCount() || 0}
+              onSearch={searchTemplates}
+              searchPlaceholder="Search for game templates"
             />
           </div>
           {/* <div class="w-fit">

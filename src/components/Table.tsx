@@ -1,6 +1,8 @@
-import { createMemo, createSignal, For, Show, createEffect } from 'solid-js'
+import { createMemo, createSignal, For, Show, createEffect, onCleanup } from 'solid-js'
 import { TiCancel } from 'solid-icons/ti'
 import { FaSolidArrowLeftLong, FaSolidArrowRightLong } from 'solid-icons/fa'
+import { SearchItem } from './Search'
+import { debounce } from '../utils'
 
 export interface TableColumn<T> {
   label: string
@@ -27,6 +29,10 @@ interface TableProps<T> {
   currentPage?: number
   onPageChange?: (offset: number, limit: number, page: number) => void
   totalItems?: number
+  onSearch?: (term: string) => Promise<SearchItem[]>
+  searchPlaceholder?: string
+  searchValue?: string
+  onSearchItemSelect?: (items: SearchItem[]) => void
 }
 
 const TableSkeleton = (props: { columns: TableColumn<any>[]; rows: number }) => {
@@ -135,6 +141,13 @@ const Table = <T,>(props: TableProps<T>) => {
     props.onPageChange?.(offset, limit, page)
   }
 
+  const debouncedSearch = debounce((value: string) => props.onSearch?.(value), 250)
+
+  const onSearchInput = (e: InputEvent) => {
+    const value = (e.target as HTMLInputElement).value
+    debouncedSearch(value)
+  }
+
   return (
     <div class="flex flex-col gap-4 w-full h-full">
       <div class="flex items-center justify-between">
@@ -143,6 +156,17 @@ const Table = <T,>(props: TableProps<T>) => {
         </Show>
         <Show when={props.renderButton}>{props.renderButton!()}</Show>
       </div>
+      <Show when={props.onSearch}>
+        <input
+          type="text"
+          class="px-3 py-2 rounded-md border border-primary/30 bg-void text-white focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all duration-200"
+          placeholder={props.searchPlaceholder || 'Search...'}
+          value={props.searchValue || ''}
+          onInput={onSearchInput}
+          aria-label="Search table"
+          tabIndex={0}
+        />
+      </Show>
       <div
         class="w-full h-full max-h-[70vh] rounded-lg border border-primary/20 shadow-[0_0_25px_rgba(226,254,116,0.1)]"
         classList={{ 'overflow-auto': !props.disableOverflow }}

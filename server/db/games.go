@@ -28,7 +28,7 @@ func insertGameRound(ctx context.Context, tx pgx.Tx, round types.RoundServer) er
 	return nil
 }
 
-func getGameByFilter(filterType string, offset string, limit string) string {
+func getGameByFilter(filterType string, offset string, limit string, query string) string {
 	baseQuery := `
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
@@ -130,6 +130,11 @@ func getGameByFilter(filterType string, offset string, limit string) string {
 	}
 	if limit == "" {
 		limit = "25"
+	}
+
+	if query != "" {
+		search := "%" + query + "%"
+		filters += fmt.Sprintf(" AND g.name ILIKE '%s'", search)
 	}
 
 	return fmt.Sprintf(baseQuery, filters, offset, limit)
@@ -364,7 +369,7 @@ func (db *DB) GetAnswersByQuestionIds(ctx context.Context, questionIds []string)
 	return answers, nil
 }
 
-func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string, offset string, limit string) ([]*types.GameClient, error) {
+func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue string, offset string, limit string, query string) ([]*types.GameClient, error) {
 	var (
 		gameID                pgtype.UUID
 		gameName              pgtype.Text
@@ -394,9 +399,9 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		questionAnswer pgtype.Text
 		questionPoints pgtype.Int4
 	)
-	query := getGameByFilter(filter, offset, limit)
+	pgQuery := getGameByFilter(filter, offset, limit, query)
 
-	rows, err := db.pool.Query(ctx, query, filterValue)
+	rows, err := db.pool.Query(ctx, pgQuery, filterValue)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query full game template: %w", err)
 	}

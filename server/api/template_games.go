@@ -33,7 +33,9 @@ func (s *Server) GetAllGameTemplates(c *gin.Context) {
 func (s *Server) GetPublicGameTemplates(c *gin.Context) {
 	offset := c.Query("offset")
 	limit := c.Query("limit")
-	games, err := s.Db.GetPublicGameTemplates(c.Request.Context(), offset, limit)
+	query := c.Query("query")
+	games, err := s.Db.GetPublicGameTemplates(c.Request.Context(), offset, limit, query)
+
 	if err != nil {
 		logger.Errorf("Failed to get public games: %v", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_PUBLIC_GAME_TEMPLATES_ERROR, Message: err.Error()})
@@ -68,7 +70,8 @@ func (s *Server) GetGameTemplatesByCreatorID(c *gin.Context) {
 	userID := c.Param("id")
 	offset := c.Query("offset")
 	limit := c.Query("limit")
-	game, err := s.Db.GetGameTemplatesByCreatorID(c.Request.Context(), userID, offset, limit)
+	query := c.Query("query")
+	game, err := s.Db.GetGameTemplatesByCreatorID(c.Request.Context(), userID, offset, limit, query)
 	if err != nil {
 		logger.Errorf("Failed to get game: %v", err)
 		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_GET_GAME_TEMPLATES_BY_CREATOR_ID_ERROR, Message: err.Error()})
@@ -85,18 +88,6 @@ func (s *Server) GetGameTemplatesByCreatorID(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, clientGames)
-}
-
-func (s *Server) SearchGameTemplates(c *gin.Context) {
-	query := c.Query("query")
-	offset := c.Query("offset")
-	limit := c.Query("limit")
-	games, err := s.Db.SearchGameTemplates(c.Request.Context(), query, offset, limit)
-	if err != nil {
-		logger.Errorf("Failed to search games: %v", err)
-		c.JSON(http.StatusInternalServerError, ErrorResponse{Code: FAIL_SEARCH_GAME_TEMPLATES_ERROR, Message: err.Error()})
-	}
-	c.JSON(http.StatusOK, games)
 }
 
 func (s *Server) CreateGameTemplate(c *gin.Context) {
@@ -170,7 +161,6 @@ func (s *Server) DeleteGameTemplate(c *gin.Context) {
 func (s *Server) AddGameTemplateRoutes(group *gin.RouterGroup) {
 	group.GET("/game_templates", s.GetAllGameTemplates)
 	group.GET("/game_templates/public", s.GetPublicGameTemplates)
-	group.GET("/game_templates/search", s.SearchGameTemplates)
 	group.GET("/game_templates/:id", s.GetGameTemplateByID)
 	group.GET("/game_templates/user/:id", s.GetGameTemplatesByCreatorID)
 	group.GET("/game_templates/info/:id", s.GetGameTemplateInfo)

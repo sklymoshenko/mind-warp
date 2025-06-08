@@ -217,6 +217,12 @@ const MyGames = () => {
     }
   })
 
+  const [searchCounts, setSearchCounts] = createSignal<Counts>({
+    gamesCount: 0,
+    templatesCount: 0,
+    historyGamesCount: 0,
+  })
+
   const invitesColumns: TableColumn<GameInvite>[] = [
     { label: 'Game', key: 'gameName' },
     { label: 'Invited by', key: 'gameCreatorName' },
@@ -459,6 +465,81 @@ const MyGames = () => {
     await refetchGamesHistory()
   }
 
+  const searchTemplates = async (term: string): Promise<GameListItem[]> => {
+    if (!term) {
+      await refetchGameTemplates()
+      setSearchCounts((prev) => ({
+        ...prev,
+        templatesCount: 0,
+      }))
+
+      return []
+    }
+
+    const response = await get<GameListItem[]>(`?query=${term}`)
+
+    if (response.data) {
+      setSearchCounts((prev) => ({
+        ...prev,
+        templatesCount: response.data!.length,
+      }))
+
+      setGameTemplates(response.data)
+    }
+
+    return response.data || []
+  }
+
+  const searchActiveGames = async (term: string): Promise<Game[]> => {
+    if (!term) {
+      await refetchActiveGames()
+      setSearchCounts((prev) => ({
+        ...prev,
+        gamesCount: 0,
+      }))
+
+      return []
+    }
+
+    const response = await getActiveGames<Game[]>(`?query=${term}`)
+
+    if (response.data) {
+      setSearchCounts((prev) => ({
+        ...prev,
+        gamesCount: response.data!.length,
+      }))
+
+      setActiveGames(response.data)
+    }
+
+    return response.data || []
+  }
+
+  const searchHistoryGames = async (term: string): Promise<Game[]> => {
+    if (!term) {
+      await refetchGamesHistory()
+      setSearchCounts((prev) => ({
+        ...prev,
+        historyGamesCount: 0,
+      }))
+
+      return []
+    }
+
+    const response = await getGamesHistory<Game[]>(`?query=${term}`)
+
+    if (response.data) {
+      setSearchCounts((prev) => ({
+        ...prev,
+        historyGamesCount: response.data!.length,
+      }))
+
+      setGamesHistory(response.data)
+    }
+
+    return response.data || []
+  }
+
   return (
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[52]">
@@ -472,7 +553,7 @@ const MyGames = () => {
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
         <div class="flex flex-row gap-6 w-full mt-10 justify-between">
-          <div class="flex h-[25rem]">
+          <div class="flex h-[35rem]">
             <Table
               columns={columns}
               minWidth="min-w-[600px]"
@@ -492,11 +573,13 @@ const MyGames = () => {
               )}
               pageSize={templatesPagination().limit}
               onPageChange={handleTemplatesPagination}
-              totalItems={counts()?.templatesCount || 0}
+              totalItems={searchCounts().templatesCount || counts()?.templatesCount || 0}
+              onSearch={searchTemplates}
+              searchPlaceholder="Search Created Templates"
             />
           </div>
 
-          <div class="flex h-[25rem]">
+          <div class="flex h-[35rem]">
             <Table
               columns={activeGamesColumns}
               loading={games.loading}
@@ -507,10 +590,12 @@ const MyGames = () => {
               onRowClick={(game) => setEditingGame(game)}
               pageSize={activeGamesPagination().limit}
               onPageChange={handleActiveGamesPagination}
-              totalItems={counts()?.gamesCount || 0}
+              totalItems={searchCounts().gamesCount || counts()?.gamesCount || 0}
+              onSearch={searchActiveGames}
+              searchPlaceholder="Search Active Games"
             />
           </div>
-          <div class="flex h-[25rem]">
+          <div class="flex h-[35rem]">
             <Table
               columns={invitesColumns}
               data={gameInvites() || []}
@@ -523,7 +608,7 @@ const MyGames = () => {
             />
           </div>
         </div>
-        <div class="flex h-[25rem] w-2/3 mx-auto mt-10">
+        <div class="flex h-[35rem] w-2/3 mx-auto mt-10">
           <Table
             columns={historyColumns}
             loading={gamesHistory.loading}
@@ -534,7 +619,9 @@ const MyGames = () => {
             onRowClick={(game) => setHistoryGame(game)}
             pageSize={historyPagination().limit}
             onPageChange={handleHistoryPagination}
-            totalItems={counts()?.historyGamesCount || 0}
+            totalItems={searchCounts().historyGamesCount || counts()?.historyGamesCount || 0}
+            onSearch={searchHistoryGames}
+            searchPlaceholder="Search History"
           />
         </div>
         {/* <div class={`${widgetStyles.base} mt-12 w-full`}>

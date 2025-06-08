@@ -57,9 +57,27 @@ func (db *DB) GetAllGameTemplates(ctx context.Context, offset string, limit stri
 	return games, nil
 }
 
-func (db *DB) GetPublicGameTemplates(ctx context.Context, offset string, limit string) ([]types.GameTemplateServer, error) {
+func (db *DB) GetPublicGameTemplates(ctx context.Context, offset, limit, query string) ([]types.GameTemplateServer, error) {
 	offset, limit = getLimitAndOffset(offset, limit)
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE is_public = true LIMIT $1 OFFSET $2", limit, offset)
+
+	var rows pgx.Rows
+	var err error
+
+	if query != "" {
+		search := "%" + query + "%"
+		rows, err = db.pool.Query(ctx,
+			`SELECT id, name, description, is_public
+			 FROM game_templates
+			 WHERE is_public = true AND name ILIKE $1`,
+			search)
+	} else {
+		rows, err = db.pool.Query(ctx,
+			`SELECT id, name, description, is_public
+			 FROM game_templates
+			 WHERE is_public = true
+			 LIMIT $1 OFFSET $2`,
+			limit, offset)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -84,24 +102,26 @@ func (db *DB) GetGameTemplateByID(ctx context.Context, id string, offset string,
 	return &game, nil
 }
 
-func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string, offset string, limit string) ([]types.GameTemplateServer, error) {
+func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string, offset string, limit string, query string) ([]types.GameTemplateServer, error) {
 	offset, limit = getLimitAndOffset(offset, limit)
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE creator_id = $1 LIMIT $2 OFFSET $3", userID, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
+	var rows pgx.Rows
+	var err error
 
-	games, err := scanGameTemplate(rows)
-	if err != nil {
-		return nil, err
+	if query != "" {
+		search := "%" + query + "%"
+		rows, err = db.pool.Query(ctx,
+			`SELECT id, name, description, is_public 
+			 FROM game_templates 
+			 WHERE creator_id = $1 AND name ILIKE $2`,
+			userID, search)
+	} else {
+		rows, err = db.pool.Query(ctx,
+			`SELECT id, name, description, is_public 
+			 FROM game_templates 
+			 WHERE creator_id = $1
+			 LIMIT $2 OFFSET $3`,
+			userID, limit, offset)
 	}
-	return games, nil
-}
-
-func (db *DB) SearchGameTemplates(ctx context.Context, query string, offset string, limit string) ([]types.GameTemplateServer, error) {
-	offset, limit = getLimitAndOffset(offset, limit)
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE name ILIKE $1 AND is_public = true LIMIT $2 OFFSET $3", "%"+query+"%", limit, offset)
 	if err != nil {
 		return nil, err
 	}
