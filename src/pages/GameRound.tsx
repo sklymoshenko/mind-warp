@@ -165,18 +165,18 @@ const GameRound = (props: Props) => {
           Back
         </A>
       </div>
-      <div class="flex flex-col justify-between h-full mt-10 sm:mt-0 sm:h-[60%] xl:h-[90%] 2xl:h-[70%] z-50 overflow-y-auto overflow-x-hidden">
-        <div class="flex flex-col items-center text-primary mx-auto">
-          <h1 class="text-3xl sm:text-5xl font-bold mb-20">{props.round?.name} </h1>
-          <div class="flex justify-center gap-4 sm:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none">
+      <div class="flex flex-col h-full sm:mt-0 z-50 overflow-y-auto overflow-x-hidden w-full gap-16 mt-0 lg:mt-[10rem]">
+        <div class="flex flex-col items-center mx-auto w-full">
+          <h1 class="text-3xl sm:text-5xl font-bold mb-20 text-primary">{props.round?.name} </h1>
+          <div class="flex justify-center gap-2 lg:gap-4 lg:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none w-full">
             <For each={props.round?.themes}>
               {(theme) => {
                 return (
                   <div class="flex flex-col items-center font-semibold min-w-[45%] sm:min-w-[200px] group">
-                    <span class="text-2xl sm:text-3xl xl:text-4xl mb-2 group-hover:text-green-600 group-hover:scale-120 transition-all duration-300">
+                    <span class="text-3xl lg:text-5xl mb-2 text-primary group-hover:text-green-600 group-hover:scale-120 transition-all duration-300">
                       {theme.name}
                     </span>
-                    <div class="flex flex-col text-3xl sm:text-5xl xl:text-7xl gap-2">
+                    <div class="flex flex-col text-3xl lg:text-5xl gap-2 text-white">
                       <For each={theme.questions}>
                         {(question) => {
                           const isCorrect = () => {
@@ -225,14 +225,12 @@ const GameRound = (props: Props) => {
             {(user) => {
               return (
                 <div class="flex flex-col items-center justify-between gap-2 sm:gap-4">
-                  <div class="text-sm sm:text-3xl font-bold text-primary flex items-center gap-2 text-center">
-                    <span classList={{ 'turn-indicator animate-pulse': user.id === props.currentUser }}>
-                      {user.name}
-                    </span>{' '}
+                  <div class="text-2xl lg:text-3xl font-bold text-primary flex items-center gap-2 text-center">
+                    <span classList={{ 'turn-indicator': user.id === props.currentUser }}>{user.name}</span>{' '}
                     {winningUser() === user.id && <TbConfetti class="text-orange-300" />}
                   </div>
                   <span
-                    class="text-xl sm:text-2xl text-gray-500 ml-2 mb-0.5"
+                    class="text-2xl lg:text-3xl text-gray-500 ml-2 mb-0.5"
                     classList={{ 'text-green-600': winningUser() === user.id }}
                   >
                     {scores()[user.id]}

@@ -160,7 +160,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   return (
     <Show when={props.isOpen}>
       <div
-        class="fixed inset-0 z-[51] flex items-center justify-center backdrop-blur-sm transition-all duration-300"
+        class="fixed inset-0 z-[51] flex items-center justify-center backdrop-blur-sm transition-all duration-300 max-w-[90%] mx-auto lg:max-w-none lg:mx-0"
         onClick={handleOverlayClick}
         aria-modal="true"
         role="dialog"
@@ -233,7 +233,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
             </div>
             <p class="text-lg font-bold text-primary">Answer Queue</p>
-            <div class="flex justify-between gap-6 w-full flex-wrap p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[90%] sm:min-w-[500px] rounded-md border border-primary/50 ">
+            <div class="flex gap-6 w-full flex-wrap p-4 bg-void/50 backdrop-blur-sm mt-2 min-w-[90%] sm:min-w-[500px] rounded-md border border-primary/50 ">
               <For each={answerQueue()}>
                 {(user) => {
                   const data = createMemo(() => extraAnswerers()?.[user.id])

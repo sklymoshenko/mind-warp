@@ -96,39 +96,48 @@ export default function GamePreview(props: GamePreviewProps) {
         />
       </Show>
       <div class="flex flex-col justify-between h-[90%] sm:h-[60%] xl:h-[70%] max-w-full sm:max-w-none">
-        <div class="mx-auto flex gap-12 sm:flex-nowrap flex-wrap max-w-full sm:max-w-none">
+        <div class="mx-auto flex gap-12 md:flex-nowrap flex-wrap max-w-full sm:max-w-none">
           <For each={props.game.rounds}>
             {(round, i) => {
               return (
-                <div
-                  class="min-w-[100px] sm:min-w-[300px] h-fit bg-void text-primary rounded-md p-2 drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
-                  onclick={() => onRoundClick(round)}
-                >
-                  <h1 class="font-semibold text-xl mb-4 sm:text-3xl sm:mb-6">
-                    Round {i() + 1}: {round.name}
-                  </h1>
-                  <div class="flex items-center justify-between">
-                    <div class="flex flex-col">
-                      <For each={round.themes}>
-                        {(theme) => {
-                          return <div class="font-medium text-lg sm:text-2xl">{theme.name}</div>
-                        }}
-                      </For>
+                <div class="flex flex-col gap-4 w-[90%] mx-auto lg:w-auto lg:mx-0">
+                  <h1 class="text-primary font-semibold text-xl sm:text-2xl">{round.name}</h1>
+                  <div
+                    class="flex justify-between min-w-[250px] w-full h-fit border border-primary/20 p-4 text-white rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300"
+                    onclick={() => onRoundClick(round)}
+                  >
+                    <div class="flex flex-col lg:w-[45%]">
+                      <h3 class="text-primary font-semibold">Themes:</h3>
+                      <ul class="flex flex-col">
+                        <For each={round.themes}>
+                          {(theme) => {
+                            return <li class="text-white ml-2">- {theme.name}</li>
+                          }}
+                        </For>
+                      </ul>
                     </div>
-                    <div class="w-[1px] bg-primary h-20 mx-4 sm:mx-14" />
-                    <div class="flex flex-col justify-start w-[230px]">
-                      <For each={props.game.users}>
-                        {(user) => {
-                          return (
-                            <div class="flex items-end justify-between">
-                              <span class="text-lg sm:text-2xl font-bold">{user.name}</span>
-                              <span class="text-xs sm:text-sm text-gray-500 ml-2 mb-0.5">
-                                {user.roundScore?.[round.id] ?? 0}
-                              </span>
-                            </div>
-                          )
-                        }}
-                      </For>
+                    <div class="flex flex-col w-[45%]">
+                      <h3 class="text-primary font-semibold">Players:</h3>
+                      <ul class="flex flex-col">
+                        <For each={props.game.users}>
+                          {(user) => {
+                            return (
+                              <li class="text-white ml-2 flex justify-between items-end">
+                                <span>{user.name}</span>
+                                <span
+                                  class="text-sm mb-0.5"
+                                  classList={{
+                                    'text-green-500': (user.roundScore?.[round.id] ?? 0) > 0,
+                                    'text-red-500': (user.roundScore?.[round.id] ?? 0) < 0,
+                                  }}
+                                >
+                                  {user.roundScore?.[round.id] ?? 0}
+                                </span>
+                              </li>
+                            )
+                          }}
+                        </For>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -142,11 +151,11 @@ export default function GamePreview(props: GamePreviewProps) {
           title="Finish Game"
           message="Are you sure you want to finish the game?"
         >
-          <button class="my-4 sm:my-0 mx-auto w-full sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
+          <button class="mx-auto w-[90%] sm:w-[300px] p-1 sm:p-4 bg-primary text-void font-bold text-2xl rounded-md drop-shadow-lg hover:shadow-[0_0px_70px_rgba(255,255,255,0.3)] hover:-translate-y-2  hover:cursor-pointer transition-all duration-300">
             Finish
           </button>
         </Confirm>
-        <div class="flex flex-col sm:flex-row justify-between p-2 gap-12 flex-wrap sm:flex-nowrap mt-4 sm:mt-0">
+        <div class="w-[90%] mx-auto flex flex-row justify-between p-2 gap-12 flex-wrap sm:flex-nowrap mt-4 sm:mt-0">
           <For each={props.game.users}>
             {(user) => {
               return (

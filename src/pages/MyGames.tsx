@@ -552,7 +552,10 @@ const MyGames = () => {
 
   return (
     <>
-      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[51]">
+      <div
+        class="absolute top-4 left-4 md:top-8 md:left-8"
+        classList={{ 'z-[52]': !editingGame() && !historyGame() && !gameInvite() }}
+      >
         <A
           href="/dashboard"
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 "
