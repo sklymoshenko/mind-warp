@@ -22,11 +22,11 @@ services:
     depends_on:
       - postgres_prod
     environment:
-      - POSTGRES_HOST=postgres_prod
+      - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_USER=${POSTGRES_USER}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_SSLMODE=require
+      - POSTGRES_SSLMODE=${POSTGRES_SSLMODE}
       - JWT_SECRET=${JWT_SECRET}
       - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL}
       - REFRESH_TOKEN_TTL=${REFRESH_TOKEN_TTL}
@@ -39,7 +39,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_SSLMODE: require
+      POSTGRES_SSLMODE: ${POSTGRES_SSLMODE}
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - /etc/letsencrypt/live/mindwarp.games/fullchain.pem:/etc/ssl/certs/postgres.crt
