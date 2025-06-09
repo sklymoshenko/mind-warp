@@ -41,6 +41,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_SSLMODE: ${POSTGRES_SSLMODE}
+    ports:
+      - '5432:5432'
     volumes:
       - postgres_prod_data:/var/lib/postgresql/data
       - /etc/letsencrypt/live/mindwarp.games/fullchain.pem:/etc/ssl/certs/postgres.crt
