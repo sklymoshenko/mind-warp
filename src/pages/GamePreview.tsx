@@ -98,7 +98,7 @@ export default function GamePreview(props: GamePreviewProps) {
       <div class="flex flex-col justify-between h-full max-w-full sm:max-w-none overflow-y-auto max-h-[90dvh] md:max-h-[90%] lg:max-h-[90%]">
         <div class="mx-auto flex gap-12 lg:flex-nowrap flex-wrap max-w-full sm:max-w-none mb-10">
           <For each={props.game.rounds}>
-            {(round, i) => {
+            {(round) => {
               return (
                 <div class="flex flex-col gap-4 w-[90%] mx-auto lg:w-auto lg:mx-0 lg:h-full">
                   <h1 class="text-primary font-semibold text-xl sm:text-2xl">{round.name}</h1>

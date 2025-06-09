@@ -4,7 +4,7 @@ import CreateGame from './CreateGame'
 import { createSignal, createMemo } from 'solid-js'
 import mockGame from '../data/mockGame'
 import { Game, Question, Round, User } from '../types'
-import GameHistory from './GameHistory'
+
 import GameRound from './GameRound'
 
 const LocalGame = () => {
@@ -142,7 +142,6 @@ const LocalGame = () => {
           )}
         />
       )}
-      <Route path="/games-history" component={() => <GameHistory />} />
     </>
   )
 }

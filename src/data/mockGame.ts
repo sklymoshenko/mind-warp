@@ -368,6 +368,7 @@ export const mockGame: Game = {
   finishDate: 1714003200000,
   isPublic: true,
   creatorId: 'user-1',
+  createdAt: 1714003200000,
 }
 
 export default mockGame

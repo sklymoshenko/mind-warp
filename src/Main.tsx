@@ -2,7 +2,6 @@ import './App.css'
 import BackgroundWrapper from './components/BackgroundWrapper'
 import WelcomePage from './pages/WelcomePage'
 import { Route, Router } from '@solidjs/router'
-import GameHistory from './pages/GameHistory'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import { Toaster } from 'solid-toast'
@@ -21,7 +20,6 @@ const Main = () => {
           <Route path="/" component={WelcomePage} />
           <LocalGameRoutes />
           <RemoteGameRoutes />
-          <Route path="/games-history" component={GameHistory} />
           <Route path="/login" component={Login} />
           <Route path="/register" component={Register} />
           <Route

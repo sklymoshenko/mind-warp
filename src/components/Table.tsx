@@ -41,7 +41,7 @@ const TableSkeleton = (props: { columns: TableColumn<any>[]; rows: number }) => 
       {() => (
         <tr class="animate-pulse">
           <For each={props.columns}>
-            {(column) => (
+            {() => (
               <td class="px-6 py-4">
                 <div class="h-6 bg-primary/10 rounded-md" />
               </td>
@@ -60,7 +60,7 @@ const TableCardSkeleton = (props: { columns: TableColumn<any>[]; rows: number })
         <div class="animate-pulse">
           <div class="flex flex-col gap-2 p-4 bg-void/70 rounded-lg border border-primary/20 shadow-[0_0_25px_rgba(226,254,116,0.1)]">
             <For each={props.columns}>
-              {(column) => (
+              {() => (
                 <div class="text-sm text-white/90 flex gap-2">
                   <span class="font-bold bg-primary/10 rounded-md h-4 w-[20%]" />
                   <span class="bg-primary/10 rounded-md h-4 w-[70%]" />

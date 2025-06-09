@@ -190,6 +190,7 @@ const CreateGame = (props: Props) => {
       isFinished: false,
       isPublic: isPublic(),
       creatorId: props.game?.creatorId || gameUsers()[0]?.id || '',
+      createdAt: Date.now(),
     }
 
     if (!props.isTemplate) {

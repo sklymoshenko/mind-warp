@@ -38,7 +38,7 @@ const columns: TableColumn<GameTemplate>[] = [
   { label: 'Description', key: 'description' },
 ]
 
-const Overview = (props: OverviewProps) => {
+const Overview = () => {
   const { user, logout } = useAuth()
   // const { get } = useApi('users')
   const navigate = useNavigate()

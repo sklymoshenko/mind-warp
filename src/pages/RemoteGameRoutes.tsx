@@ -6,11 +6,7 @@ import GameRound from './GameRound'
 import { useApi } from '../hooks/useApi'
 import AuthGuard from '../components/AuthGuard'
 
-type RemoteGameProps = {
-  game?: Game
-}
-
-const RemoteGameRoutes = (props: RemoteGameProps) => {
+const RemoteGameRoutes = () => {
   const { post: finishGame } = useApi(`games/finish`)
   const { post: updateGame } = useApi(`games/update`)
   const [game, setGame] = createSignal<Game>()
