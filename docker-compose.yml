@@ -1,0 +1,54 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /etc/letsencrypt/live/mindwarp.games/fullchain.pem:/etc/ssl/certs/fullchain.pem
+      - /etc/letsencrypt/live/mindwarp.games/privkey.pem:/etc/ssl/private/privkey.pem
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    ports:
+      - '8080:8080'
+    depends_on:
+      - postgres_prod
+    environment:
+      - POSTGRES_HOST=postgres_prod
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_SSLMODE=require
+      - JWT_SECRET=${JWT_SECRET}
+      - ACCESS_TOKEN_TTL=${ACCESS_TOKEN_TTL}
+      - REFRESH_TOKEN_TTL=${REFRESH_TOKEN_TTL}
+    restart: unless-stopped
+
+  postgres_prod:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_SSLMODE: require
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+      - /etc/letsencrypt/live/mindwarp.games/fullchain.pem:/etc/ssl/certs/postgres.crt
+      - /etc/letsencrypt/live/mindwarp.games/privkey.pem:/etc/ssl/private/postgres.key
+    command: >
+      postgres
+      -c ssl=on
+      -c ssl_cert_file=/etc/ssl/certs/postgres.crt
+      -c ssl_key_file=/etc/ssl/private/postgres.key
+
+volumes:
+  postgres_prod_data:

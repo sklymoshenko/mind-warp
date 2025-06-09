@@ -520,7 +520,6 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 	}
 
 	if len(gamesMap) == 0 {
-		logger.Errorf("no games found for filter %s and value %s", filter, filterValue)
 		return []*types.GameClient{}, nil
 	}
 
