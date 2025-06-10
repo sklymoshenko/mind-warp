@@ -30,23 +30,28 @@ func insertGameRound(ctx context.Context, tx pgx.Tx, round types.RoundServer) er
 
 func getGameByFilter(filterType string, offset string, limit string, query string) string {
 	baseQuery := `
+		WITH ordered_games AS (
+			SELECT g.*
+			FROM games g
+			ORDER BY g.created_at DESC NULLS LAST
+			OFFSET %s
+			LIMIT %s
+		)
 		SELECT
 			g.id, g.name, g.is_finished, g.creator_id, g.template_id,
 			g.current_round_id, g.current_question_id, g.current_user_id,
 			g.finish_date,
-			w.id as winner_id, w.name as winner_name,  g.created_at,
+			w.id as winner_id, w.name as winner_name, g.created_at,
 			r.id, r.name, r.time_settings, r.rank_settings, r.position,
 			t.id, t.name, t.position,
 			q.id, q.text, q.answer, q.points
 		FROM
-			games g
+			ordered_games g
 		LEFT JOIN
 			users w ON g.winner_id = w.id
 		%s
 		ORDER BY
-			r.position, t.position, q.points, g.created_at DESC
-		OFFSET %s
-		LIMIT %s;
+			g.created_at DESC NULLS LAST, r.position, t.position, q.points;
 	`
 
 	filters := `
@@ -137,7 +142,7 @@ func getGameByFilter(filterType string, offset string, limit string, query strin
 		filters += fmt.Sprintf(" AND g.name ILIKE '%s'", search)
 	}
 
-	return fmt.Sprintf(baseQuery, filters, offset, limit)
+	return fmt.Sprintf(baseQuery, offset, limit, filters)
 }
 
 func (db *DB) GetUsersByGameId(ctx context.Context, id string) ([]types.GameUserClient, error) {
@@ -407,11 +412,16 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 	}
 	defer rows.Close()
 
-	gamesMap := make(map[string]*types.GameClient)
+	gamesMap := make(map[string]bool)
 	roundsMap := make(map[string]map[string]*types.RoundServer)
 	themesMap := make(map[string]map[string]*types.ThemeServer)
 	questionsMap := make(map[string]map[string]*types.QuestionServer)
 	questionIds := make([]string, 0)
+
+	// Process each game
+	var games []*types.GameClient
+	// Use a slice to maintain the order from SQL query
+	orderedGames := make([]*types.GameClient, 0, len(gamesMap))
 
 	for rows.Next() {
 		err := rows.Scan(
@@ -431,12 +441,11 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		themeIDStr := uuidToString(themeID)
 		questionIDStr := uuidToString(questionID)
 
-		// Initialize game if not exists
 		if _, exists := gamesMap[gameIDStr]; !exists {
 			if gameID.Status != pgtype.Present {
 				continue
 			}
-			gamesMap[gameIDStr] = &types.GameClient{
+			game := &types.GameClient{
 				ID:              gameIDStr,
 				Name:            gameName.String,
 				IsFinished:      gameIsFinished.Bool,
@@ -454,9 +463,11 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 			}
 
 			if gameFinishDate.Status == pgtype.Present {
-				gamesMap[gameIDStr].FinishDate = gameFinishDate.Time.UnixMilli()
+				game.FinishDate = gameFinishDate.Time.UnixMilli()
 			}
 
+			gamesMap[gameIDStr] = true
+			orderedGames = append(orderedGames, game)
 			roundsMap[gameIDStr] = make(map[string]*types.RoundServer)
 			themesMap[gameIDStr] = make(map[string]*types.ThemeServer)
 			questionsMap[gameIDStr] = make(map[string]*types.QuestionServer)
@@ -529,9 +540,9 @@ func (db *DB) GetGameByFilter(ctx context.Context, filter string, filterValue st
 		return nil, fmt.Errorf("failed to get answers: %w", err)
 	}
 
-	// Process each game
-	var games []*types.GameClient
-	for gameID, game := range gamesMap {
+	// Process each game in the original order
+	for _, game := range orderedGames {
+		gameID := game.ID
 		for _, round := range roundsMap[gameID] {
 			var roundThemes []types.ThemeClient
 

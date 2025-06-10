@@ -69,10 +69,10 @@ export type Game = {
 
 export type GameTemplate = Omit<
   Game,
-  'users' | 'currentRound' | 'currentQuestion' | 'currentUser' | 'isFinished' | 'winner'
+  'users' | 'currentRound' | 'currentQuestion' | 'currentUser' | 'isFinished' | 'winner' | 'createdAt'
 >
 
-export type GameListItem = Pick<Game, 'id' | 'name' | 'description' | 'creatorId' | 'isPublic'>
+export type GameTemplateListItem = Pick<Game, 'id' | 'name' | 'description' | 'creatorId' | 'isPublic' | 'createdAt'>
 
 export type GameInvite = {
   id: string

@@ -48,6 +48,7 @@ type GameTemplateClient struct {
 	IsPublic    bool          `json:"isPublic"`
 	Rounds      []RoundClient `json:"rounds"`
 	CreatorID   string        `json:"creatorId"`
+	CreatedAt   int64         `json:"createdAt"`
 }
 
 type GameUserClient struct {

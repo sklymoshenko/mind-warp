@@ -32,7 +32,7 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 	games := []types.GameTemplateServer{}
 	for rows.Next() {
 		var game types.GameTemplateServer
-		err := rows.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic)
+		err := rows.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic, &game.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -43,7 +43,7 @@ func scanGameTemplate(rows pgx.Rows) ([]types.GameTemplateServer, error) {
 
 func (db *DB) GetAllGameTemplates(ctx context.Context, offset string, limit string) ([]types.GameTemplateServer, error) {
 	offset, limit = getLimitAndOffset(offset, limit)
-	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public FROM game_templates LIMIT $1 OFFSET $2", limit, offset)
+	rows, err := db.pool.Query(ctx, "SELECT id, name, description, is_public, created_at FROM game_templates ORDER BY created_at DESC LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -66,15 +66,17 @@ func (db *DB) GetPublicGameTemplates(ctx context.Context, offset, limit, query s
 	if query != "" {
 		search := "%" + query + "%"
 		rows, err = db.pool.Query(ctx,
-			`SELECT id, name, description, is_public
+			`SELECT id, name, description, is_public, created_at
 			 FROM game_templates
-			 WHERE is_public = true AND name ILIKE $1`,
+			 WHERE is_public = true AND name ILIKE $1
+			 ORDER BY created_at DESC`,
 			search)
 	} else {
 		rows, err = db.pool.Query(ctx,
-			`SELECT id, name, description, is_public
+			`SELECT id, name, description, is_public, created_at
 			 FROM game_templates
 			 WHERE is_public = true
+			 ORDER BY created_at DESC
 			 LIMIT $1 OFFSET $2`,
 			limit, offset)
 	}
@@ -92,10 +94,10 @@ func (db *DB) GetPublicGameTemplates(ctx context.Context, offset, limit, query s
 
 func (db *DB) GetGameTemplateByID(ctx context.Context, id string, offset string, limit string) (*types.GameTemplateServer, error) {
 	offset, limit = getLimitAndOffset(offset, limit)
-	row := db.pool.QueryRow(ctx, "SELECT id, name, description, is_public FROM game_templates WHERE id = $1 LIMIT $2 OFFSET $3", id, limit, offset)
+	row := db.pool.QueryRow(ctx, "SELECT id, name, description, is_public, created_at FROM game_templates WHERE id = $1 LIMIT $2 OFFSET $3", id, limit, offset)
 
 	var game types.GameTemplateServer
-	err := row.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic)
+	err := row.Scan(&game.ID, &game.Name, &game.Description, &game.IsPublic, &game.CreatedAt)
 	if err != nil {
 		return nil, err
 	}
@@ -110,15 +112,17 @@ func (db *DB) GetGameTemplatesByCreatorID(ctx context.Context, userID string, of
 	if query != "" {
 		search := "%" + query + "%"
 		rows, err = db.pool.Query(ctx,
-			`SELECT id, name, description, is_public 
+			`SELECT id, name, description, is_public, created_at
 			 FROM game_templates 
-			 WHERE creator_id = $1 AND name ILIKE $2`,
+			 WHERE creator_id = $1 AND name ILIKE $2
+			 ORDER BY created_at DESC`,
 			userID, search)
 	} else {
 		rows, err = db.pool.Query(ctx,
-			`SELECT id, name, description, is_public 
+			`SELECT id, name, description, is_public, created_at
 			 FROM game_templates 
 			 WHERE creator_id = $1
+			 ORDER BY created_at DESC
 			 LIMIT $2 OFFSET $3`,
 			userID, limit, offset)
 	}

@@ -94,6 +94,7 @@ const GameRound = (props: Props) => {
       <Show when={props.round}>
         <QuestionModal
           isOpen={isModalOpen()}
+          answerText={activeQuestion()?.answer || 'Read the answer'}
           updateExtraAnswerers={updateExtraAnswerers}
           themeTitle={activeTheme()?.name || 'Theme'}
           points={activeQuestion()?.points || 0}
@@ -114,7 +115,7 @@ const GameRound = (props: Props) => {
           Back
         </A>
       </div>
-      <div class="flex flex-col h-full sm:mt-0 z-50 overflow-y-auto overflow-x-hidden w-full gap-16 mt-0 lg:mt-[10rem]">
+      <div class="flex flex-col h-full z-50 overflow-y-auto overflow-x-hidden w-full gap-16 mt-0 xl:mt-[10rem]">
         <div class="flex flex-col items-center mx-auto w-full">
           <h1 class="text-3xl sm:text-5xl font-bold mb-20 text-primary">{props.round?.name} </h1>
           <div class="flex justify-center gap-2 lg:gap-4 lg:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none w-full">

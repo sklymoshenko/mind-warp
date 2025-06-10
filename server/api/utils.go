@@ -186,6 +186,7 @@ func MapGameClientToCreate(body types.GameClient) (types.GameServer, []types.Rou
 				IsSelected: round.Time.IsSelected,
 			},
 			RankSettings: rankSettings,
+			Position:     uint16(i),
 		}
 
 		for j, theme := range round.Themes {

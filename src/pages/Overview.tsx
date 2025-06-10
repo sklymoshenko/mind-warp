@@ -3,22 +3,15 @@ import { useApi } from '../hooks/useApi'
 import { useAuth } from '../context/AuthContext'
 import { TbSettings, TbDeviceGamepad2 } from 'solid-icons/tb'
 import { RiDocumentFileList3Fill, RiUserFacesSpyLine } from 'solid-icons/ri'
-import { Game, GameTemplate } from '../types'
+import { Game, GameTemplate, GameTemplateListItem } from '../types'
 import { useNavigate } from '@solidjs/router'
 import OverlayComponent from '../components/OverlayComponent'
 import CreateGame from './CreateGame'
 import GameInfo from '../components/GameInfo'
 import Table from '../components/Table'
 import { TableColumn } from '../components/Table'
-
-type OverviewProps = {}
-
-const settingItemStyles = {
-  base: 'group flex items-center text-primary gap-2 cursor-pointer p-2 rounded-md hover:bg-primary/10 transition-colors duration-300',
-  title:
-    'text-bold text-2xl opacity-0 group-hover:opacity-100 transition-all duration-400 whitespace-nowrap overflow-hidden max-w-0 group-hover:max-w-xs',
-  icon: 'w-7 h-7 flex-shrink-0',
-}
+import { FiLogOut } from 'solid-icons/fi'
+import { DateTime } from 'luxon'
 
 // const leaderboardColumns: TableColumn<User>[] = [
 //   {
@@ -33,9 +26,14 @@ const settingItemStyles = {
 //   { label: 'Score', key: 'score', render: (user) => <span>{user?.score || 0}</span> },
 // ]
 
-const columns: TableColumn<GameTemplate>[] = [
+const columns: TableColumn<GameTemplateListItem>[] = [
   { label: 'Name', key: 'name' },
   { label: 'Description', key: 'description' },
+  {
+    label: 'Created at',
+    key: 'createdAt',
+    render: (template) => DateTime.fromMillis(template!.createdAt).toFormat('MMM d, yyyy h:mm a'),
+  },
 ]
 
 const Overview = () => {
@@ -78,10 +76,15 @@ const Overview = () => {
   // })
 
   const [gameTemplates, { refetch: refetchGameTemplates, mutate: mutateGameTemplates }] = createResource(async () => {
-    const response = await getGameTemplatesList<GameTemplate[]>(
+    const response = await getGameTemplatesList<GameTemplateListItem[]>(
       `?limit=${templatesPagination().limit}&offset=${templatesPagination().offset}`
     )
-    return response.data
+
+    if (response.data) {
+      return response.data
+    }
+
+    return []
   })
 
   const handleLogout = async () => {
@@ -97,14 +100,14 @@ const Overview = () => {
     setGameTemplateId(id)
   }
 
-  const searchTemplates = async (term: string): Promise<GameTemplate[]> => {
+  const searchTemplates = async (term: string): Promise<GameTemplateListItem[]> => {
     if (!term) {
       refetchPublicTemplatesCount()
       refetchGameTemplates()
       return []
     }
 
-    const response = await getGameTemplatesList<GameTemplate[]>(`?query=${term}`)
+    const response = await getGameTemplatesList<GameTemplateListItem[]>(`?query=${term}`)
     if (response.data) {
       setPublicTemplatesCount(response.data.length)
       mutateGameTemplates(response.data)
@@ -121,40 +124,29 @@ const Overview = () => {
 
   return (
     <>
-      <div class="absolute top-4 left-4 md:top-8 md:left-8 z-[51]">
-        <button
-          class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white hover:cursor-pointer transition-all duration-300 "
-          onclick={handleLogout}
-        >
-          Logout
-        </button>
-      </div>
-      <div class="text-primary h-full flex flex-col items-center justify-start gap-4 w-full px-4 z-51">
-        <div class={settingItemStyles.base}>
-          <RiUserFacesSpyLine class={settingItemStyles.icon + ' w-10 h-10'} />
-          <span class={settingItemStyles.title}>{user()?.name || 'Nameless'}</span>
-        </div>
-        <div class="flex justify-center items-center gap-4">
-          <button class={settingItemStyles.base}>
-            <TbSettings class={settingItemStyles.icon} />
-            <span class={settingItemStyles.title}>Settings</span>
-          </button>
-          <button class={settingItemStyles.base}>
-            <RiDocumentFileList3Fill class={settingItemStyles.icon} />
-            <span class={settingItemStyles.title}>Rules</span>
-          </button>
+      <div class="text-primary h-full flex flex-col items-center justify-start gap-4 w-full px-4 z-50">
+        <div class="relative w-full mb-10 flex items-center justify-between">
           <button
-            class={settingItemStyles.base}
+            class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
             onclick={() => {
               navigate('/games/me')
             }}
           >
-            <TbDeviceGamepad2 class={settingItemStyles.icon} />
-            <span class={settingItemStyles.title}>My Games</span>
+            <span class="text-2xl group-hover:text-white transition-colors duration-300">My Games</span>
+          </button>
+          <button
+            class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
+            onclick={handleLogout}
+            title="Logout"
+          >
+            <div class="text-lg text-gray-400 group-hover:text-white transition-colors duration-300">
+              {user()?.name || 'Nameless'}
+            </div>
+            <FiLogOut class="w-5 h-5 text-gray-400 group-hover:text-white transition-colors duration-300" />
           </button>
         </div>
         <div class="flex gap-4 items-start w-full h-full">
-          <div class="min-w-full md:min-w-[50%] mx-auto md:min-h-[80%] md:h-[80%] 2xl:h-full 2xl:min-h-[30rem]">
+          <div class="min-w-full md:min-w-[50%] mx-auto md:min-h-[80%] md:max-h-[80%] 2xl:max-h-full 2xl:min-h-[30rem]">
             <Table
               columns={columns}
               loading={gameTemplates.loading}
@@ -166,6 +158,8 @@ const Overview = () => {
               totalItems={publicTemplatesCount() || 0}
               onSearch={searchTemplates}
               searchPlaceholder="Search for game templates"
+              fallbackTitle="No game templates found"
+              fallbackDetail="Create a game template to get started"
             />
           </div>
           {/* <div class="w-fit">
