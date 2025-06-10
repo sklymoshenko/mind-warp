@@ -7,5 +7,6 @@
   ],
   "theme_color": "#e2fe74",
   "background_color": "#000000",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "https://mindwarp.games"
 }

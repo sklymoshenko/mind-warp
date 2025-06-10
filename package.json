@@ -1,5 +1,6 @@
 {
   "name": "mindwarp",
+  "description": "An interactive multiplayer trivia game where you can create custom games, challenge friends, and test your knowledge in real-time!",
   "private": true,
   "version": "0.0.1",
   "type": "module",
