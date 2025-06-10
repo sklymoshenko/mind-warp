@@ -178,7 +178,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
         aria-modal="true"
         role="dialog"
         classList={{
-          'bg-void/80!': (isCorrect() === null || overlayText()) !== '' && !isTimeOver(),
+          'bg-void/80!': (isCorrect() === null || overlayText() !== '') && !isTimeOver(),
           'bg-red-600/10!': isTimeOver() || (isCorrect() === false && overlayText() === ''),
           'bg-green-600/10!': isCorrect() === true && overlayText() === '' && !isTimeOver(),
         }}
