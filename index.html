@@ -63,7 +63,19 @@
         "browserRequirements": "Requires JavaScript. Requires HTML5."
       }
     </script>
-    <script defer data-domain="mindwarp.games" src="https://plausible.io/js/script.tagged-events.js"></script>
+
+    <!-- Plausible Analytics -->
+    <script>
+      const DOMAIN = 'mindwarp.games'
+      // Only load Plausible in production
+      if (window.location.hostname.endsWith(DOMAIN)) {
+        const script = document.createElement('script')
+        script.defer = true
+        script.dataset.domain = DOMAIN
+        script.src = 'https://plausible.io/js/script.tagged-events.js'
+        document.head.appendChild(script)
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
