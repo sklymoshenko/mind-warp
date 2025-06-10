@@ -66,11 +66,12 @@
 
     <!-- Plausible Analytics -->
     <script>
+      const DOMAIN = 'mindwarp.games'
       // Only load Plausible in production
-      if (window.location.hostname === 'mindwarp.games') {
+      if (window.location.hostname.endsWith(DOMAIN)) {
         const script = document.createElement('script')
         script.defer = true
-        script.dataset.domain = 'mindwarp.games'
+        script.dataset.domain = DOMAIN
         script.src = 'https://plausible.io/js/script.tagged-events.js'
         document.head.appendChild(script)
       }
