@@ -1,6 +1,6 @@
 import { createResource, Show, createSignal } from 'solid-js'
 import mockGame from '../data/mockGame'
-import { Counts, Game, GameInvite, GameListItem } from '../types'
+import { Counts, Game, GameInvite, GameTemplateListItem } from '../types'
 import { DateTime, Duration } from 'luxon'
 import { A, useNavigate } from '@solidjs/router'
 
@@ -23,11 +23,11 @@ import { FaSolidLock } from 'solid-icons/fa'
 import Table, { TableColumn } from '../components/Table'
 import { FiLock } from 'solid-icons/fi'
 
-const isFullGame = (item: Game | GameListItem): item is Game => {
+const isFullGame = (item: Game | GameTemplateListItem): item is Game => {
   return 'users' in item && 'rounds' in item
 }
 
-const GameCard = (props: Game | GameListItem) => {
+const GameCard = (props: Game | GameTemplateListItem) => {
   return (
     <div class="flex bg-primary/15 rounded-md p-4 shadow-md gap-4 items-start hover:cursor-pointer hover:bg-primary/20 transition-all duration-300">
       <IoGameControllerOutline class="text-primary w-20 h-20" />
@@ -59,7 +59,7 @@ const GameCard = (props: Game | GameListItem) => {
 }
 
 type GameTemplateCardProps = {
-  game: GameListItem
+  game: GameTemplateListItem
   onDelete?: () => void
   onClick?: () => void
   isHistory?: boolean
@@ -266,28 +266,28 @@ const MyGames = () => {
     },
   ]
 
-  const columns: TableColumn<GameListItem>[] = [
+  const columns: TableColumn<GameTemplateListItem>[] = [
     {
       label: 'Name',
       key: 'name',
-      render: (game) => (
+      render: (gameTemplate) => (
         <div class="flex items-center gap-2">
-          <span>{game?.name}</span>
-          {!game?.isPublic && <FiLock class="w-4 h-4 " />}
+          <span>{gameTemplate?.name}</span>
+          {!gameTemplate?.isPublic && <FiLock class="w-4 h-4 " />}
         </div>
       ),
     },
     {
       label: 'Description',
       key: 'description',
-      render: (game) => (
+      render: (gameTemplate) => (
         <div class="flex items-center gap-2 group h-full justify-between w-full">
-          <span>{game?.description}</span>
+          <span>{gameTemplate?.description}</span>
           <div>
             <Confirm
               title="Delete Game Template"
               message="Are you sure you want to delete this game template?"
-              onConfirm={() => onTemplateDelete(game!.id!)}
+              onConfirm={() => onTemplateDelete(gameTemplate!.id!)}
             >
               <button
                 title="Delete Game Template"
@@ -299,6 +299,11 @@ const MyGames = () => {
           </div>
         </div>
       ),
+    },
+    {
+      label: 'Created at',
+      key: 'createdAt',
+      render: (gameTemplate) => DateTime.fromMillis(gameTemplate!.createdAt).toFormat('MMM d, yyyy h:mm a'),
     },
   ]
 
@@ -337,7 +342,7 @@ const MyGames = () => {
   })
 
   const [gameTemplates, { refetch: refetchGameTemplates, mutate: setGameTemplates }] = createResource(async () => {
-    const response = await get<GameListItem[]>(
+    const response = await get<GameTemplateListItem[]>(
       `?limit=${templatesPagination().limit}&offset=${templatesPagination().offset}`
     )
     if (response.data) {
@@ -475,7 +480,7 @@ const MyGames = () => {
     await refetchGamesHistory()
   }
 
-  const searchTemplates = async (term: string): Promise<GameListItem[]> => {
+  const searchTemplates = async (term: string): Promise<GameTemplateListItem[]> => {
     if (!term) {
       await refetchGameTemplates()
       setSearchCounts((prev) => ({
@@ -486,7 +491,7 @@ const MyGames = () => {
       return []
     }
 
-    const response = await get<GameListItem[]>(`?query=${term}`)
+    const response = await get<GameTemplateListItem[]>(`?query=${term}`)
 
     if (response.data) {
       setSearchCounts((prev) => ({
@@ -565,7 +570,7 @@ const MyGames = () => {
       </div>
       <div class="text-primary h-full flex flex-col items-start justify-start gap-4 w-full px-4 z-51 overflow-y-auto">
         <h1 class="text-4xl font-bold mx-auto">My Games</h1>
-        <div class="flex gap-6 w-full mt-10 flex-col justify-between">
+        <div class="flex gap-16 w-full mt-10 flex-col justify-between">
           <div class="flex max-h-[35rem] w-full">
             <Table
               columns={activeGamesColumns}
@@ -582,8 +587,8 @@ const MyGames = () => {
               searchPlaceholder="Search Active Games"
             />
           </div>
-          <div class="flex flex-col gap-4 lg:gap-0 xl:flex-row justify-between">
-            <div class="flex max-h-[35rem] w-full xl:w-[50%]">
+          <div class="flex flex-col gap-16 lg:gap-0 xl:flex-row justify-between">
+            <div class="flex max-h-[35rem] w-full xl:w-[48%]">
               <Table
                 columns={columns}
                 minWidth="min-w-[600px]"
@@ -608,7 +613,7 @@ const MyGames = () => {
                 searchPlaceholder="Search Created Templates"
               />
             </div>
-            <div class="flex max-h-[35rem] w-full xl:w-[49%] mt-10 xl:mt-0">
+            <div class="flex max-h-[35rem] w-full xl:w-[48%] mt-10 xl:mt-0">
               <Table
                 columns={invitesColumns}
                 data={gameInvites() || []}
@@ -674,7 +679,7 @@ const MyGames = () => {
             setNewGameTemplate(undefined)
           }}
         >
-          <div class="flex flex-col gap-6">
+          <div class="flex flex-col gap-6 w-full">
             <CreateGame
               game={newGameTemplate()}
               onGameUpdate={setNewGameTemplate}

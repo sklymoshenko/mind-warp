@@ -24,6 +24,7 @@ func (s *Server) GetAllGameTemplates(c *gin.Context) {
 			Name:        game.Name,
 			Description: game.Description,
 			IsPublic:    game.IsPublic,
+			CreatedAt:   game.CreatedAt.UnixMilli(),
 		}
 	}
 
@@ -48,6 +49,7 @@ func (s *Server) GetPublicGameTemplates(c *gin.Context) {
 			Name:        game.Name,
 			Description: game.Description,
 			IsPublic:    game.IsPublic,
+			CreatedAt:   game.CreatedAt.UnixMilli(),
 		}
 	}
 
@@ -84,6 +86,7 @@ func (s *Server) GetGameTemplatesByCreatorID(c *gin.Context) {
 			Name:        game.Name,
 			Description: game.Description,
 			IsPublic:    game.IsPublic,
+			CreatedAt:   game.CreatedAt.UnixMilli(),
 		}
 	}
 

@@ -11,15 +11,19 @@ export const useApi = (url: string) => {
   const handleError = async (response: Response) => {
     setIsLoading(false)
     const error = await response.json()
-
+    let err = `Failed to get data [${response.status}:${response.statusText}]:${error.message ? error.message : error.error}`
     if (error.code) {
+      err = errorMessages[error.code as keyof typeof errorMessages]
+
+      console.error(err)
+
       return {
-        error: errorMessages[error.code as keyof typeof errorMessages],
+        error: err,
       }
     }
 
     return {
-      error: `Failed to get data [${response.status}:${response.statusText}]:${error.message ? error.message : error.error}`,
+      error: err,
     }
   }
 
@@ -38,6 +42,7 @@ export const useApi = (url: string) => {
       const response = await fetch(createBaseUrl() + url, { credentials: 'include' })
       return handleResponse<T>(response)
     } catch (error) {
+      console.error(`Unexpected error while GET: ${error}`)
       return { error: `Unexpected error while GET: ${error}` }
     } finally {
       setIsLoading(false)
@@ -55,6 +60,7 @@ export const useApi = (url: string) => {
 
       return handleResponse<T>(response)
     } catch (error) {
+      console.error(`Unexpected error while POST: ${error}`)
       return { error: `Unexpected error while POST: ${error}` }
     } finally {
       setIsLoading(false)
@@ -71,6 +77,7 @@ export const useApi = (url: string) => {
 
       return handleResponse<T>(response)
     } catch (error) {
+      console.error(`Unexpected error while DELETE: ${error}`)
       return { error: `Unexpected error while DELETE: ${error}` }
     } finally {
       setIsLoading(false)

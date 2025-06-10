@@ -13,6 +13,7 @@ type QuestionModalProps = {
   points: number
   questionText: string
   questionTime?: number
+  answerText?: string
   onAnswerSubmit: (timeAnswered: number, isCorrect: boolean | null) => void
   users: User[]
   currentUser: User['id']
@@ -30,6 +31,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   const [overlayText, setOverlayText] = createSignal('')
   const [questionTime, setQuestionTime] = createSignal(props.questionTime || 180)
   const [extraAnswerers, setExtraAnswerers] = createSignal<ExtraAnswerers>({})
+  const [isAnswerRevealed, setIsAnswerRevealed] = createSignal(false)
 
   const answerQueue = () => {
     return props.users.filter((user) => user.id !== props.currentUser)
@@ -50,7 +52,14 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
 
   const startCountdown = () => {
     countdown = setInterval(() => {
-      setQuestionTime((prev) => (prev - 1 === 0 ? 0 : prev - 1))
+      setQuestionTime((prev) => {
+        if (prev - 1 <= 0) {
+          clearCountdown()
+          return 0
+        }
+
+        return prev - 1
+      })
     }, 1000)
   }
 
@@ -135,7 +144,7 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
   }
 
   const isTimeOver = createMemo(() => {
-    return questionTime() === 0
+    return questionTime() === 0 && isCorrect() === null
   })
 
   const onExtraSelect = (user: User) => {
@@ -157,6 +166,10 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
     })
   }
 
+  const onAnswerReveal = () => {
+    setIsAnswerRevealed((prev) => !prev)
+  }
+
   return (
     <Show when={props.isOpen}>
       <div
@@ -165,9 +178,9 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
         aria-modal="true"
         role="dialog"
         classList={{
-          'bg-void/80': isCorrect() === null || overlayText() !== '',
-          'bg-red-600/10': isTimeOver() || (isCorrect() === false && overlayText() === ''),
-          'bg-green-600/10': isCorrect() === true && overlayText() === '',
+          'bg-void/80!': (isCorrect() === null || overlayText()) !== '' && !isTimeOver(),
+          'bg-red-600/10!': isTimeOver() || (isCorrect() === false && overlayText() === ''),
+          'bg-green-600/10!': isCorrect() === true && overlayText() === '' && !isTimeOver(),
         }}
       >
         <Show when={!overlayText()}>
@@ -211,25 +224,39 @@ const QuestionModal: Component<QuestionModalProps> = (props) => {
               </div>
 
               <div class="mb-6">
-                <p class="text-lg leading-relaxed text-[var(--color-white)] text-center">
+                <p class="text-lg leading-relaxed text-white text-center transition-all duration-300 ease-in-out ">
                   {props.questionText || 'Read the question'}
                 </p>
+                <p
+                  class="text-base text-gray-500 leading-relaxed text-center opacity-0 transition-all duration-300 ease-in-out"
+                  classList={{ 'opacity-100 animate-slide-down': isAnswerRevealed() }}
+                >
+                  {props.answerText || 'Read the answer'}
+                </p>
               </div>
-              <div class="flex justify-end gap-4">
+              <div class="flex justify-between">
                 <button
-                  onClick={() => handleAnswerSubmit(false)}
-                  class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+                  class="text-base cursor-pointer text-gray-500 hover:text-gray-500/70 transition-all duration-300 ease-in-out"
+                  onclick={onAnswerReveal}
                 >
-                  <TbX class="mr-1.5 h-5 w-5" />
-                  <span>Wrong</span>
+                  {isAnswerRevealed() ? 'Hide Answer' : 'Reveal Answer'}
                 </button>
-                <button
-                  onClick={() => handleAnswerSubmit(true)}
-                  class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
-                >
-                  <TbCheck class="mr-1.5 h-5 w-5" />
-                  <span>Correct</span>
-                </button>
+                <div class="flex justify-end gap-4">
+                  <button
+                    onClick={() => handleAnswerSubmit(false)}
+                    class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-accent)] px-5 py-2 text-sm font-semibold text-[var(--text-on-accent)] transition-colors duration-200 ease-in-out hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+                  >
+                    <TbX class="mr-1.5 h-5 w-5" />
+                    <span>Wrong</span>
+                  </button>
+                  <button
+                    onClick={() => handleAnswerSubmit(true)}
+                    class="hover:cursor-pointer inline-flex items-center justify-center rounded-md bg-[var(--color-primary)] px-5 py-2 text-sm font-semibold text-[var(--text-on-primary)] transition-colors duration-200 ease-in-out hover:bg-lime-300 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)] focus:ring-offset-2 focus:ring-offset-[var(--color-void)]"
+                  >
+                    <TbCheck class="mr-1.5 h-5 w-5" />
+                    <span>Correct</span>
+                  </button>
+                </div>
               </div>
             </div>
             <p class="text-lg font-bold text-primary">Answer Queue</p>

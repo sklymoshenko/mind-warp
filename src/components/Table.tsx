@@ -81,7 +81,7 @@ const DefaultTableEmptyState = (props: { columns: TableColumn<any>[]; title?: st
         <div class="flex flex-col items-center justify-center h-full text-gray-400">
           <TiCancel class="w-20 h-20 mb-2" />
           <p class="text-lg font-medium">{props.title || 'No data available'}</p>
-          <p class="text-sm">{props.detail || 'The table is currently empty.'}</p>
+          <p class="text-sm text-gray-500">{props.detail || 'The table is currently empty.'}</p>
         </div>
       </td>
     </tr>
@@ -93,7 +93,7 @@ const DefaultCardEmptyState = (props: { columns: TableColumn<any>[]; title?: str
     <div class="flex flex-col items-center justify-center h-full text-gray-400">
       <TiCancel class="w-20 h-20 mb-2" />
       <p class="text-lg font-medium">{props.title || 'No data available'}</p>
-      <p class="text-sm">{props.detail || 'The table is currently empty.'}</p>
+      <p class="text-sm text-gray-500">{props.detail || 'The table is currently empty.'}</p>
     </div>
   )
 }
