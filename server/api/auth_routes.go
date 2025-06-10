@@ -71,29 +71,32 @@ func parseLoginError(err error) ErrorResponse {
 }
 
 func (s *Server) handleLogin(c *gin.Context, req loginRequest) {
+	errorResponse := ErrorResponse{}
 	user, err := s.Db.GetUserByEmail(req.Email)
 	if err != nil {
-		response := parseLoginError(err)
-		c.JSON(http.StatusUnauthorized, response)
+		errorResponse = parseLoginError(err)
+		c.JSON(http.StatusUnauthorized, errorResponse)
 		return
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(req.Password, user.Password)
 
-	if err != nil || !match {
-		response := ErrorResponse{
+	if err != nil {
+		errorResponse = ErrorResponse{
 			Code:    FAIL_PASSWORD_COMPARE_ERROR,
 			Message: err.Error(),
 		}
+	}
 
-		if !match {
-			response = ErrorResponse{
-				Code:    INVALID_PASSWORD_ERROR,
-				Message: "Invalid login or password",
-			}
+	if !match {
+		errorResponse = ErrorResponse{
+			Code:    INVALID_PASSWORD_ERROR,
+			Message: "Invalid login or password",
 		}
+	}
 
-		c.JSON(http.StatusUnauthorized, response)
+	if errorResponse.Code != "" {
+		c.JSON(http.StatusUnauthorized, errorResponse)
 		return
 	}
 
