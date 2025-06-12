@@ -126,14 +126,24 @@ const Overview = () => {
     <>
       <div class="text-primary h-full flex flex-col items-center justify-start gap-4 w-full px-4 z-50">
         <div class="relative w-full mb-10 flex items-center justify-between">
-          <button
-            class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
-            onclick={() => {
-              navigate('/games/me')
-            }}
-          >
-            <span class="text-2xl group-hover:text-white transition-colors duration-300">My Games</span>
-          </button>
+          <div class="flex items-center gap-8">
+            <button
+              class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
+              onclick={() => {
+                navigate('/games/me')
+              }}
+            >
+              <span class="text-2xl group-hover:text-white transition-colors duration-300">My Games</span>
+            </button>
+            <button
+              class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
+              onclick={() => {
+                navigate('/how-to-play')
+              }}
+            >
+              <span class="text-2xl group-hover:text-white transition-colors duration-300">How to Play</span>
+            </button>
+          </div>
           <button
             class="flex items-center gap-2 hover:cursor-pointer transition-colors duration-300 group"
             onclick={handleLogout}

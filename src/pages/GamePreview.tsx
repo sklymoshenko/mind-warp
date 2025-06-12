@@ -5,6 +5,7 @@ import { TbConfetti } from 'solid-icons/tb'
 import GameFinished from '../components/GameFinish'
 import { Confirm } from '../components/Confirm'
 import { calculateUserGameScore } from '../utils'
+import { useNavigate } from '@solidjs/router'
 
 interface GamePreviewProps {
   game: Game
@@ -16,7 +17,14 @@ interface GamePreviewProps {
 
 export default function GamePreview(props: GamePreviewProps) {
   const [isGameFinished, setIsGameFinished] = createSignal(false)
-  const [finishTimeout, setFinishTimeout] = createSignal<number>()
+  const [finishTimeout, setFinishTimeout] = createSignal<NodeJS.Timeout>()
+  const navigate = useNavigate()
+
+  // Create a memo to determine if it's a local game based on the URL
+  const isLocalGame = createMemo(() => {
+    const currentUrl = window.location.pathname
+    return currentUrl.includes('/local/')
+  })
 
   const scores = createMemo(() => calculateUserGameScore(props.game.users))
 
@@ -80,7 +88,7 @@ export default function GamePreview(props: GamePreviewProps) {
     <>
       <div class="absolute top-4 left-4 md:top-8 md:left-8 z-20">
         <button
-          onClick={() => window.history.back()}
+          onClick={() => (isLocalGame() ? navigate('/') : window.history.back())}
           class="text-primary text-sm md:text-lg font-bold uppercase tracking-wider hover:text-white transition-all duration-300 hover:cursor-pointer"
         >
           Back

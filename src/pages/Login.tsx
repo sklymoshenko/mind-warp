@@ -51,9 +51,9 @@ const Login = () => {
   })
 
   return (
-    <div class="flex flex-col items-center justify-center h-screen">
+    <div class="flex flex-col items-center justify-center h-screen w-full">
       <h1 class="text-4xl font-bold text-primary mb-8">Login</h1>
-      <div class="flex flex-col items-center justify-center gap-4 w-full sm:w-[300px]">
+      <div class="flex flex-col items-center justify-center gap-4 w-full max-w-[300px]">
         <input
           class="input-colors w-full"
           classList={{

@@ -1,7 +1,7 @@
 import { createEffect, createMemo, createSignal, For, Show } from 'solid-js'
 import { Game, Question, Round, Theme, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
-import { A } from '@solidjs/router'
+import { A, useNavigate } from '@solidjs/router'
 import QuestionModal, { ExtraAnswerers } from '../components/QuestionModal'
 
 type Props = {
@@ -118,7 +118,7 @@ const GameRound = (props: Props) => {
       <div class="flex flex-col h-full z-50 overflow-y-auto overflow-x-hidden w-full gap-16 mt-0 xl:mt-[10rem]">
         <div class="flex flex-col items-center mx-auto w-full">
           <h1 class="text-3xl sm:text-5xl font-bold mb-20 text-primary">{props.round?.name} </h1>
-          <div class="flex justify-center gap-2 lg:gap-4 lg:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none w-full">
+          <div class="flex justify-center gap-4 lg:gap-14 lg:flex-nowrap flex-wrap max-w-[99%] sm:max-w-none w-full">
             <For each={props.round?.themes}>
               {(theme) => {
                 return (

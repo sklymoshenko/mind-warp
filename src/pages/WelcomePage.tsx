@@ -28,8 +28,14 @@ const Welcome = () => {
   })
 
   return (
-    <>
-      <div class="relative z-10 text-center ">
+    <div class="h-full flex flex-col items-center justify-center">
+      <button
+        class="text-primary text-lg lg:text-xl font-bold uppercase hover:text-primary/50 transition-all duration-300 hover:cursor-pointer"
+        onclick={() => navigate('/how-to-play')}
+      >
+        How To Play
+      </button>
+      <div class="relative z-10 text-center flex flex-col items-center justify-center h-full">
         <h1
           class="text-5xl md:text-7xl font-extrabold text-primary uppercase tracking-tight transition-all duration-1000"
           classList={{
@@ -39,7 +45,7 @@ const Welcome = () => {
         >
           Mind Warp
         </h1>
-        <div class="flex gap-4" classList={{ 'flex-col': gameInProgress() === null }}>
+        <div class="flex gap-4 mb-8" classList={{ 'flex-col': gameInProgress() === null }}>
           <button
             class="mt-8 bg-primary text-void text-xl md:text-2xl font-bold uppercase py-3 px-6 rounded-lg hover:bg-primary/80 hover:text-void transition-all duration-300 hover:cursor-pointer"
             classList={{
@@ -73,7 +79,7 @@ const Welcome = () => {
           </button>
         </div>
       </div>
-    </>
+    </div>
   )
 }
 

@@ -11,6 +11,7 @@ import Overview from './pages/Overview'
 import MyGames from './pages/MyGames'
 import LocalGameRoutes from './pages/LocalGame'
 import RemoteGameRoutes from './pages/RemoteGameRoutes'
+import HowToPlay from './pages/HowToPlay'
 
 const Main = () => {
   return (
@@ -18,6 +19,7 @@ const Main = () => {
       <BackgroundWrapper>
         <Router>
           <Route path="/" component={WelcomePage} />
+          <Route path="/how-to-play" component={HowToPlay} />
           <LocalGameRoutes />
           <RemoteGameRoutes />
           <Route path="/login" component={Login} />
