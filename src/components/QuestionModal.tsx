@@ -4,7 +4,7 @@ import { Component, Show, createSignal, createEffect, createMemo, For, on } from
 import { TbTag, TbAward, TbCheck, TbX } from 'solid-icons/tb'
 import { getQuizResponse } from '../data/utils'
 import { Duration } from 'luxon'
-import { User } from '../types'
+import { Interval, User } from '../types'
 
 type QuestionModalProps = {
   isOpen: boolean
@@ -22,7 +22,7 @@ type QuestionModalProps = {
 export type ExtraAnswerers = Record<User['id'], [number, boolean | null]>
 
 const QuestionModal: Component<QuestionModalProps> = (props) => {
-  let countdown: number | undefined = undefined
+  let countdown: Interval | undefined = undefined
   const [isCorrect, setIsCorrect] = createSignal<boolean | null>(null)
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation()
