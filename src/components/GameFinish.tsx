@@ -1,7 +1,7 @@
 // GameFinish.tsx
 import { onMount, onCleanup, For } from 'solid-js'
 import confetti from 'canvas-confetti'
-import { Game, User } from '../types'
+import { Game, Interval, User } from '../types'
 import { sarcasticCongrats } from '../data/utils'
 
 type Props = {
@@ -40,7 +40,7 @@ const GameFinish = (props: Props) => {
 
     const randomInRange = (min: number, max: number): number => Math.random() * (max - min) + min
 
-    const interval: number = setInterval(() => {
+    const interval: Interval = setInterval(() => {
       const timeLeft: number = animationEnd - Date.now()
 
       if (timeLeft <= 0) {

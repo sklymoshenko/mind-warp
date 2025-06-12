@@ -1,6 +1,6 @@
 // src/GamePreview.tsx
 import { createMemo, createSignal, For, Show } from 'solid-js'
-import { Game, Round, User } from '../types'
+import { Game, Round, Timeout, User } from '../types'
 import { TbConfetti } from 'solid-icons/tb'
 import GameFinished from '../components/GameFinish'
 import { Confirm } from '../components/Confirm'
@@ -17,7 +17,7 @@ interface GamePreviewProps {
 
 export default function GamePreview(props: GamePreviewProps) {
   const [isGameFinished, setIsGameFinished] = createSignal(false)
-  const [finishTimeout, setFinishTimeout] = createSignal<NodeJS.Timeout>()
+  const [finishTimeout, setFinishTimeout] = createSignal<Timeout>()
   const navigate = useNavigate()
 
   // Create a memo to determine if it's a local game based on the URL

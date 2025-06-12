@@ -13,7 +13,7 @@ const RemoteGameRoutes = () => {
   const [game, setGame] = createSignal<Game>()
 
   const [lastSaved, setLastSaved] = createSignal<Date>(new Date())
-  let autosaveTimer: NodeJS.Timeout | undefined
+  let autosaveTimer: ReturnType<typeof setInterval> | undefined
 
   // Setup autosave timer
   createEffect(() => {
