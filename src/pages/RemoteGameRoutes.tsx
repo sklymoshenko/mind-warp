@@ -5,18 +5,45 @@ import { Game, Question, Round, User } from '../types'
 import GameRound from './GameRound'
 import { useApi } from '../hooks/useApi'
 import AuthGuard from '../components/AuthGuard'
+const AUTOSAVE_INTERVAL = 5 * 60 * 1000 // 5 min
 
 const RemoteGameRoutes = () => {
   const { post: finishGame } = useApi(`games/finish`)
   const { post: updateGame } = useApi(`games/update`)
   const [game, setGame] = createSignal<Game>()
 
+  const [lastSaved, setLastSaved] = createSignal<Date>(new Date())
+  let autosaveTimer: NodeJS.Timeout | undefined
+
+  // Setup autosave timer
+  createEffect(() => {
+    if (game()) {
+      if (autosaveTimer) {
+        clearInterval(autosaveTimer)
+      }
+
+      autosaveTimer = setInterval(async () => {
+        await saveGame()
+        console.log('autosaving')
+        setLastSaved(new Date())
+      }, AUTOSAVE_INTERVAL)
+    }
+  })
+
+  onCleanup(() => {
+    if (autosaveTimer) {
+      clearInterval(autosaveTimer)
+    }
+  })
+
   const saveGame = async () => {
     if (!game()) return
-    await updateGame<Game>(game()!, `/${game()!.id}`)
+    const response = await updateGame<Game>(game()!, `/${game()!.id}`)
+    if (response.error) {
+      console.error('Failed to save game:', response.error)
+    }
   }
 
-  // Watch for route changes
   const handleRouteChange = () => {
     if (!window.location.pathname.includes('/game/')) {
       saveGame()
@@ -131,7 +158,7 @@ const RemoteGameRoutes = () => {
         path="/game/:gameId"
         component={() => {
           const navigate = useNavigate()
-          const { get: getGame } = useApi('/games')
+          const { get: getGame } = useApi('games')
           const params = useParams()
 
           useBeforeLeave(() => {
@@ -176,7 +203,7 @@ const RemoteGameRoutes = () => {
         component={() => {
           const params = useParams()
           const navigate = useNavigate()
-          const { get: getGame } = useApi('/games')
+          const { get: getGame } = useApi('games')
 
           createResource(
             () => params.gameId,
